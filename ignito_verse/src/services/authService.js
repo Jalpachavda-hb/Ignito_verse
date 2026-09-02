@@ -18,7 +18,6 @@ const STORAGE_USER_KEY = 'ignito_auth_user';
  * @returns {Promise<object>} Parsed Output Parameter Object `{ success, user, token, error }`
  */
 export async function loginUser(email, password) {
-  debugger;
   // 1. Prepare Input Parameter DTO
   const inputDto = buildLoginInput(email, password);
 
