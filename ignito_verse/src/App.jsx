@@ -5,6 +5,7 @@ import Footer from './component/footer/Footer';
 import HomePage from './component/Homepage/HomePage';
 import MicrocredentialsCatalog from './component/Microcredentials/MicrocredentialsCatalog';
 import MicrocredentialDetail from './component/Microcredentials/MicrocredentialDetail';
+import MicrocredentialWatchPage from './component/Microcredentials/MicrocredentialWatchPage';
 import ProfilePage from './component/Profile/ProfilePage';
 import LoginPage from './component/Auth/LoginPage';
 import BookDemoModal from './component/modals/BookDemoModal';
@@ -161,6 +162,15 @@ export default function App() {
             onBack={() => handleNavigate('microcredentials')}
             onBookDemo={() => setIsDemoModalOpen(true)}
             onPreviewVideo={handleOpenVideoPreview}
+            onWatchCourse={() => handleNavigate('watch')}
+          />
+        )}
+
+        {activePage === 'watch' && (
+          <MicrocredentialWatchPage 
+            course={selectedCourse}
+            onBack={() => handleNavigate('detail')}
+            onNavigate={handleNavigate}
           />
         )}
 

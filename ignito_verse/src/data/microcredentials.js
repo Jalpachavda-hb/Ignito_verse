@@ -44,6 +44,7 @@ export const microcredentialsData = [
     },
     certificateName: 'Relaxation Techniques and Meditation',
     certificateType: 'Certificate of completion',
+    certificateImage: '',
     skillLevel: 'Beginner-Friendly',
     modules: [
       {

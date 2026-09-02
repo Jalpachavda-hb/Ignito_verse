@@ -6101,7 +6101,7 @@ a {
 }
 
 .breadcrumb-item.linkable:hover {
-  color: #5850ec;
+  color: #00385E;
   text-decoration: underline;
 }
 
@@ -6111,16 +6111,16 @@ a {
 }
 
 .breadcrumb-item.active {
-  color: #0f172a;
+  color: #00385E;
   font-weight: 600;
 }
 
-/* 2. Hero Split Card (Text + Meditation Visual) */
+/* 2. Hero Header Block */
+.mc-hero-header-block,
 .mc-hero-split-card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 28px;
+  flex-direction: column;
+  gap: 0;
   padding-bottom: 8px;
 }
 
@@ -6129,16 +6129,32 @@ a {
   min-width: 0;
 }
 
-.mc-category-badge {
-  display: inline-block;
-  background: #eff0fe;
-  color: #5850ec;
-  font-size: 0.78rem;
+.mc-category-pill-wrapper {
+  display: flex;
+  margin-bottom: 12px;
+}
+
+.mc-category-capsule-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #f0f7fc;
+  border: 1.5px solid #d4e7f5;
+  color: #00385E;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.76rem;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  padding: 5px 12px;
-  border-radius: 6px;
-  margin-bottom: 14px;
+  letter-spacing: 0.06em;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 6px rgba(0, 56, 94, 0.04);
+}
+
+.mc-cat-indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00385E;
 }
 
 .mc-hero-title {
@@ -6146,7 +6162,7 @@ a {
   font-size: clamp(1.9rem, 2.8vw, 2.6rem);
   font-weight: 800;
   line-height: 1.18;
-  color: #08233D;
+  color: #00385E;
   margin: 0 0 14px 0;
   letter-spacing: -0.01em;
 }
@@ -6221,7 +6237,7 @@ a {
   height: 36px;
   border-radius: 50%;
   overflow: hidden;
-  border: 1.5px solid #e0e7ff;
+  border: 1.5px solid #c9dfef;
 }
 
 .mc-inst-avatar img {
@@ -6243,7 +6259,7 @@ a {
 
 .mc-inst-name {
   font-weight: 700;
-  color: #08233D;
+  color: #00385E;
 }
 
 .mc-inst-cat-pipe {
@@ -6260,7 +6276,7 @@ a {
 }
 
 .mc-cat-link {
-  color: #5850ec;
+  color: #00385E;
   font-weight: 700;
 }
 
@@ -6276,7 +6292,7 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: #5850ec;
+  background: #00385E;
   color: #ffffff;
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
   font-size: 0.98rem;
@@ -6285,14 +6301,14 @@ a {
   border-radius: 10px;
   border: none;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(88, 80, 236, 0.32);
+  box-shadow: 0 6px 18px rgba(0, 56, 94, 0.3);
   transition: all 0.25s ease;
 }
 
 .mc-btn-primary-apply:hover {
-  background: #4338ca;
+  background: #002844;
   transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(88, 80, 236, 0.45);
+  box-shadow: 0 8px 22px rgba(0, 56, 94, 0.45);
 }
 
 .mc-btn-secondary-preview {
@@ -6300,26 +6316,26 @@ a {
   align-items: center;
   gap: 8px;
   background: #ffffff;
-  color: #4338ca;
+  color: #00385E;
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
   font-size: 0.98rem;
   font-weight: 700;
   padding: 11px 24px;
   border-radius: 9999px;
-  border: 1.5px solid #e0e7ff;
+  border: 1.5px solid #00385E;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .mc-btn-secondary-preview:hover {
-  border-color: #5850ec;
-  background: #f8fafc;
-  color: #5850ec;
+  border-color: #00385E;
+  background: #f0f7fc;
+  color: #00385E;
 }
 
 .play-icon-fill {
-  color: #5850ec;
-  fill: #5850ec;
+  color: #00385E;
+  fill: #00385E;
 }
 
 /* Hero Right Visual Side */
@@ -6344,49 +6360,173 @@ a {
   transform: translateY(-4px) scale(1.03);
 }
 
-/* Tabs Navigation Bar */
-.mc-tabs-nav-bar {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  border-bottom: 1.5px solid #e2e8f0;
-  padding-bottom: 0;
+/* ========================================================
+   LUXURY FLOATING ISLAND TAB BAR (EXACT REFERENCE DESIGN)
+   ======================================================== */
+.mc-island-tabs-container {
+  width: 100%;
+  margin-bottom: 10px;
   overflow-x: auto;
+  padding: 6px 2px 10px;
 }
 
-.mc-tab-item {
-  background: none;
+.mc-island-tabs-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 28px;
+  padding: 8px 12px;
+  box-shadow: 0 10px 30px rgba(0, 56, 94, 0.06);
+  min-width: max-content;
+}
+
+.mc-island-tab-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
   border: none;
-  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
-  font-size: 0.96rem;
-  font-weight: 600;
-  color: #64748b;
-  padding: 10px 0 14px 0;
+  border-radius: 20px;
+  padding: 8px 16px;
   cursor: pointer;
-  position: relative;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+}
+
+.mc-island-tab-item:hover {
+  background: #f1f6fa;
+}
+
+/* Circular Icon Wrapper */
+.island-tab-circle-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+
+.island-tab-circle-icon.purple-soft {
+  color: #6366f1;
+  background: #eef2ff;
+  border-color: #e0e7ff;
+}
+
+.island-tab-circle-icon.blue-soft {
+  color: #0284c7;
+  background: #f0f9ff;
+  border-color: #e0f2fe;
+}
+
+.island-tab-circle-icon.gold-soft {
+  color: #d97706;
+  background: #fffbeb;
+  border-color: #fef3c7;
+}
+
+.island-tab-circle-icon.teal-soft {
+  color: #0d9488;
+  background: #f0fdfa;
+  border-color: #ccfbf1;
+}
+
+.island-tab-text-group {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.island-tab-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #334155;
   transition: color 0.2s ease;
   white-space: nowrap;
 }
 
-.mc-tab-item:hover {
-  color: #08233D;
-}
-
-.mc-tab-item.active {
-  color: #5850ec;
+/* Mini Badges inside Island Tabs */
+.island-tab-badge {
+  font-size: 0.72rem;
   font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  transition: all 0.25s ease;
+  white-space: nowrap;
 }
 
-.mc-tab-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1.5px;
-  left: 0;
-  width: 100%;
-  height: 2.5px;
-  background: #5850ec;
-  border-radius: 3px 3px 0 0;
+.island-tab-badge.count-pill {
+  background: #e0f2fe;
+  color: #0369a1;
 }
+
+.island-tab-badge.rating-pill {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.island-tab-badge.official-pill {
+  background: #dbeafe;
+  color: #1d4ed8;
+  text-transform: uppercase;
+}
+
+/* ACTIVE ISLAND TAB STATE WITH #00385E THEME GRADIENT */
+.mc-island-tab-item.active {
+  background: linear-gradient(135deg, #00385E 0%, #005086 100%);
+  box-shadow: 0 8px 24px rgba(0, 56, 94, 0.28);
+}
+
+.mc-island-tab-item.active .island-tab-title {
+  color: #ffffff;
+}
+
+.mc-island-tab-item.active .island-tab-circle-icon {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #00385E;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.mc-island-tab-item.active .island-tab-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* Decorative Colorful Node Line */
+.mc-nodes-accent-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 2px;
+  background: linear-gradient(90deg, #38bdf8 0%, #818cf8 35%, #fbbf24 70%, #34d399 100%);
+  border-radius: 999px;
+  margin: 6px 18px 28px;
+  position: relative;
+}
+
+.node-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2.5px solid #00385E;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+.node-dot.blue { border-color: #0284c7; }
+.node-dot.purple { border-color: #6366f1; }
+.node-dot.orange { border-color: #f59e0b; }
+.node-dot.teal { border-color: #10b981; }
 
 /* Single Page Sections Stack */
 .mc-single-page-sections-stack,
@@ -6419,23 +6559,23 @@ a {
 }
 
 .mc-header-icon-box.purple-tint {
-  background: #eef2ff;
-  color: #5850ec;
-  border: 1px solid #e0e7ff;
+  background: #e6f0f7;
+  color: #00385E;
+  border: 1px solid #c9dfef;
 }
 
 .mc-section-title {
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
   font-size: 1.18rem;
   font-weight: 800;
-  color: #08233D;
+  color: #00385E;
   margin: 0;
 }
 
 .mc-section-paragraph {
   font-size: 0.94rem;
   line-height: 1.68;
-  color: #475569;
+  color: #334155;
   margin: 0;
 }
 
@@ -6452,26 +6592,26 @@ a {
   margin: 0;
 }
 
-/* "What Will You Learn?" Light Blue Box */
+/* What Will You Learn Box */
 .mc-learn-box-card {
-  background: #f0f7ff;
-  border: 1.5px solid #bfdbfe;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 16px;
-  padding: 26px 28px;
+  padding: 24px 26px;
 }
 
 .mc-learn-box-heading {
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
   font-size: 1.15rem;
   font-weight: 800;
-  color: #08233D;
-  margin: 0 0 20px 0;
+  color: #00385E;
+  margin: 0 0 18px 0;
 }
 
 .mc-learn-grid-2col {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px 24px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px 22px;
 }
 
 .mc-learn-item-row {
@@ -6484,7 +6624,7 @@ a {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #2563eb;
+  background: #00385E;
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -6500,21 +6640,539 @@ a {
   font-weight: 500;
 }
 
-/* Curriculum Accordion */
-.mc-curriculum-accordion {
+/* ========================================================
+   EXECUTIVE LUXURY CONTENT PANE & MODULE CARDS
+   ======================================================== */
+.mc-content-luxury-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mc-content-banner-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 22px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 6px 20px rgba(0, 56, 94, 0.04);
+  flex-wrap: wrap;
+}
+
+.banner-left-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.banner-squircle-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #00385E 0%, #005a96 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0, 56, 94, 0.25);
+  flex-shrink: 0;
+}
+
+.banner-main-heading {
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #00385E;
+  margin: 0 0 4px 0;
+}
+
+.banner-sub-desc {
+  font-size: 0.88rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.banner-right-metrics {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.metric-pill-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 8px 16px;
+}
+
+.metric-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-icon-wrap.purple {
+  background: #f1f5f9;
+  color: #00385E;
+}
+
+.metric-icon-wrap.teal {
+  background: #f0fdf4;
+  color: #059669;
+}
+
+.metric-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-info strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #00385E;
+  line-height: 1.2;
+}
+
+.metric-info span {
+  font-size: 0.76rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* Luxury Module Topics Stack */
+.mc-luxury-modules-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.mc-accordion-item {
+.mc-module-luxury-card {
+  background: #ffffff;
+  border: 1.5px solid #e9eff5;
+  border-radius: 14px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.mc-module-luxury-card:hover {
+  border-color: #cbd5e1;
+  background: #fafcfe;
+}
+
+.module-card-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.module-index-box {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #00385E;
+  background: #e6f0f7;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.module-details-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.module-title-headline {
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.module-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.meta-dur-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.meta-separator {
+  color: #cbd5e1;
+}
+
+.meta-type-pill {
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.btn-explore-topic {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  color: #00385E;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 7px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-explore-topic:hover,
+.mc-module-luxury-card:hover .btn-explore-topic {
+  background: #00385E;
+  border-color: #00385E;
+  color: #ffffff;
+}
+
+.mc-topic-name {
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: #00385E;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* ========================================================
+   SECTION: VERIFIED CERTIFICATE PREVIEW (IMAGE SHOWCASE)
+   ======================================================== */
+.mc-certificate-showcase-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px 26px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+}
+
+.mc-certificate-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cert-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e6f0f7;
+  border: 1px solid #c9dfef;
+  color: #00385E;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+}
+
+.mc-certificate-image-canvas {
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1.5px solid #c9dfef;
+  box-shadow: 0 10px 30px rgba(0, 56, 94, 0.09);
+  background: #0f172a;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.mc-certificate-preview-photo {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.mc-certificate-image-canvas:hover .mc-certificate-preview-photo {
+  transform: scale(1.015);
+}
+
+.mc-cert-footer-verify-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 4px 0;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.verify-strip-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: #00385E;
+  font-weight: 600;
+}
+
+.check-green-svg {
+  color: #10b981;
+}
+
+.btn-cert-share {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e6f0f7;
+  color: #00385E;
+  border: 1px solid #c9dfef;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cert-share:hover {
+  background: #00385E;
+  color: #ffffff;
+}
+
+/* ========================================================
+   SECTION: STUDENT REVIEWS & STAR RATING BREAKDOWN
+   ======================================================== */
+.mc-reviews-creative-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px 26px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+}
+
+.mc-reviews-breakdown-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 32px;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 22px 24px;
+  margin: 18px 0 20px;
+}
+
+.mc-big-score-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-right: 1.5px solid #e2e8f0;
+  padding-right: 24px;
+}
+
+.score-number-display {
+  font-size: 3.2rem;
+  font-weight: 800;
+  color: #00385E;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.score-stars-row {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 6px;
+}
+
+.score-total-count {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.mc-rating-bars-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.mc-rating-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bar-star-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #475569;
+  width: 28px;
+}
+
+.bar-track-line {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bar-fill-line {
+  height: 100%;
+  background: #00385E;
+  border-radius: 999px;
+}
+
+.bar-count-label {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 600;
+  width: 78px;
+  text-align: right;
+}
+
+/* Verified Testimonial Card */
+.mc-student-review-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  background: #ffffff;
+}
+
+.student-review-author-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.student-avatar-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1.5px solid #c9dfef;
+  flex-shrink: 0;
+}
+
+.student-avatar-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.student-author-info h4 {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #00385E;
+  margin: 0 0 2px 0;
+}
+
+.student-stars-and-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.student-mini-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.review-timestamp {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.student-review-body-text {
+  font-size: 0.92rem;
+  line-height: 1.62;
+  color: #334155;
+  margin: 0 0 14px 0;
+}
+
+.student-review-action-row {
+  display: flex;
+  align-items: center;
+}
+
+.btn-like-review {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-like-review:hover,
+.btn-like-review.liked {
+  background: #e6f0f7;
+  border-color: #c9dfef;
+  color: #00385E;
+}
+
+/* ========================================================
+   SECTION: FAQ ACCORDION LIST
+   ======================================================== */
+.mc-faq-accordion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.mc-faq-card-item {
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   overflow: hidden;
   background: #ffffff;
+  transition: border-color 0.2s ease;
 }
 
-.mc-accordion-header {
+.mc-faq-card-item.open {
+  border-color: #c9dfef;
+}
+
+.mc-faq-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -6524,178 +7182,27 @@ a {
   transition: background 0.2s ease;
 }
 
-.mc-accordion-header:hover {
+.mc-faq-header:hover {
   background: #f8fafc;
 }
 
-.mc-accordion-title-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.mc-module-num {
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: #5850ec;
-  background: #eef2ff;
-  padding: 3px 8px;
-  border-radius: 5px;
-}
-
-.mc-accordion-title-left h4 {
-  font-size: 0.98rem;
+.faq-q-text {
+  font-size: 0.95rem;
   font-weight: 700;
-  color: #08233D;
-  margin: 0;
+  color: #00385E;
 }
 
-.mc-accordion-header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #64748b;
-}
-
-.mc-mod-duration {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.82rem;
-}
-
-.mc-lectures-tray {
+.mc-faq-body {
+  padding: 0 20px 16px;
   border-top: 1px solid #f1f5f9;
   background: #fbfcfe;
-  padding: 8px 16px;
 }
 
-.mc-lecture-entry {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 8px;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.mc-lecture-entry:last-child {
-  border-bottom: none;
-}
-
-.mc-lecture-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.88rem;
-  color: #334155;
-  font-weight: 600;
-}
-
-.play-icon-blue {
-  color: #5850ec;
-}
-
-.mc-lecture-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.lec-dur-text {
-  font-size: 0.82rem;
-  color: #94a3b8;
-}
-
-.btn-preview-tag {
-  background: #eef2ff;
-  border: 1px solid #c7d2fe;
-  color: #5850ec;
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-preview-tag:hover {
-  background: #5850ec;
-  color: #ffffff;
-}
-
-/* Instructor Profile Tab */
-.mc-instructor-full-profile {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 24px;
-}
-
-.inst-profile-avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-  border: 2px solid #e0e7ff;
-}
-
-.inst-profile-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.inst-profile-body h3 {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #08233D;
-  margin: 0 0 4px 0;
-}
-
-.inst-title-tag {
-  font-size: 0.86rem;
-  font-weight: 600;
-  color: #5850ec;
-  margin: 0 0 10px 0;
-}
-
-.inst-bio-text {
+.mc-faq-body p {
   font-size: 0.9rem;
+  line-height: 1.6;
   color: #475569;
-  line-height: 1.55;
-  margin: 0;
-}
-
-/* Reviews Summary Strip */
-.mc-reviews-summary-strip {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 24px;
-  flex-wrap: wrap;
-}
-
-.big-rating-number {
-  font-size: 2.4rem;
-  font-weight: 800;
-  color: #08233D;
-}
-
-.stars-large {
-  display: flex;
-  gap: 3px;
-}
-
-.total-reviews-count {
-  font-size: 0.9rem;
-  color: #64748b;
+  margin: 12px 0 0 0;
 }
 
 /* "More Microcredentials by Prof." Block */
@@ -6714,14 +7221,14 @@ a {
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
   font-size: 1.18rem;
   font-weight: 800;
-  color: #08233D;
+  color: #00385E;
   margin: 0;
 }
 
 .mc-view-all-link {
   background: none;
   border: none;
-  color: #5850ec;
+  color: #00385E;
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
   font-size: 0.88rem;
   font-weight: 700;
@@ -6782,8 +7289,8 @@ a {
 .mini-level-pill {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #5850ec;
-  background: #eef2ff;
+  color: #00385E;
+  background: #e6f0f7;
   padding: 3px 8px;
   border-radius: 5px;
 }
@@ -6791,14 +7298,14 @@ a {
 .mini-fee-price {
   font-size: 0.95rem;
   font-weight: 800;
-  color: #08233D;
+  color: #00385E;
 }
 
 .mini-course-heading {
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
   font-size: 1.05rem;
   font-weight: 800;
-  color: #08233D;
+  color: #00385E;
   margin: 0 0 6px 0;
 }
 
@@ -6838,11 +7345,13 @@ a {
 /* ========================================================
    RIGHT COLUMN: STICKY SIDEBAR
    ======================================================== */
+.mc-main-right-sidebar,
 .mc-right-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  position: relative;
+  gap: 24px;
+  position: sticky;
+  top: 96px;
 }
 
 /* 1. Video Banner Box */
@@ -6928,13 +7437,13 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #5850ec;
+  color: #00385E;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   transition: transform 0.25s ease;
 }
 
 .play-icon-triangle {
-  fill: #5850ec;
+  fill: #00385E;
   margin-left: 3px;
 }
 
@@ -6949,7 +7458,7 @@ a {
 
 .mc-btn-apply-full {
   width: 100%;
-  background: #5850ec;
+  background: #00385E;
   color: #ffffff;
   border: none;
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
@@ -6958,14 +7467,14 @@ a {
   padding: 13px 20px;
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(88, 80, 236, 0.28);
+  box-shadow: 0 6px 18px rgba(0, 56, 94, 0.28);
   transition: all 0.2s ease;
 }
 
 .mc-btn-apply-full:hover {
-  background: #4338ca;
+  background: #002844;
   transform: translateY(-1.5px);
-  box-shadow: 0 8px 22px rgba(88, 80, 236, 0.4);
+  box-shadow: 0 8px 22px rgba(0, 56, 94, 0.4);
 }
 
 /* Sidebar General Card Box */
@@ -6981,7 +7490,7 @@ a {
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
   font-size: 1.06rem;
   font-weight: 800;
-  color: #08233D;
+  color: #00385E;
   margin: 0 0 16px 0;
 }
 
@@ -7026,13 +7535,13 @@ a {
 
 .include-val-cell.bold-price {
   font-weight: 800;
-  color: #08233D;
+  color: #00385E;
 }
 
 .include-val-cell.cert-title-val {
   font-size: 0.8rem;
   line-height: 1.25;
-  color: #08233D;
+  color: #00385E;
   max-width: 55%;
 }
 
@@ -7049,7 +7558,7 @@ a {
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  border: 1.5px solid #e0e7ff;
+  border: 1.5px solid #c9dfef;
 }
 
 .author-avatar-img img {
@@ -7061,7 +7570,7 @@ a {
 .author-details-text h4 {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #08233D;
+  color: #00385E;
   margin: 0 0 2px 0;
 }
 
@@ -7076,7 +7585,7 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: #08233D;
+  color: #00385E;
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
@@ -7085,11 +7594,11 @@ a {
 }
 
 .mc-download-material-link:hover {
-  color: #5850ec;
+  color: #002844;
 }
 
 .doc-icon-box {
-  color: #5850ec;
+  color: #00385E;
 }
 
 /* Share Card */
@@ -7120,8 +7629,8 @@ a {
 }
 
 .mc-share-circle-btn:hover {
-  background: #5850ec;
-  border-color: #5850ec;
+  background: #00385E;
+  border-color: #00385E;
   color: #ffffff;
   transform: translateY(-2px);
 }
@@ -7153,10 +7662,1261 @@ a {
   .about-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
 
+/* ========================================================
+   SECTION 20: DEDICATED MICROCREDENTIAL WATCH / LEARNING PLAYER
+   ======================================================== */
+.mc-sidebar-watch-btn-wrapper {
+  padding: 14px 18px;
+  background: #ffffff;
+  border-top: 1px solid #edf2f7;
+}
+
+.mc-btn-watch-full {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: #00385E;
+  color: #ffffff;
+  border: none;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 13px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 56, 94, 0.25);
+  transition: all 0.22s ease;
+}
+
+.mc-btn-watch-full:hover {
+  background: #002844;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 56, 94, 0.35);
+}
+
+/* Watch Page Outer Frame */
+.mc-watch-page-container {
+  background: #f8fafc;
+  min-height: 100vh;
+  padding: 24px 0 80px;
+  font-family: var(--font-body, 'Inter', sans-serif);
+}
+
+.mc-watch-fluid-layout {
+  max-width: 1420px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 3.5vw, 48px);
+  box-sizing: border-box;
+}
+
+/* Watch Page Header & Breadcrumb */
+.mc-watch-top-header {
+  margin-bottom: 24px;
+}
+
+.mc-watch-breadcrumb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: #64748b;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.watch-crumb.linkable {
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.watch-crumb.linkable:hover {
+  color: #00385E;
+  text-decoration: underline;
+}
+
+.crumb-sep {
+  color: #cbd5e1;
+}
+
+.watch-crumb.active {
+  color: #00385E;
+  font-weight: 600;
+}
+
+.mc-watch-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.watch-course-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.watch-course-title {
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+  font-weight: 800;
+  color: #00385E;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.watch-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e6f0f7;
+  color: #00385E;
+  border: 1.5px solid #b8d7ec;
+}
+
+.btn-back-to-course {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #6366f1;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-back-to-course:hover {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+/* Master 2-Column Watch Grid */
+.mc-watch-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 370px;
+  gap: 28px;
+  align-items: start;
+}
+
+/* LEFT COLUMN: THEATER PLAYER & DISCUSSION */
+.mc-watch-left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* Theater Player Screen Card */
+.mc-theater-player-card {
+  background: #081120;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 14px 40px rgba(0, 56, 94, 0.16);
+  border: 1px solid #1e293b;
+  position: relative;
+}
+
+.theater-header-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(180deg, rgba(8, 17, 32, 0.95) 0%, rgba(8, 17, 32, 0.4) 100%);
+}
+
+.theater-channel-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theater-avatar-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #6366f1;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.theater-lecture-text h4 {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 2px 0;
+}
+
+.theater-org-name {
+  font-size: 0.76rem;
+  color: #94a3b8;
+}
+
+.btn-theater-icon {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-theater-icon:hover,
+.btn-theater-icon.active {
+  background: #00385E;
+  color: #ffffff;
+}
+
+.theater-video-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000000;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.theater-html5-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.theater-glass-center-play {
+  position: absolute;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #6366f1;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.45);
+  transition: transform 0.25s ease;
+}
+
+.theater-video-frame:hover .theater-glass-center-play {
+  transform: scale(1.12);
+}
+
+.play-triangle-fill {
+  fill: #ffffff;
+  margin-left: 4px;
+}
+
+/* Bottom Controls Bar */
+.theater-bottom-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  background: #081120;
+  color: #ffffff;
+}
+
+.btn-ctrl-play,
+.btn-ctrl-vol,
+.btn-ctrl-share,
+.btn-ctrl-settings,
+.btn-ctrl-expand {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+.btn-ctrl-play:hover,
+.btn-ctrl-vol:hover,
+.btn-ctrl-share:hover,
+.btn-ctrl-settings:hover,
+.btn-ctrl-expand:hover {
+  opacity: 1;
+}
+
+.theater-progress-track {
+  flex: 1;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.theater-progress-fill {
+  height: 100%;
+  background: #6366f1;
+  border-radius: 999px;
+}
+
+.theater-time-code {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Lesson Navigation Bar */
+.mc-lesson-navigation-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 18px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.btn-lesson-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-lesson-nav:hover:not(:disabled) {
+  background: #00385E;
+  border-color: #00385E;
+  color: #ffffff;
+}
+
+.btn-lesson-nav:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-ignito-assist-ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f5f3ff;
+  border: 1.5px solid #ddd6fe;
+  color: #6d28d9;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.92rem;
+  font-weight: 800;
+  padding: 9px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(109, 40, 217, 0.08);
+}
+
+.btn-ignito-assist-ai:hover {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+  transform: translateY(-1px);
+}
+
+.sparkle-ai-icon {
+  color: #8b5cf6;
+}
+
+/* AI Helper Drawer */
+.mc-ai-helper-drawer {
+  background: #faf5ff;
+  border: 1.5px solid #e9d5ff;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ai-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-bot-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6b21a8;
+  font-size: 0.95rem;
+}
+
+.btn-close-ai {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  color: #9333ea;
+  cursor: pointer;
+}
+
+.ai-greeting-msg {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #4c1d95;
+  margin: 0;
+}
+
+.ai-input-wrap {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-input-wrap input {
+  flex: 1;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid #d8b4fe;
+  font-size: 0.88rem;
+  outline: none;
+}
+
+.btn-ai-send {
+  background: #7e22ce;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0 16px;
+  cursor: pointer;
+}
+
+/* 3. Discussion & Community Forum */
+.mc-discussion-forum-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 24px 26px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+}
+
+.mc-forum-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 14px;
+}
+
+.forum-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.forum-tab-btn.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #ffffff;
+}
+
+.forum-main-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.forum-section-title {
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #00385E;
+  margin: 0;
+}
+
+.btn-ask-question-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #6366f1;
+  color: #ffffff;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-ask-question-cta:hover {
+  background: #4f46e5;
+}
+
+/* Question Item */
+.forum-question-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  background: #ffffff;
+}
+
+.question-author-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.author-avatar-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1.5px solid #c7d2fe;
+}
+
+.author-avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.author-name-stamp h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 2px 0;
+}
+
+.post-timestamp {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.question-body-heading h3 {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #00385E;
+  margin: 0 0 14px 0;
+}
+
+.question-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.btn-like-forum {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e0e7ff;
+  border: none;
+  color: #4338ca;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-like-forum.liked {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+.btn-reply-forum {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.forum-reply-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: #64748b;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* Nested Professor Reply Box */
+.forum-nested-professor-reply {
+  background: #f8fafc;
+  border-left: 3px solid #6366f1;
+  border-radius: 0 10px 10px 0;
+  padding: 16px 18px;
+  margin-top: 14px;
+}
+
+.prof-author-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.prof-avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1.5px solid #818cf8;
+}
+
+.prof-avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.prof-name-stamp h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #00385E;
+  margin: 0 0 2px 0;
+}
+
+.prof-timestamp {
+  font-size: 0.74rem;
+  color: #94a3b8;
+}
+
+.prof-reply-text {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #334155;
+  margin: 0;
+}
+
+/* ========================================================
+   RIGHT COLUMN: WATCH SIDEBAR
+   ======================================================== */
+.mc-watch-right-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: sticky;
+  top: 90px;
+}
+
+/* 1. Learning Progress Box */
+.mc-watch-progress-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+}
+
+.progress-box-title {
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 1rem;
+  font-weight: 800;
+  color: #00385E;
+  margin: 0 0 12px 0;
+}
+
+.progress-stats-visual-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.circular-progress-wrap {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.circular-chart {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.circle-bg {
+  fill: none;
+  stroke: #e2e8f0;
+  stroke-width: 3.8;
+}
+
+.circle-bar {
+  fill: none;
+  stroke: #6366f1;
+  stroke-width: 3.8;
+  stroke-linecap: round;
+}
+
+.percentage-text {
+  fill: #00385E;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.55rem;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.progress-text-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.progress-text-info strong {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.progress-text-info span {
+  font-size: 0.76rem;
+  color: #64748b;
+}
+
+.progress-avatar-illustration {
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.progress-watchnow-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(99, 102, 241, 0.18));
+  transition: transform 0.3s ease;
+}
+
+.mc-watch-progress-box:hover .progress-watchnow-img {
+  transform: translateY(-2px) scale(1.04);
+}
+
+/* 2. Playlist Box */
+.mc-watch-playlist-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+}
+
+.playlist-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.playlist-title {
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #00385E;
+  margin: 0;
+}
+
+.playlist-count-label {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.playlist-progress-bar-line {
+  width: 100%;
+  height: 3px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+.playlist-progress-bar-fill {
+  height: 100%;
+  background: #6366f1;
+}
+
+.playlist-items-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.playlist-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1px solid #eef3f7;
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.playlist-item-row:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.playlist-item-row.active {
+  background: #f5f3ff;
+  border-color: #c7d2fe;
+}
+
+.playlist-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.playlist-play-icon-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.playlist-play-icon-circle.active {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+.play-svg-arrow {
+  margin-left: 1px;
+}
+
+.playlist-item-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playlist-item-row.active .playlist-item-name {
+  color: #4f46e5;
+}
+
+.playlist-item-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.playlist-item-pct {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.gift-red-icon {
+  color: #ef4444;
+}
+
+/* 3. Expandable Card */
+.mc-watch-expandable-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.expandable-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #00385E;
+}
+
+.expandable-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chevron-exp {
+  transition: transform 0.2s ease;
+}
+
+.chevron-exp.open {
+  transform: rotate(180deg);
+}
+
+.expandable-content-body {
+  padding: 12px 18px 16px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+/* 4. Action Cards (Quiz, Cert, Notes) */
+.mc-watch-action-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.action-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.action-icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.action-icon-circle.purple {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.action-icon-circle.blue {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.action-title-block h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #00385E;
+  margin: 0 0 4px 0;
+}
+
+.quiz-eligibility-warning {
+  font-size: 0.76rem;
+  color: #ef4444;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.action-sub-text {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Question Modal */
+.mc-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.mc-modal-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.mc-modal-card h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #00385E;
+  margin: 0 0 6px 0;
+}
+
+.mc-modal-card p {
+  font-size: 0.86rem;
+  color: #64748b;
+  margin: 0 0 14px 0;
+}
+
+.mc-modal-card textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.modal-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.btn-modal-cancel {
+  background: #f1f5f9;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+}
+
+.btn-modal-submit {
+  background: #00385E;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+/* ========================================================
+   SECTION 21: CLEAN MICROCREDENTIALS CATALOG PAGE
+   ======================================================== */
+.catalog-page-container {
+  background: #ffffff;
+  min-height: 100vh;
+  padding: 48px 0 90px;
+  width: 100%;
+}
+
+.catalog-clean-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 clamp(36px, 5.5vw, 96px);
+  box-sizing: border-box;
+}
+
+.section-header-center {
+  text-align: center;
+  max-width: 780px;
+  margin: 0 auto 36px;
+}
+
+.section-main-title {
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: clamp(2rem, 3.2vw, 2.75rem);
+  font-weight: 800;
+  color: #00385E;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.01em;
+}
+
+.b2b-blue-text {
+  color: #00385E;
+}
+
+.section-subtitle {
+  font-size: clamp(0.95rem, 1.2vw, 1.05rem);
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* 2-Filter Bar */
+.catalog-two-filters-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 20px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.catalog-filter-select-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-select-label {
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #00385E;
+}
+
+.custom-select-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.custom-select-box select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 10px 40px 10px 16px;
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  min-width: 180px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.custom-select-box select:hover,
+.custom-select-box select:focus {
+  border-color: #00385E;
+  box-shadow: 0 0 0 3px rgba(0, 56, 94, 0.08);
+}
+
+.select-chevron-icon {
+  position: absolute;
+  right: 14px;
+  pointer-events: none;
+  color: #64748b;
+}
+
+/* 4-Column Grid */
+.catalog-courses-clean-grid {
+  margin-top: 10px;
+}
+
+/* Empty State */
+.catalog-empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  background: #f8fafc;
+  border-radius: 20px;
+  border: 1.5px dashed #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 600px;
+  margin: 40px auto;
+}
+
+.empty-icon {
+  color: #94a3b8;
+}
+
+.catalog-empty-state h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #00385E;
+  margin: 0;
+}
+
+.catalog-empty-state p {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.btn-reset-empty {
+  background: #00385E;
+  color: #ffffff;
+  border: none;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 10px 22px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-reset-empty:hover {
+  background: #002844;
+}
+
+/* ========================================================
+   RESPONSIVE MEDIA QUERIES
+   ======================================================== */
+@media (max-width: 1080px) {
   .detail-grid-layout,
   .mc-body-grid,
-  .mc-main-two-col-grid {
+  .mc-main-two-col-grid,
+  .mc-watch-main-grid {
     grid-template-columns: 1fr;
   }
 
@@ -7171,7 +8931,8 @@ a {
   }
 
   .sticky-sidebar-card,
-  .mc-main-right-sidebar {
+  .mc-main-right-sidebar,
+  .mc-watch-right-sidebar {
     position: static;
   }
 }
@@ -7204,6 +8965,18 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .catalog-two-filters-bar {
+    justify-content: stretch;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .catalog-filter-select-wrapper,
+  .custom-select-box,
+  .custom-select-box select {
+    width: 100%;
+  }
+
   .how-steps-grid,
   .impact-stats-grid,
   .about-stats-grid,
@@ -7213,3 +8986,4 @@ a {
     grid-template-columns: 1fr;
   }
 }
+

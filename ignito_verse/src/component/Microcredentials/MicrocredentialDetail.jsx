@@ -1,4 +1,4 @@
-// ignitoverse: Executive Microcredential Detail Page (Single Page Continuous Flow)
+// ignitoverse: Executive Microcredential Detail Page with Luxury Floating Island Tabs & Enhanced Content UI
 import React, { useState } from 'react';
 import { 
   Clock, 
@@ -8,53 +8,101 @@ import {
   ShieldCheck, 
   FileText, 
   Award, 
-  HelpCircle, 
-  ArrowLeft, 
-  ChevronDown, 
-  ChevronUp, 
   Building2, 
-  Calendar, 
   Layers, 
   BookOpen, 
   Globe, 
   DollarSign, 
   FileCheck, 
   GraduationCap, 
-  Sparkle, 
+  Sparkles, 
   Check, 
   Play, 
-  Link, 
-  MessageCircle 
+  ThumbsUp, 
+  Share2, 
+  Calendar,
+  Brain,
+  ChevronRight,
+  Zap,
+  Activity
 } from 'lucide-react';
-import meditationImg from '../../assets/home/meditaion.png';
+import userCertificateImg from '../../assets/e47782ae-798b-479b-99e6-428b70bf4a7a.png';
 
 export default function MicrocredentialDetail({ 
   course, 
   onBack = () => {}, 
   onBookDemo = () => {}, 
-  onPreviewVideo = () => {} 
+  onPreviewVideo = () => {},
+  onWatchCourse = () => {}
 }) {
-  const [expandedModule, setExpandedModule] = useState('mod-1');
-  const [copiedLink, setCopiedLink] = useState(false);
+  const [activeTab, setActiveTab] = useState('content');
+  const [likedReviews, setLikedReviews] = useState({ review1: 2 });
+  const [hasLiked, setHasLiked] = useState({ review1: false });
 
   if (!course) return null;
 
-  const toggleModule = (modId) => {
-    setExpandedModule(expandedModule === modId ? null : modId);
+  const handleToggleLike = (reviewId) => {
+    setHasLiked(prev => ({
+      ...prev,
+      [reviewId]: !prev[reviewId]
+    }));
+    setLikedReviews(prev => ({
+      ...prev,
+      [reviewId]: prev[reviewId] + (hasLiked[reviewId] ? -1 : 1)
+    }));
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard?.writeText(window.location.href);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
-  };
+  const detailedTopics = [
+    {
+      id: 1,
+      title: 'Acute vs Chronic Stress: Brain Chemistry & Cortisol Impact',
+      duration: '45 min',
+      type: 'Theory',
+      icon: Brain
+    },
+    {
+      id: 2,
+      title: 'Diaphragmatic & Somatic Breathing for Immediate Vagal Activation',
+      duration: '50 min',
+      type: 'Practical',
+      icon: Activity
+    },
+    {
+      id: 3,
+      title: 'Cognitive Reframing: Neuroplasticity & Thought Restructuring',
+      duration: '40 min',
+      type: 'Case Study',
+      icon: Zap
+    },
+    {
+      id: 4,
+      title: 'Progressive Muscle Relaxation (PMR) & Somatic Tension Release',
+      duration: '55 min',
+      type: 'Practical',
+      icon: PlayCircle
+    },
+    {
+      id: 5,
+      title: 'Mindfulness Integration for High-Performance Workspaces',
+      duration: '45 min',
+      type: 'Masterclass',
+      icon: BookOpen
+    },
+    {
+      id: 6,
+      title: 'Executive Daily Reset: 5-Minute Micro-Meditation Protocols',
+      duration: '35 min',
+      type: 'Workshop',
+      icon: Sparkles
+    }
+  ];
 
   return (
     <div className="mc-detail-page-wrapper">
       <div className="mc-fluid-container mc-main-two-col-grid">
         
         {/* ========================================================
-            LEFT COLUMN (SINGLE CONTINUOUS FLOW)
+            LEFT COLUMN (TABS NAVIGATION & CONTENT)
             ======================================================== */}
         <div className="mc-main-left-column">
           
@@ -69,179 +117,339 @@ export default function MicrocredentialDetail({
             </div>
           </div>
 
-          {/* 2. Hero Header Block (Title & Rating + Meditation Image) */}
-          <div className="mc-hero-split-card">
-            
-            {/* Left Hero Text Side */}
-            <div className="mc-hero-text-content">
-              <div className="mc-category-badge">
+          {/* 2. Hero Header Block */}
+          <div className="mc-hero-header-block">
+            <div className="mc-category-pill-wrapper">
+              <span className="mc-category-capsule-tag">
+                <span className="mc-cat-indicator-dot" />
                 {course.category ? course.category.toUpperCase() : 'MANAGEMENT'}
-              </div>
-
-              <h1 className="mc-hero-title">{course.title}</h1>
-
-              {/* Stats Bar (Rating & Last Updated) */}
-              <div className="mc-hero-stats-row">
-                <div className="mc-rating-badge">
-                  <Star size={14} className="star-icon-filled" />
-                  <span className="rating-score">{course.rating || '4.5'}</span>
-                </div>
-                <div className="mc-stat-divider" />
-                <div className="mc-stat-item">
-                  <Calendar size={15} className="mc-stat-icon" />
-                  <span>Last updated {course.lastUpdated || '05 August 2026'}</span>
-                </div>
-              </div>
+              </span>
             </div>
 
-            {/* Right Hero Meditation Image */}
-            <div className="mc-hero-visual-side">
-              <img 
-                src={meditationImg} 
-                alt="Meditation & Relaxation" 
-                className="mc-hero-meditation-photo"
-              />
-            </div>
+            <h1 className="mc-hero-title">{course.title}</h1>
 
+            {/* Quick Metadata Stats */}
+            <div className="mc-hero-stats-row">
+              <div className="mc-rating-badge">
+                <Star size={14} className="star-icon-filled" />
+                <span className="rating-score">{course.rating || '4.5'}</span>
+              </div>
+              <div className="mc-stat-divider" />
+              <div className="mc-stat-item">
+                <Calendar size={15} className="mc-stat-icon" />
+                <span>Last updated {course.lastUpdated || 'August 2026'}</span>
+              </div>
+            </div>
           </div>
 
-          {/* 3. CONTINUOUS SINGLE PAGE CONTENT FLOW (NO TABS) */}
+          {/* 3. LUXURY FLOATING ISLAND TAB BAR */}
+          <div className="mc-island-tabs-container">
+            <div className="mc-island-tabs-track">
+              
+              {/* Tab 1: Info */}
+              <button 
+                type="button" 
+                className={`mc-island-tab-item ${activeTab === 'info' ? 'active' : ''}`}
+                onClick={() => setActiveTab('info')}
+              >
+                <div className="island-tab-circle-icon purple-soft">
+                  <Building2 size={19} />
+                </div>
+                <div className="island-tab-text-group">
+                  <span className="island-tab-title">Microcredential Information</span>
+                </div>
+              </button>
+
+              {/* Tab 2: Content */}
+              <button 
+                type="button" 
+                className={`mc-island-tab-item ${activeTab === 'content' ? 'active' : ''}`}
+                onClick={() => setActiveTab('content')}
+              >
+                <div className="island-tab-circle-icon blue-soft">
+                  <BookOpen size={19} />
+                </div>
+                <div className="island-tab-text-group">
+                  <span className="island-tab-title">Microcredentials Content</span>
+                </div>
+                <span className="island-tab-badge count-pill">12</span>
+              </button>
+
+              {/* Tab 3: Reviews */}
+              <button 
+                type="button" 
+                className={`mc-island-tab-item ${activeTab === 'reviews' ? 'active' : ''}`}
+                onClick={() => setActiveTab('reviews')}
+              >
+                <div className="island-tab-circle-icon gold-soft">
+                  <Star size={19} />
+                </div>
+                <div className="island-tab-text-group">
+                  <span className="island-tab-title">Student Review</span>
+                </div>
+                <span className="island-tab-badge rating-pill">4.5 ★</span>
+              </button>
+
+              {/* Tab 4: Certificate */}
+              <button 
+                type="button" 
+                className={`mc-island-tab-item ${activeTab === 'certificate' ? 'active' : ''}`}
+                onClick={() => setActiveTab('certificate')}
+              >
+                <div className="island-tab-circle-icon teal-soft">
+                  <Award size={19} />
+                </div>
+                <div className="island-tab-text-group">
+                  <span className="island-tab-title">Certificate</span>
+                </div>
+                <span className="island-tab-badge official-pill">OFFICIAL</span>
+              </button>
+
+            </div>
+          </div>
+
+          {/* Decorative Colorful Node Line */}
+          <div className="mc-nodes-accent-line">
+            <div className="node-dot blue" />
+            <div className="node-dot purple" />
+            <div className="node-dot orange" />
+            <div className="node-dot teal" />
+          </div>
+
+          {/* 4. ACTIVE TAB CONTENT PANES */}
           <div className="mc-single-page-sections-stack">
             
-            {/* Section 1: About Microcredential */}
-            <div className="mc-card-section">
-              <div className="mc-section-header">
-                <div className="mc-header-icon-box purple-tint">
-                  <Building2 size={20} />
-                </div>
-                <h2 className="mc-section-title">About Microcredential</h2>
-              </div>
-              <p className="mc-section-paragraph">
-                {course.about || "This course introduces simple relaxation methods and meditation practices to improve focus, reduce stress, and maintain emotional balance. Students learn breathing techniques, mindfulness practices, and ways to develop a calm and positive approach toward daily challenges."}
-              </p>
-            </div>
-
-            {/* Section 2: What Will You Learn? Box */}
-            <div className="mc-learn-box-card">
-              <h3 className="mc-learn-box-heading">What Will You Learn?</h3>
-              <div className="mc-learn-grid-2col">
-                {(course.learningOutcomes || [
-                  'Build positive thinking habits and improve overall well-being.',
-                  'Understand meditation practices for improving focus and mental clarity.',
-                  'Learn breathing exercises to promote calmness and relaxation.',
-                  'Understand meditation practices for improving focus and mental clarity.',
-                  'Develop mindfulness skills to improve emotional balance and self-awareness.',
-                  'Learn effective relaxation techniques to manage daily stress and pressure.'
-                ]).map((outcome, idx) => (
-                  <div key={idx} className="mc-learn-item-row">
-                    <div className="mc-learn-blue-check">
-                      <Check size={12} strokeWidth={3.5} />
+            {/* TAB 1: MICROCREDENTIAL INFORMATION */}
+            {activeTab === 'info' && (
+              <>
+                {/* Section 1: About Microcredential */}
+                <div className="mc-card-section">
+                  <div className="mc-section-header">
+                    <div className="mc-header-icon-box purple-tint">
+                      <Building2 size={20} />
                     </div>
-                    <span className="mc-learn-item-text">{outcome}</span>
+                    <h2 className="mc-section-title">About Microcredential</h2>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Section 4: Curriculum & Video Masterclasses */}
-            <div className="mc-card-section">
-              <div className="mc-section-header">
-                <div className="mc-header-icon-box purple-tint">
-                  <BookOpen size={20} />
+                  <p className="mc-section-paragraph">
+                    {course.about || "This course introduces simple relaxation methods and meditation practices to improve focus, reduce stress, and maintain emotional balance. Students learn breathing techniques, mindfulness practices, and ways to develop a calm and positive approach toward daily challenges."}
+                  </p>
                 </div>
-                <h2 className="mc-section-title">Curriculum & Video Masterclasses</h2>
-              </div>
-              
-              <div className="mc-curriculum-accordion">
-                {(course.modules || [
-                  {
-                    id: 'rt-mod-1',
-                    title: 'Module 1: Foundations of Relaxation & Breathwork',
-                    duration: '2h 15m',
-                    lectures: [
-                      { title: 'Understanding Tension Triggers & Diaphragmatic Breathing', duration: '30m', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-                      { title: 'Mind-Body Connection & Somatic Calmness', duration: '45m', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4' }
-                    ]
-                  },
-                  {
-                    id: 'rt-mod-2',
-                    title: 'Module 2: Meditation Practices for Focus & Clarity',
-                    duration: '2h 45m',
-                    lectures: [
-                      { title: 'Guided Mindfulness for Emotional Regulation', duration: '40m', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-                      { title: 'Daily Stress Reset & 5-Minute Meditation Routines', duration: '50m', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4' }
-                    ]
-                  }
-                ]).map((mod, mIdx) => {
-                  const isOpen = expandedModule === (mod.id || `mod-${mIdx}`);
-                  const currentModId = mod.id || `mod-${mIdx}`;
-                  return (
-                    <div key={currentModId} className={`mc-accordion-item ${isOpen ? 'open' : ''}`}>
-                      <div 
-                        className="mc-accordion-header"
-                        onClick={() => toggleModule(currentModId)}
-                      >
-                        <div className="mc-accordion-title-left">
-                          <span className="mc-module-num">0{mIdx + 1}</span>
-                          <h4>{mod.title}</h4>
+
+                {/* Section 2: Description */}
+                <div className="mc-card-section">
+                  <div className="mc-section-header">
+                    <div className="mc-header-icon-box purple-tint">
+                      <FileText size={20} />
+                    </div>
+                    <h2 className="mc-section-title">Description</h2>
+                  </div>
+                  <p className="mc-section-paragraph">
+                    {course.description || "Relaxation Techniques and Meditation focuses on developing mental calmness, emotional balance, and stress management skills through various relaxation practices. This course introduces students to breathing exercises, mindfulness, meditation methods, and techniques for reducing physical and mental tension to handle daily challenges effectively."}
+                  </p>
+                </div>
+
+                {/* Section 3: What Will You Learn? Box */}
+                <div className="mc-learn-box-card">
+                  <h3 className="mc-learn-box-heading">What Will You Learn?</h3>
+                  <div className="mc-learn-grid-2col">
+                    {(course.learningOutcomes || [
+                      'Build positive thinking habits and improve overall well-being.',
+                      'Understand meditation practices for improving focus and mental clarity.',
+                      'Learn breathing exercises to promote calmness and relaxation.',
+                      'Understand meditation practices for improving focus and mental clarity.',
+                      'Develop mindfulness skills to improve emotional balance and self-awareness.',
+                      'Learn effective relaxation techniques to manage daily stress and pressure.'
+                    ]).map((outcome, idx) => (
+                      <div key={idx} className="mc-learn-item-row">
+                        <div className="mc-learn-blue-check">
+                          <Check size={12} strokeWidth={3.5} />
                         </div>
-                        <div className="mc-accordion-header-right">
-                          <span className="mc-mod-duration"><Clock size={13} /> {mod.duration}</span>
-                          {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                        <span className="mc-learn-item-text">{outcome}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* TAB 2: MICROCREDENTIALS CONTENT (LUXURY EXECUTIVE DESIGN) */}
+            {activeTab === 'content' && (
+              <div className="mc-content-luxury-pane">
+                
+                {/* Content Header Banner Card */}
+                <div className="mc-content-banner-card">
+                  <div className="banner-left-brand">
+                    <div className="banner-squircle-icon">
+                      <BookOpen size={28} />
+                    </div>
+                    <div className="banner-title-text">
+                      <h2 className="banner-main-heading">Microcredential Content</h2>
+                      <p className="banner-sub-desc">Access all learning modules and practical topics included in this microcredential.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detailed Module Topics List */}
+                <div className="mc-luxury-modules-list">
+                  {detailedTopics.map((item) => (
+                    <div 
+                      key={item.id} 
+                      className="mc-module-luxury-card"
+                    >
+                      <div className="module-card-left">
+                        <div className="module-index-box">0{item.id}</div>
+
+                        <div className="module-details-text">
+                          <h3 className="module-title-headline">{item.title}</h3>
                         </div>
                       </div>
-
-                      {isOpen && (
-                        <div className="mc-lectures-tray">
-                          {mod.lectures?.map((lec, lIdx) => (
-                            <div key={lIdx} className="mc-lecture-entry">
-                              <div className="mc-lecture-left">
-                                <PlayCircle size={17} className="play-icon-blue" />
-                                <span>{lec.title}</span>
-                              </div>
-                              <div className="mc-lecture-right">
-                                <span className="lec-dur-text">{lec.duration}</span>
-                                <button 
-                                  type="button" 
-                                  className="btn-preview-tag"
-                                  onClick={() => onPreviewVideo({
-                                    lectureTitle: lec.title,
-                                    courseTitle: course.title,
-                                    duration: lec.duration,
-                                    videoUrl: lec.videoUrl
-                                  })}
-                                >
-                                  Preview
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Section 4: Learner Reviews & Ratings */}
-            <div className="mc-card-section">
-              <div className="mc-section-header">
-                <div className="mc-header-icon-box purple-tint">
-                  <Star size={20} />
-                </div>
-                <h2 className="mc-section-title">Learner Reviews & Ratings</h2>
-              </div>
-              <div className="mc-reviews-summary-strip">
-                <div className="big-rating-number">4.5</div>
-                <div className="stars-large">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={18} className="star-icon-filled" />
                   ))}
                 </div>
-                <span className="total-reviews-count">Based on 452 verified corporate learner reviews</span>
+
               </div>
-            </div>
+            )}
+
+            {/* TAB 3: STUDENT REVIEW */}
+            {activeTab === 'reviews' && (
+              <div className="mc-reviews-creative-card">
+                <div className="mc-section-header">
+                  <div className="mc-header-icon-box purple-tint">
+                    <Star size={20} />
+                  </div>
+                  <div>
+                    <h2 className="mc-section-title">Student Review</h2>
+                    <span className="mc-sub-text">Verified student feedback and rating breakdown</span>
+                  </div>
+                </div>
+
+                {/* Rating Summary & Star Breakdown Grid */}
+                <div className="mc-reviews-breakdown-grid">
+                  
+                  {/* Big Score Box */}
+                  <div className="mc-big-score-box">
+                    <div className="score-number-display">5.0</div>
+                    <div className="score-stars-row">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} size={18} className="star-icon-filled" />
+                      ))}
+                    </div>
+                    <span className="score-total-count">Total 452 Verified Ratings</span>
+                  </div>
+
+                  {/* 5-Star Distribution Bars */}
+                  <div className="mc-rating-bars-stack">
+                    {[
+                      { stars: 5, pct: 96, count: '434 Ratings' },
+                      { stars: 4, pct: 4, count: '18 Ratings' },
+                      { stars: 3, pct: 0, count: '0 Ratings' },
+                      { stars: 2, pct: 0, count: '0 Ratings' },
+                      { stars: 1, pct: 0, count: '0 Ratings' }
+                    ].map((bar, bIdx) => (
+                      <div key={bIdx} className="mc-rating-bar-row">
+                        <span className="bar-star-label">☆ {bar.stars}</span>
+                        <div className="bar-track-line">
+                          <div className="bar-fill-line" style={{ width: `${bar.pct}%` }} />
+                        </div>
+                        <span className="bar-count-label">{bar.count}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                </div>
+
+                {/* Verified Student Testimonial */}
+                <div className="mc-student-review-item">
+                  <div className="student-review-author-row">
+                    <div className="student-avatar-wrap">
+                      <img 
+                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" 
+                        alt="Anjali Sharma" 
+                      />
+                    </div>
+                    <div className="student-author-info">
+                      <h4>Anjali Sharma</h4>
+                      <div className="student-stars-and-date">
+                        <div className="student-mini-stars">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} size={13} className="star-icon-filled" />
+                          ))}
+                        </div>
+                        <span className="review-timestamp">• 3 months ago</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="student-review-body-text">
+                    "I am currently pursuing the course on this platform, and my learning experience has been excellent so far. The course content is well-structured, engaging, and easy to follow, with interactive lessons and assessments that enhance my understanding. I am learning practical techniques to manage daily stress, improve focus, and maintain emotional well-being in both academic and professional life."
+                  </p>
+
+                  <div className="student-review-action-row">
+                    <button 
+                      type="button" 
+                      className={`btn-like-review ${hasLiked.review1 ? 'liked' : ''}`}
+                      onClick={() => handleToggleLike('review1')}
+                    >
+                      <ThumbsUp size={14} />
+                      <span>Like ({likedReviews.review1})</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: CERTIFICATE */}
+            {activeTab === 'certificate' && (
+              <div className="mc-certificate-showcase-card">
+                <div className="mc-certificate-header-row">
+                  <div className="mc-section-header">
+                    <div className="mc-header-icon-box purple-tint">
+                      <Award size={20} />
+                    </div>
+                    <div>
+                      <h2 className="mc-section-title">Certificate of Completion</h2>
+                      <span className="mc-sub-text">Official accredited credential verifiable on blockchain</span>
+                    </div>
+                  </div>
+                  <div className="cert-badge-pill">
+                    <Sparkles size={14} />
+                    <span>Accredited Credential</span>
+                  </div>
+                </div>
+
+                {/* Realistic Certificate Image Preview */}
+                <div className="mc-certificate-image-canvas">
+                  <img 
+                    src={course.certificateImage || userCertificateImg} 
+                    alt={`${course.title} Certificate of Completion`} 
+                    className="mc-certificate-preview-photo"
+                  />
+                </div>
+
+                {/* Bottom Verification & Share Strip */}
+                <div className="mc-cert-footer-verify-strip">
+                  <div className="verify-strip-left">
+                    <CheckCircle2 size={16} className="check-green-svg" />
+                    <span>Click to verify this accredited certificate authenticity on blockchain</span>
+                  </div>
+                  <div className="verify-strip-actions">
+                    <button 
+                      type="button" 
+                      className="btn-cert-share"
+                      onClick={() => {
+                        if (navigator.clipboard) {
+                          navigator.clipboard.writeText(window.location.href);
+                        }
+                        alert('Certificate verification link copied!');
+                      }}
+                    >
+                      <Share2 size={13} />
+                      <span>Share Certificate</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
           </div>
 
@@ -256,12 +464,8 @@ export default function MicrocredentialDetail({
           <div className="mc-sidebar-video-box">
             <div 
               className="mc-video-cover-container"
-              onClick={() => onPreviewVideo({
-                lectureTitle: course.modules?.[0]?.lectures?.[0]?.title || '6 Relaxation Techniques Overview',
-                courseTitle: course.title,
-                duration: '15 mins',
-                videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4'
-              })}
+              onClick={onWatchCourse}
+              title="Click to start watching"
             >
               <img 
                 src={course.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80'} 
@@ -280,14 +484,15 @@ export default function MicrocredentialDetail({
               </div>
             </div>
 
-            {/* Apply Now Primary Button */}
-            <div className="mc-sidebar-apply-btn-wrapper">
+            {/* Watch Video Dedicated Button */}
+            <div className="mc-sidebar-watch-btn-wrapper">
               <button 
                 type="button" 
-                className="mc-btn-apply-full"
-                onClick={onBookDemo}
+                className="mc-btn-watch-full"
+                onClick={onWatchCourse}
               >
-                Apply Now
+                <PlayCircle size={18} />
+                <span>Watch Video</span>
               </button>
             </div>
           </div>
@@ -411,7 +616,7 @@ export default function MicrocredentialDetail({
               {/* Row 11: Certification Skill Level */}
               <div className="mc-include-row">
                 <div className="include-key-cell">
-                  <Sparkle size={15} className="inc-icon" />
+                  <Sparkles size={15} className="inc-icon" />
                   <span>Certification Skill Level</span>
                 </div>
                 <div className="include-val-cell">
@@ -419,18 +624,7 @@ export default function MicrocredentialDetail({
                 </div>
               </div>
 
-              {/* Row 12: Update */}
-              <div className="mc-include-row">
-                <div className="include-key-cell">
-                  <Calendar size={15} className="inc-icon" />
-                  <span>Update</span>
-                </div>
-                <div className="include-val-cell">
-                  {course.lastUpdated || '05 August 2026'}
-                </div>
-              </div>
-
-              {/* Row 13: Certificate */}
+              {/* Row 12: Certificate Type */}
               <div className="mc-include-row">
                 <div className="include-key-cell">
                   <Award size={15} className="inc-icon" />
