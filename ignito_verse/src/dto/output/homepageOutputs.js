@@ -3,19 +3,31 @@
  * Parses raw HTTP response payloads from POST /api/HomePageAPI/HomePage into clean data objects.
  */
 
-const BASE_IMAGE_DOMAIN = 'https://verse.ignitolearn.com';
+// Dynamically use API / Image base URL from environment config instead of hardcoded domain
+const API_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || import.meta.env.VITE_API_BASE_URL || '';
 
 /**
- * Normalizes image relative paths to full absolute URLs.
+ * Normalizes image relative paths using configured base URL.
  * @param {string} path - Relative image path (e.g. '/HomePageImages/HomeBannerImage/...')
- * @returns {string} Fully qualified image URL
+ * @returns {string} Formatted image URL
  */
 export function formatImageUrl(path) {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
     return path;
   }
-  return `${BASE_IMAGE_DOMAIN.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+
+  if (API_BASE_URL.startsWith('http://') || API_BASE_URL.startsWith('https://')) {
+    try {
+      const urlObj = new URL(API_BASE_URL);
+      return `${urlObj.origin}/${path.replace(/^\//, '')}`;
+    } catch {
+      return `${API_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+    }
+  }
+
+  // Relative path fallback (e.g. when served via Vite proxy or same-origin domain)
+  return path.startsWith('/') ? path : `/${path}`;
 }
 
 /**

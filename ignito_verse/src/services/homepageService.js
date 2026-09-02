@@ -6,7 +6,11 @@
 
 import { apiClient } from './apiClient';
 import { buildHomePageInput } from '../dto/input/homepageInputs';
+import { buildHomeTrustedLogoListInput } from '../dto/input/homeTrustedLogoListInput';
 import { parseHomePageOutput, parseHomePageErrorOutput } from '../dto/output/homepageOutputs';
+import { parseHomeTrustedLogoListOutput, parsehomeTrustedLogoListErrorOutput } from '../dto/output/homeTrustedLogoListOutput';
+import { bindTestimonialReviewInput } from '../dto/input/testimonialReviewInput'
+import { parseTestimonialReviewOutput, parseTestimonialReviewErrorOutput } from '../dto/output/testimonialReviewOutput'
 
 /**
  * Fetches homepage hero section and section data list from .NET Web API.
@@ -38,7 +42,47 @@ export async function getHomePageData() {
   }
 }
 
-/**
- * Alias for getHomePageData for backward compatibility or alternative naming preferences.
- */
+
+export async function getHomeTrustedLogoList() {
+    try{
+         const inputDto = buildHomeTrustedLogoListInput();
+         const response = await apiClient('/HomePageAPI/HomeTrustedLogoList', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+         });
+         if (!response.ok && response.status !== 200) {
+            return parsehomeTrustedLogoListErrorOutput(response.data, response.status);
+         }
+         return parseHomeTrustedLogoListOutput(response.data, response.status);
+    } catch (error) {
+        console.error('Error fetching home trusted logo list:', error);
+        return parsehomeTrustedLogoListErrorOutput({ message: error.message }, 500);
+    }     
+}
+
+
+export async function getTestimonialReviewLists() {
+    try{
+        const inputDto = bindTestimonialReviewInput();
+        const response = await apiClient('/HomePageAPI/GetTestimonialReviewList', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+        if (!response.ok && response.status !== 200) {
+            return parseTestimonialReviewErrorOutput(response.data, response.status);
+        }
+        return parseTestimonialReviewOutput(response.data, response.status);
+    } catch (error) {
+        console.error('Error fetching testimonial review list:', error);
+        return parseTestimonialReviewErrorOutput({ message: error.message }, 500);
+    }
+}
+
+
+
 export const fetchHomePageData = getHomePageData;
+export const fetchHomeTrustedLogoList = getHomeTrustedLogoList;
+export const fetchTestimonialReviewLists = getTestimonialReviewLists;
+
