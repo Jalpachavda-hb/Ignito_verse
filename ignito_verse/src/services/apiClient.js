@@ -2,7 +2,7 @@
  * Centralized API Client for making HTTP requests to .NET Web API.
  */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7107/api';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 /**
  * Custom fetch wrapper for API communication.
