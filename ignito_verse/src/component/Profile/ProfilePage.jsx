@@ -1,28 +1,31 @@
-// ignitoverse: Integrated Learner Profile & Portal (Dashboard, Certificates, Verify, Settings)
+// ignitoverse: Executive Learner Profile & Portal (Creative Design with profilebg.png)
 import React, { useState } from 'react';
 import { 
-  User, LayoutDashboard, Award, ShieldCheck, Settings, 
-  BookOpen, Clock, CheckCircle2, Search, Download, 
-  ExternalLink, ArrowRight, Bell, Lock, Building2, PlayCircle
+  LayoutDashboard, Award, ShieldCheck, BookOpen, Clock, 
+  Check, Download, ArrowRight, PlayCircle, Building2, 
+  Briefcase, Sparkles, User as UserIcon, Calendar, TrendingUp
 } from 'lucide-react';
-import CertificateVerification from '../Verification/CertificateVerification';
+import profileBgImg from '../../assets/profilebg.png';
+import badgesImg from '../../assets/badges.png';
 
 export default function ProfilePage({ 
   user = {
-    name: 'Saurabh Mukherjee',
-    email: 'saurabh.mukherjee@enterprise.com',
-    role: 'Senior Java Architect',
-    company: 'Enterprise Learning Cohort',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-    empId: 'EMP-94021'
+    name: 'Enterprise User',
+    email: 'enterprise.user@ignitoverse.com',
+    role: 'Executive Learner',
+    company: 'IgnitoVerse Enterprise',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    empId: 'EMP-1001'
   },
   initialTab = 'dashboard',
   onExploreCatalog = () => {},
   onViewCourse = () => {}
 }) {
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeTab, setActiveTab] = useState(
+    ['dashboard', 'certificates'].includes(initialTab) ? initialTab : 'dashboard'
+  );
 
-  // In-progress courses data
+  // In-progress courses data matching user screenshot
   const enrolledCourses = [
     {
       id: 'mc-java-enterprise',
@@ -53,7 +56,7 @@ export default function ProfilePage({
     }
   ];
 
-  // Completed earned certificates
+  // Completed earned certificates matching user screenshot
   const earnedCertificates = [
     {
       id: 'cert-1',
@@ -78,236 +81,245 @@ export default function ProfilePage({
   return (
     <div className="profile-page-wrapper">
       <div className="profile-page-container">
-        {/* User Hero Banner */}
-        <div className="profile-hero-card">
-          <div className="profile-hero-left">
-            <img src={user.avatar} alt={user.name} className="profile-avatar-large" />
-            <div className="profile-hero-info">
-              <div className="profile-name-row">
-                <h1 className="profile-user-name">{user.name}</h1>
-                <span className="profile-badge-active">Active Learner</span>
+        
+        {/* ========================================================
+            CREATIVE EXECUTIVE LEARNER HERO CARD (WITH profilebg.png)
+            ======================================================== */}
+        <div 
+          className="profile-creative-hero-card"
+          style={{ backgroundImage: `url(${profileBgImg})` }}
+        >
+          <div className="profile-creative-hero-content">
+            {/* Left: User Identity Details */}
+            <div className="profile-user-identity-block">
+              <div className="profile-avatar-creative-wrapper">
+                <img 
+                  src={user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'} 
+                  alt={user.name} 
+                  className="profile-avatar-creative" 
+                />
+                <div className="profile-avatar-status-badge" title="Verified Active Learner">
+                  <ShieldCheck size={14} />
+                </div>
               </div>
-              <p className="profile-user-role">{user.role} • {user.company}</p>
-              <span className="profile-user-empid">Employee ID: {user.empId} • {user.email}</span>
-            </div>
-          </div>
 
-          {/* Quick Metrics */}
-          <div className="profile-metrics-summary">
-            <div className="metric-pill">
-              <span className="metric-num">3</span>
-              <span className="metric-lbl">In Progress</span>
-            </div>
-            <div className="metric-pill">
-              <span className="metric-num">2</span>
-              <span className="metric-lbl">Certificates</span>
-            </div>
-            <div className="metric-pill">
-              <span className="metric-num">27.5h</span>
-              <span className="metric-lbl">Learning Time</span>
+              <div className="profile-user-creative-details">
+                <div className="profile-user-title-row">
+                  <h1 className="profile-user-name-title">{user.name || 'Enterprise User'}</h1>
+                  <span className="profile-enterprise-chip">
+                    <Check size={12} strokeWidth={3} /> ACTIVE LEARNER
+                  </span>
+                </div>
+                
+                <div className="profile-user-meta-chips">
+                  <span className="user-meta-chip">
+                    <Briefcase size={13} className="meta-chip-icon" /> {user.role || 'Executive Learner'}
+                  </span>
+                  <span className="user-meta-chip">
+                    <Building2 size={13} className="meta-chip-icon" /> {user.company || 'IgnitoVerse Enterprise'}
+                  </span>
+                  <span className="user-meta-chip empid-chip">
+                    ID: {user.empId || 'EMP-1001'}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Profile Navigation Tabs */}
-        <div className="profile-tabs-nav">
-          <button 
-            type="button" 
-            className={`profile-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
-          >
-            <LayoutDashboard size={18} />
-            <span>My Dashboard</span>
-          </button>
+        {/* ========================================================
+            FOCUSED SEGMENTED NAVIGATION (My Dashboard & My Certificates)
+            ======================================================== */}
+        <div className="profile-segmented-nav-wrapper">
+          <div className="profile-segmented-nav">
+            <button 
+              type="button" 
+              className={`profile-segment-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveTab('dashboard')}
+            >
+              <LayoutDashboard size={18} className="profile-segment-icon" />
+              <span>My Dashboard</span>
+              <span className="segment-count-badge">3</span>
+            </button>
 
-          <button 
-            type="button" 
-            className={`profile-tab-btn ${activeTab === 'certificates' ? 'active' : ''}`}
-            onClick={() => setActiveTab('certificates')}
-          >
-            <Award size={18} />
-            <span>My Certificates</span>
-          </button>
-
-          <button 
-            type="button" 
-            className={`profile-tab-btn ${activeTab === 'verify' ? 'active' : ''}`}
-            onClick={() => setActiveTab('verify')}
-          >
-            <ShieldCheck size={18} />
-            <span>Verify Certificate</span>
-          </button>
-
-          <button 
-            type="button" 
-            className={`profile-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('settings')}
-          >
-            <Settings size={18} />
-            <span>Settings</span>
-          </button>
+            <button 
+              type="button" 
+              className={`profile-segment-btn ${activeTab === 'certificates' ? 'active' : ''}`}
+              onClick={() => setActiveTab('certificates')}
+            >
+              <Award size={18} className="profile-segment-icon" />
+              <span>My Certificates</span>
+              <span className="segment-count-badge">2</span>
+            </button>
+          </div>
         </div>
 
-        {/* Tab 1: My Dashboard */}
+        {/* ========================================================
+            SECTION 1: MY CERTIFICATES (Top Section in Dashboard & Tab)
+            ======================================================== */}
+        {(activeTab === 'dashboard' || activeTab === 'certificates') && (
+          <div className="profile-section-block">
+            <div className="profile-block-header-row">
+              <div className="profile-block-title-group">
+                <div className="profile-block-icon-badge purple">
+                  <Award size={22} />
+                </div>
+                <div className="profile-block-text-col">
+                  <h2 className="profile-block-heading">My Certificates</h2>
+                  <p className="profile-block-sub">Your achievements and verified credentials</p>
+                </div>
+              </div>
+              
+              {activeTab === 'dashboard' && (
+                <button 
+                  type="button" 
+                  className="btn-block-action-link"
+                  onClick={() => setActiveTab('certificates')}
+                >
+                  <span>View All Certificates</span>
+                  <ArrowRight size={14} />
+                </button>
+              )}
+            </div>
+
+            <div className="profile-cert-grid-2col">
+              {earnedCertificates.map((cert) => (
+                <div key={cert.id} className="profile-cert-card-box">
+                  {/* Badges Watermark Image on top right */}
+                  <img 
+                    src={badgesImg} 
+                    alt="Badge Watermark" 
+                    className="profile-cert-badge-watermark-img" 
+                    aria-hidden="true"
+                  />
+
+                  {/* Top Header Row with Icon on Left + Details beside */}
+                  <div className="profile-cert-top-row">
+                    <div className="profile-cert-badge-square">
+                      <Award size={26} />
+                    </div>
+
+                    <div className="profile-cert-heading-col">
+                      <span className="profile-cert-active-tag">
+                        <Check size={12} strokeWidth={3} /> {cert.status}
+                      </span>
+                      <h3 className="profile-cert-title">{cert.title}</h3>
+                      <div className="profile-cert-id-tag">ID: {cert.certId}</div>
+                    </div>
+                  </div>
+
+                  {/* 3-Column Metadata Box with Vertical Divider Lines */}
+                  <div className="profile-cert-meta-container">
+                    <div className="cert-meta-col">
+                      <div className="cert-meta-col-icon purple">
+                        <UserIcon size={14} />
+                      </div>
+                      <div className="cert-meta-col-text">
+                        <span className="cert-meta-label">Issued To</span>
+                        <strong className="cert-meta-val">{user.name || 'Enterprise User'}</strong>
+                      </div>
+                    </div>
+
+                    <div className="cert-meta-col">
+                      <div className="cert-meta-col-icon purple">
+                        <Calendar size={14} />
+                      </div>
+                      <div className="cert-meta-col-text">
+                        <span className="cert-meta-label">Date of Issue</span>
+                        <strong className="cert-meta-val">{cert.issueDate}</strong>
+                      </div>
+                    </div>
+
+                    <div className="cert-meta-col">
+                      <div className="cert-meta-col-icon green">
+                        <TrendingUp size={14} />
+                      </div>
+                      <div className="cert-meta-col-text">
+                        <span className="cert-meta-label">Exam Score</span>
+                        <strong className="cert-meta-val score-green-val">{cert.score}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Full-width Download PDF button */}
+                  <button type="button" className="btn-card-download-pdf">
+                    <Download size={15} />
+                    <span>Download PDF</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================
+            SECTION 2: COURSES IN PROGRESS (Dashboard View)
+            ======================================================== */}
         {activeTab === 'dashboard' && (
-          <div className="profile-tab-content">
-            <div className="section-title-row">
-              <div>
-                <h2 className="profile-section-heading">Courses in Progress</h2>
-                <p className="profile-section-sub">Pick up right where you left off in your assigned enterprise tracks.</p>
+          <div className="profile-section-block">
+            <div className="profile-block-header-row">
+              <div className="profile-block-title-group">
+                <div className="profile-block-icon-badge blue">
+                  <BookOpen size={20} />
+                </div>
+                <div className="profile-block-text-col">
+                  <h2 className="profile-block-heading">Courses in Progress</h2>
+                  <p className="profile-block-sub">Pick up right where you left off in your enterprise tracks</p>
+                </div>
               </div>
-              <button type="button" className="btn-explore-catalog-link" onClick={onExploreCatalog}>
+
+              <button 
+                type="button" 
+                className="btn-block-action-link"
+                onClick={onExploreCatalog}
+              >
                 <span>Browse More Courses</span>
-                <ArrowRight size={15} />
+                <ArrowRight size={14} />
               </button>
             </div>
 
-            <div className="dashboard-courses-grid">
+            <div className="profile-inprogress-grid-3col">
               {enrolledCourses.map((c) => (
-                <div key={c.id} className="dashboard-course-card">
-                  <div className="dashboard-thumb-box">
-                    <img src={c.thumbnail} alt={c.title} className="dashboard-thumb-img" />
-                    <span className="dashboard-progress-badge">{c.progress}% Complete</span>
-                  </div>
-
-                  <div className="dashboard-card-body">
-                    <h3 className="dashboard-course-title">{c.title}</h3>
-                    
-                    <div className="dashboard-progress-bar-track">
-                      <div className="dashboard-progress-bar-fill" style={{ width: `${c.progress}%` }} />
+                <div key={c.id} className="profile-inprogress-card">
+                  {/* Card Top: Thumbnail + Details */}
+                  <div className="profile-inprogress-top">
+                    <div className="profile-inprogress-thumb-box">
+                      <img src={c.thumbnail} alt={c.title} className="profile-inprogress-thumb-img" />
+                      <span className="profile-inprogress-percent-tag">{c.progress}%</span>
                     </div>
 
-                    <div className="dashboard-meta-row">
-                      <span><CheckCircle2 size={14} className="meta-icon-blue" /> {c.completedLessons}</span>
-                      <span><Clock size={14} className="meta-icon-blue" /> {c.timeSpent}</span>
-                    </div>
+                    <div className="profile-inprogress-info">
+                      <h3 className="profile-inprogress-title">{c.title}</h3>
+                      
+                      <div className="profile-inprogress-meta-line">
+                        <span><BookOpen size={13} className="meta-icon-indigo" /> {c.completedLessons}</span>
+                        <span><Clock size={13} className="meta-icon-indigo" /> {c.timeSpent}</span>
+                      </div>
 
-                    <button 
-                      type="button" 
-                      className="btn-continue-learning"
-                      onClick={() => onViewCourse(c)}
-                    >
-                      <PlayCircle size={16} />
-                      <span>Continue Learning</span>
-                    </button>
+                      <div className="profile-inprogress-progress-bar-track">
+                        <div 
+                          className="profile-inprogress-progress-bar-fill" 
+                          style={{ width: `${c.progress}%` }} 
+                        />
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Card Bottom Button */}
+                  <button 
+                    type="button" 
+                    className="btn-card-continue-learning"
+                    onClick={() => onViewCourse(c)}
+                  >
+                    <PlayCircle size={15} />
+                    <span>Continue Learning</span>
+                  </button>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Tab 2: My Certificates */}
-        {activeTab === 'certificates' && (
-          <div className="profile-tab-content">
-            <div className="section-title-row">
-              <div>
-                <h2 className="profile-section-heading">Earned Microcredential Certificates</h2>
-                <p className="profile-section-sub">Cryptographically signed digital credentials verified by Ignitoverse skill standards.</p>
-              </div>
-            </div>
-
-            <div className="certificates-grid">
-              {earnedCertificates.map((cert) => (
-                <div key={cert.id} className="certificate-card-box">
-                  <div className="cert-card-header">
-                    <div className="cert-award-icon">
-                      <Award size={24} />
-                    </div>
-                    <span className="cert-status-badge">{cert.status}</span>
-                  </div>
-
-                  <h3 className="cert-title">{cert.title}</h3>
-                  <div className="cert-id-tag">ID: {cert.certId}</div>
-
-                  <div className="cert-details-list">
-                    <div className="cert-detail-item">
-                      <span className="cert-lbl">Issued To:</span>
-                      <span className="cert-val">{user.name}</span>
-                    </div>
-                    <div className="cert-detail-item">
-                      <span className="cert-lbl">Date of Issue:</span>
-                      <span className="cert-val">{cert.issueDate}</span>
-                    </div>
-                    <div className="cert-detail-item">
-                      <span className="cert-lbl">Exam Score:</span>
-                      <span className="cert-val score-highlight">{cert.score}</span>
-                    </div>
-                  </div>
-
-                  <div className="cert-actions-row">
-                    <button type="button" className="btn-download-cert">
-                      <Download size={15} />
-                      <span>Download PDF</span>
-                    </button>
-                    <button 
-                      type="button" 
-                      className="btn-verify-cert"
-                      onClick={() => setActiveTab('verify')}
-                    >
-                      <ShieldCheck size={15} />
-                      <span>Verify Credential</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Tab 3: Verify Certificate */}
-        {activeTab === 'verify' && (
-          <div className="profile-tab-content">
-            <CertificateVerification />
-          </div>
-        )}
-
-        {/* Tab 4: Settings */}
-        {activeTab === 'settings' && (
-          <div className="profile-tab-content">
-            <div className="settings-container-grid">
-              <div className="settings-card-box">
-                <h3 className="settings-box-title"><User size={18} /> Employee Profile</h3>
-                <div className="settings-form-grid">
-                  <div className="form-group">
-                    <label>Full Name</label>
-                    <input type="text" defaultValue={user.name} className="settings-input" />
-                  </div>
-                  <div className="form-group">
-                    <label>Enterprise Email</label>
-                    <input type="email" defaultValue={user.email} disabled className="settings-input disabled" />
-                  </div>
-                  <div className="form-group">
-                    <label>Role / Designation</label>
-                    <input type="text" defaultValue={user.role} className="settings-input" />
-                  </div>
-                  <div className="form-group">
-                    <label>Organization Cohort</label>
-                    <input type="text" defaultValue={user.company} disabled className="settings-input disabled" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="settings-card-box">
-                <h3 className="settings-box-title"><Bell size={18} /> Notification & Learning Preferences</h3>
-                <div className="settings-toggle-list">
-                  <label className="toggle-item">
-                    <input type="checkbox" defaultChecked />
-                    <span>Email notification for weekly microcredential cohort milestones</span>
-                  </label>
-                  <label className="toggle-item">
-                    <input type="checkbox" defaultChecked />
-                    <span>Proctored assessment ready alerts and retake cooldown reminders</span>
-                  </label>
-                  <label className="toggle-item">
-                    <input type="checkbox" defaultChecked />
-                    <span>Automatic sync of earned credentials to corporate LMS</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

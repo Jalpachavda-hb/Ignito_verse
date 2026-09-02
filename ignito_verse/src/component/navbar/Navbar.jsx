@@ -147,24 +147,6 @@ export default function Navbar({
                       <span>My Certificates</span>
                     </a>
 
-                    <a 
-                      href="#profile/verify" 
-                      className="dropdown-item"
-                      onClick={(e) => handleProfileSubNav('verify', e)}
-                    >
-                      <ShieldCheck size={16} className="dropdown-icon" />
-                      <span>Verify Certificate</span>
-                    </a>
-
-                    <a 
-                      href="#profile/settings" 
-                      className="dropdown-item"
-                      onClick={(e) => handleProfileSubNav('settings', e)}
-                    >
-                      <Settings size={16} className="dropdown-icon" />
-                      <span>Settings</span>
-                    </a>
-
                     <div className="dropdown-divider" />
 
                     <button

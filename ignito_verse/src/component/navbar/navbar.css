@@ -495,6 +495,8 @@
   }
   .navbar-blue-accent-section {
     padding: 0 1.25rem 0 2.5rem;
+  }
+  .navbar-blue-accent-section::before {
     clip-path: polygon(18% 0, 100% 0, 100% 100%, 0% 100%);
   }
   .action-btn-login,

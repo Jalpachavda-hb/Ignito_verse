@@ -94,26 +94,6 @@ export default function Herosetion({
               <span>{secondaryBtnText}</span>
             </button>
           </div>
-
-          {/* Bottom Metric Stats Row */}
-          <div className="b2b-stats-card">
-            <div className="b2b-stats-row">
-              {stats.map((stat) => {
-                const IconComponent = stat.icon || Users;
-                return (
-                  <div key={stat.id} className="b2b-stat-col">
-                    <div className="b2b-stat-icon-wrap">
-                      <IconComponent size={20} className="b2b-stat-icon" />
-                    </div>
-                    <div className="b2b-stat-info">
-                      <h3 className="b2b-stat-val">{stat.value}</h3>
-                      <p className="b2b-stat-lbl">{stat.label}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </div>
 
         {/* Right Side: Foreground Collage Image & Floating Metric Card */}
