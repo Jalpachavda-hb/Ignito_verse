@@ -1,0 +1,570 @@
+/* ===================================================
+   IGNITOVERSE B2B HERO SECTION (TWO-COLUMN RESPONSIVE)
+   =================================================== */
+
+.b2b-hero-section {
+  position: relative;
+  width: 100%;
+  min-height: 780px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-color: #f6faff;
+  padding: 3.5rem 0 4rem;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Centered 1440px Container */
+.b2b-hero-container {
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 clamp(1.5rem, 3.5vw, 4rem);
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  align-items: center;
+  gap: clamp(2rem, 3.5vw, 4.5rem);
+  box-sizing: border-box;
+  z-index: 2;
+}
+
+/* LEFT COLUMN: CONTENT */
+.b2b-hero-content {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 640px;
+}
+
+/* Top Pill Badge */
+.b2b-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 1.15rem;    
+  border-radius: 9999px;
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.22);
+  margin-bottom: 1.45rem;
+}
+
+.b2b-badge span {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1d4ed8 ;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+/* Main Headline */
+.b2b-headline {
+  font-family: var(--font-heading1, 'Outfit', 'Plus Jakarta Sans', sans-serif);
+  font-size: clamp(2.6rem, 4.2vw, 4.1rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -1.5px;
+  color: #0a1128;
+  margin-bottom: 1.35rem;
+}
+
+.b2b-blue-text {
+  color: #00385E;
+  display: inline-block;
+}
+
+/* Subtitle Description */
+.b2b-description {
+  font-size: clamp(1rem, 1.15vw, 1.15rem);
+  line-height: 1.65;
+  color: #4b5563;
+  font-weight: 450;
+  margin-bottom: 2.25rem;
+  max-width: 540px;
+}
+
+/* Action CTA Buttons */
+.b2b-cta-group {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin-bottom: 2.85rem;
+  flex-wrap: wrap;
+}
+
+.b2b-btn {
+  font-size: 0.98rem;
+  font-weight: 600;
+  padding: 0.85rem 1.85rem;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.btn-demo {
+  background: #00385E;
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(21, 93, 252, 0.35);
+}
+
+.btn-demo:hover {
+  background: #0d4cd6;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(21, 93, 252, 0.45);
+}
+
+.btn-demo:hover .btn-arrow {
+  transform: translateX(4px);
+}
+
+.btn-solutions {
+  background: #ffffff;
+  color: #00385E;
+  border: 1.5px solid #bfdbfe;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.btn-solutions:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #0d4cd6;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.08);
+}
+
+.btn-arrow {
+  transition: transform 0.2s ease;
+}
+
+/* METRIC STATS ROW */
+.b2b-stats-card {
+  width: 100%;
+  max-width: 560px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  padding: 0.95rem 1.35rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+}
+
+.b2b-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.b2b-stat-col {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.b2b-stat-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #eef4ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.b2b-stat-col:hover .b2b-stat-icon-wrap {
+  transform: scale(1.08);
+  background: #dfeaff;
+}
+
+.b2b-stat-icon {
+  color: #00385E;
+}
+
+.b2b-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.b2b-stat-val {
+  font-family: var(--font-heading, 'Outfit', 'Plus Jakarta Sans', sans-serif);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0b132b;
+  line-height: 1.2;
+}
+
+.b2b-stat-lbl {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* ===================================================
+   RIGHT COLUMN: FOREGROUND VISUAL & OVERLAY CARD
+   =================================================== */
+
+.b2b-hero-visual-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.b2b-hero-foreground-img {
+  width: 111%;
+  max-width: 680px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.05));
+  transition: transform 0.4s ease;
+}
+
+.b2b-hero-visual-wrapper:hover .b2b-hero-foreground-img {
+  transform: translateY(-4px);
+}
+
+/* FLOATING COURSE COMPLETION 93% CARD */
+.floating-metric-card {
+  position: absolute;
+  left: 2%;
+  bottom: 22%;
+  width: 195px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 14px;
+  padding: 1rem 1.15rem 0.85rem;
+  box-shadow: 
+    0 20px 40px rgba(37, 99, 235, 0.16), 
+    0 4px 14px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  z-index: 10;
+  animation: floatCard 4s ease-in-out infinite alternate;
+  transition: transform 0.3s ease;
+}
+
+.floating-metric-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 
+    0 26px 50px rgba(37, 99, 235, 0.22), 
+    0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.metric-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.65rem;
+}
+
+.metric-plus-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: #dbeafe;
+  color: #00385E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.metric-header-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.metric-stat-body {
+  margin-bottom: 0.4rem;
+}
+
+.metric-stat-number {
+  font-family: var(--font-heading, 'Outfit', 'Plus Jakarta Sans', sans-serif);
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #00385E;
+  line-height: 1;
+  margin-bottom: 0.2rem;
+}
+
+.metric-stat-sub {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0;
+}
+
+.metric-chart-container {
+  width: 100%;
+  height: 42px;
+  margin-top: 0.25rem;
+}
+
+.metric-sparkline-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@keyframes floatCard {
+  0% {
+    transform: translateY(0px);
+  }
+  100% {
+    transform: translateY(-8px);
+  }
+}
+
+/* ===================================================
+   RESPONSIVE BREAKPOINTS
+   =================================================== */
+
+@media (max-width: 1200px) {
+  .b2b-hero-container {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+  .floating-metric-card {
+    left: -10px;
+    bottom: 15%;
+  }
+}
+
+@media (max-width: 992px) {
+  .b2b-hero-section {
+    padding: 3rem 0 3.5rem;
+    min-height: auto;
+  }
+  .b2b-hero-container {
+    grid-template-columns: 1fr;
+    gap: 3.5rem;
+  }
+  .b2b-hero-content {
+    max-width: 100%;
+    align-items: center;
+    text-align: center;
+  }
+  .b2b-description {
+    max-width: 600px;
+  }
+  .b2b-cta-group {
+    justify-content: center;
+  }
+  .b2b-stats-card {
+    margin: 0 auto;
+  }
+  .b2b-hero-visual-wrapper {
+    justify-content: center;
+    max-width: 620px;
+    margin: 0 auto;
+  }
+  .floating-metric-card {
+    left: 20px;
+    bottom: 10%;
+  }
+}
+
+@media (max-width: 640px) {
+  .b2b-hero-section {
+    padding: 2rem 0 3rem;
+  }
+  .b2b-headline {
+    font-size: 2.35rem;
+    letter-spacing: -0.8px;
+  }
+  .b2b-description {
+    font-size: 0.96rem;
+  }
+  .b2b-cta-group {
+    flex-direction: column;
+    width: 100%;
+  }
+  .b2b-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .b2b-stats-row {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+  .b2b-stats-card {
+    max-width: 100%;
+  }
+  .floating-metric-card {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    margin: 1.5rem auto 0;
+    width: 100%;
+    max-width: 220px;
+  }
+}
+
+/* ==========================================================================
+   IGNITOVERSE - TRUSTED BY LEADING ORGANIZATIONS
+   Seamless Transparent Background with Hero-matching Typography
+   ========================================================================== */
+
+
+
+.trusted-canopy-container {
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3vw, 32px);
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* 2. HEADER TEXT & HERO-MATCHING HEADLINE */
+.canopy-header-text {
+  max-width: 860px;
+  margin-bottom: 38px;
+}
+
+.canopy-headline {
+  font-family: var(--font-heading, 'Outfit', 'Plus Jakarta Sans', sans-serif);
+  font-size:45px;
+  font-weight: 800;
+  line-height: 1.14;
+  letter-spacing: -1.5px;
+  color: #0a1128;
+  margin-bottom: 1.15rem;
+}
+
+.canopy-description {
+  font-size: clamp(1rem, 1.15vw, 1.12rem);
+  line-height: 1.65;
+  color: #4b5563;
+  font-weight: 450;
+  max-width: 660px;
+  margin: 0 auto;
+}
+
+.highlight-text-blue {
+  color: #00385E;
+  font-weight: 700;
+}
+
+/* 3. SEAMLESS CANOPY STAGE & 3 LOGO CARDS */
+.canopy-curved-arch {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.trusted-three-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 310px));
+  justify-content: center;
+  gap: 26px;
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+/* Single Card Matching Screenshot */
+.canopy-card {
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 32px 26px 26px;
+  min-height: 152px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 
+    0 10px 30px rgba(15, 23, 42, 0.04), 
+    0 2px 6px rgba(0, 0, 0, 0.02);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: default;
+}
+
+.canopy-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 
+    0 18px 40px rgba(37, 99, 235, 0.12), 
+    0 4px 10px rgba(0, 0, 0, 0.04);
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+.card-logo-holder {
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.partner-logo-img {
+  max-height: 87px;
+  max-width: 185px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  transition: transform 0.25s ease;
+}
+
+.canopy-card:hover .partner-logo-img {
+  transform: scale(1.05);
+}
+
+.card-industry-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #334155;
+  text-align: center;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  margin-top: 14px;
+}
+
+/* RESPONSIVE BREAKPOINTS */
+@media (max-width: 860px) {
+  .trusted-three-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+}
+
+@media (max-width: 580px) {
+  .trusted-badge-img {
+    width: 68px;
+    height: 68px;
+  }
+  .trusted-three-cards-grid {
+    grid-template-columns: 1fr;
+    max-width: 320px;
+  }
+}
+
