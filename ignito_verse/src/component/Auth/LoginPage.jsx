@@ -8,6 +8,7 @@ import {
 import logoImg from '../../assets/Ignitoverse Logo.png';
 import loginMainImg from '../../assets/home/login_main.png';
 import loginBadgeImg from '../../assets/login_page.png';
+import { loginUser } from '../../services/authService';
 
 export default function LoginPage({ 
   onLoginSuccess = () => {}, 
@@ -21,6 +22,7 @@ export default function LoginPage({
   // Interaction & Focus States
   const [focusedField, setFocusedField] = useState(null); // 'email' | 'password' | null
   const [authStage, setAuthStage] = useState('idle'); // 'idle' | 'verifying' | 'granted'
+  const [errorMessage, setErrorMessage] = useState('');
   
   // Validation
   const isEmailValid = email.length > 3 && email.includes('@') && email.includes('.');
@@ -141,28 +143,31 @@ export default function LoginPage({
     };
   }, []);
   
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (authStage !== 'idle') return;
 
-    // Stage 1: Verifying credentials
+    setErrorMessage('');
     setAuthStage('verifying');
 
-    setTimeout(() => {
-      // Stage 2: Access Granted
-      setAuthStage('granted');
+    try {
+      // Execute login against .NET Web API + MSSQL DB using Input/Output DTOs
+      const result = await loginUser(email, password);
 
-      setTimeout(() => {
-        onLoginSuccess({
-          name: email ? email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Saurabh Mukherjee',
-          email: email || 'saurabh.mukherjee@enterprise.com',
-          role: 'Senior Java Architect',
-          company: 'Enterprise Learning Cohort',
-          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-          empId: 'EMP-94021'
-        });
-      }, 700);
-    }, 1100);
+      if (result.success && result.user) {
+        setAuthStage('granted');
+        setTimeout(() => {
+          onLoginSuccess(result.user);
+        }, 700);
+      } else {
+        setAuthStage('idle');
+        setErrorMessage(result.error || 'Authentication failed. Please check your credentials or API connection.');
+      }
+    } catch (err) {
+      console.error('[LoginPage] Auth Exception:', err);
+      setAuthStage('idle');
+      setErrorMessage(err.message || 'An error occurred during authentication.');
+    }
   };
 
   return (
@@ -296,6 +301,28 @@ export default function LoginPage({
             {/* Title & Tagline */}
             <h2 className="executive-card-heading">Welcome Back</h2>
             <p className="executive-card-subheading">Access your IgnitoVerse account</p>
+
+            {/* Error Banner */}
+            {errorMessage && (
+              <div 
+                style={{
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  color: '#f87171',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  fontSize: '13px',
+                  lineHeight: '1.4',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <span>⚠️</span>
+                <span>{errorMessage}</span>
+              </div>
+            )}
 
             {/* Form */}
             <form className="executive-login-form" onSubmit={handleSubmit}>

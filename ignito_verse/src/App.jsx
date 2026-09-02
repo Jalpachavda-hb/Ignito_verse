@@ -11,11 +11,12 @@ import LoginPage from './component/Auth/LoginPage';
 import BookDemoModal from './component/modals/BookDemoModal';
 import VideoModal from './component/modals/VideoModal';
 import { microcredentialsData } from './data/microcredentials';
+import { getSavedUserSession, logoutUser } from './services/authService';
 import './Global.css';
 
 export default function App() {
-  // Authentication state: user object when logged in, null when logged out
-  const [user, setUser] = useState(null);
+  // Authentication state: loaded from persistent session storage
+  const [user, setUser] = useState(() => getSavedUserSession());
 
   // Navigation state: 'home' | 'microcredentials' | 'detail' | 'profile' | 'login'
   const [activePage, setActivePage] = useState('home');
@@ -80,6 +81,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    logoutUser();
     setUser(null);
     setActivePage('home');
     window.location.hash = 'home';
