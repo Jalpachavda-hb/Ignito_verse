@@ -74,9 +74,8 @@ export default function App() {
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
-    setActivePage('profile');
-    setProfileTab('dashboard');
-    window.location.hash = 'profile/dashboard';
+    setActivePage('home');
+    window.location.hash = 'home';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

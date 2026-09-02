@@ -5315,7 +5315,7 @@ a {
 
 .executive-cta-button.granted {
   background: #059669;
-  box-shadow: 0 8px 28px rgba(5, 150, 105, 0.4);
+  box-shadow: none;
   cursor: default;
 }
 
