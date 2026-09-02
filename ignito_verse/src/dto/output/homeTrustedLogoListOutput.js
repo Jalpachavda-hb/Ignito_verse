@@ -24,3 +24,6 @@ export function parsehomeTrustedLogoListErrorOutput(rawJson = {}, status = 500) 
     rawData: rawJson
   };
 }
+
+export const parseHomeTrustedLogoListOutput = parsehomeTrustedLogoListOutput;
+

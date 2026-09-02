@@ -11,6 +11,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false, // Allows self-signed SSL certificates in local development
       },
+      '/HomePageImages': {
+        target: 'https://verse.ignitolearn.com',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 })

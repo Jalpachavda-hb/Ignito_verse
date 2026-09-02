@@ -97,9 +97,9 @@ const catalogCoursesList = [
   }
 ];
 
-export default function MicrocredentialsCatalog({ 
-  onViewDetails = () => {}, 
-  onPreviewVideo = () => {},
+export default function MicrocredentialsCatalog({
+  onViewDetails = () => { },
+  onPreviewVideo = () => { },
   initialCategory = 'All'
 }) {
   const [selectedLevel, setSelectedLevel] = useState('All');
@@ -118,16 +118,16 @@ export default function MicrocredentialsCatalog({
 
   const filteredCourses = useMemo(() => {
     return catalogCoursesList.filter((course) => {
-      const matchesLevel = 
+      const matchesLevel =
         selectedLevel === 'All' ||
         (selectedLevel === 'Beginner' && (course.level?.toLowerCase().includes('beginner') || course.level === 'All' || course.level === 'All Levels')) ||
         (selectedLevel === 'Intermediate' && course.level?.toLowerCase().includes('intermediate')) ||
         (selectedLevel === 'Expert' && (course.level?.toLowerCase().includes('expert') || course.level?.toLowerCase().includes('advanced'))) ||
         (selectedLevel === 'All Levels' && (course.level === 'All' || course.level === 'All Levels'));
 
-      const matchesCategory = 
-        selectedCategory === 'All' || 
-        course.category === selectedCategory || 
+      const matchesCategory =
+        selectedCategory === 'All' ||
+        course.category === selectedCategory ||
         course.domain === selectedCategory;
 
       return matchesLevel && matchesCategory;
@@ -197,7 +197,7 @@ export default function MicrocredentialsCatalog({
         {filteredCourses.length > 0 ? (
           <div className="featured-courses-grid catalog-courses-clean-grid">
             {filteredCourses.map((course) => (
-              <CourseCard 
+              <CourseCard
                 key={course.id}
                 course={course}
                 onViewDetails={onViewDetails}
@@ -210,8 +210,8 @@ export default function MicrocredentialsCatalog({
             <BookOpen size={48} className="empty-icon" />
             <h3>No courses found for selected filters</h3>
             <p>Try selecting a different skill level or category.</p>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn-reset-empty"
               onClick={() => {
                 setSelectedLevel('All');

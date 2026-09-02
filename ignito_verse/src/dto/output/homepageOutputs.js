@@ -4,7 +4,7 @@
  */
 
 // Dynamically use API / Image base URL from environment config instead of hardcoded domain
-const API_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://verse.ignitolearn.com';
 
 /**
  * Normalizes image relative paths using configured base URL.
@@ -17,16 +17,17 @@ export function formatImageUrl(path) {
     return path;
   }
 
-  if (API_BASE_URL.startsWith('http://') || API_BASE_URL.startsWith('https://')) {
+  const customBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || import.meta.env.VITE_API_BASE_URL;
+  if (customBaseUrl && (customBaseUrl.startsWith('http://') || customBaseUrl.startsWith('https://'))) {
     try {
-      const urlObj = new URL(API_BASE_URL);
+      const urlObj = new URL(customBaseUrl);
       return `${urlObj.origin}/${path.replace(/^\//, '')}`;
     } catch {
-      return `${API_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+      return `${customBaseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
     }
   }
 
-  // Relative path fallback (e.g. when served via Vite proxy or same-origin domain)
+  // Relative path fallback (e.g. served via Vite proxy for /HomePageImages or same-origin domain)
   return path.startsWith('/') ? path : `/${path}`;
 }
 

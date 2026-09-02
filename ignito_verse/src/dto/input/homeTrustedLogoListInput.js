@@ -7,3 +7,5 @@ export function buildhomeTrustedLogoListInput() {
         body: JSON.stringify({})
     };
 }
+
+export const buildHomeTrustedLogoListInput = buildhomeTrustedLogoListInput;

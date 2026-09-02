@@ -24,3 +24,7 @@ export function parsetestimonialReviewErrorOutput(rawJson = {}, status = 500) {
     rawData: rawJson
   };
 }
+
+export const parseTestimonialReviewOutput = parsetestimonialReviewOutput;
+export const parseTestimonialReviewErrorOutput = parsetestimonialReviewErrorOutput;
+

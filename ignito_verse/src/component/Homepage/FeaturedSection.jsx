@@ -6,10 +6,10 @@ import noriBg01 from '../../assets/home/nori-background-01.png';
 import noriPost2 from '../../assets/home/nori-post-2-720x720.webp';
 import CourseCard from '../Microcredentials/CourseCard';
 
-export default function FeaturedSection({ 
-  onViewDetails = () => {}, 
-  onViewAll = () => {},
-  onPreviewVideo = () => {}
+export default function FeaturedSection({
+  onViewDetails = () => { },
+  onViewAll = () => { },
+  onPreviewVideo = () => { }
 }) {
   // 8 courses exactly matching the reference screenshot
   const coursesList = [
@@ -99,7 +99,7 @@ export default function FeaturedSection({
     <section className="featured-courses-section" id="featured-microcredentials">
       <div className="featured-full-wrapper">
         {/* Top Checkered Background Watermark Pattern */}
-        <div 
+        <div
           className="nori-header-bg-watermark"
           style={{ backgroundImage: `url(${noriBg01})` }}
           aria-hidden="true"
@@ -129,7 +129,7 @@ export default function FeaturedSection({
         {/* 8 Course Cards in 4-Column Grid (414px x 482px model) */}
         <div className="featured-courses-grid">
           {coursesList.map((course) => (
-            <CourseCard 
+            <CourseCard
               key={course.id}
               course={course}
               onViewDetails={onViewDetails}
@@ -140,8 +140,8 @@ export default function FeaturedSection({
 
         {/* Overlapping Centered Browse More Courses Button */}
         <div className="featured-bottom-floating-action">
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-browse-more-courses"
             onClick={onViewAll}
           >

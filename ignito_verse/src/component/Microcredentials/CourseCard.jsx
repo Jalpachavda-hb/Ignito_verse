@@ -2,7 +2,7 @@
 import React from 'react';
 import { FileText, User } from 'lucide-react';
 
-export default function CourseCard({ course, onViewDetails = () => {}, onPreviewVideo = () => {} }) {
+export default function CourseCard({ course, onViewDetails = () => { }, onPreviewVideo = () => { } }) {
   if (!course) return null;
 
   const levelText = course.level || 'Intermediate';
@@ -13,17 +13,17 @@ export default function CourseCard({ course, onViewDetails = () => {}, onPreview
       <div className="thumbnail">
         <span className="course-level">{levelText}</span>
 
-        <a 
-          className="course-thumb" 
-          href={`#${course.id}`} 
+        <a
+          className="course-thumb"
+          href={`#${course.id}`}
           onClick={(e) => { e.preventDefault(); onViewDetails(course); }}
         >
-          <img 
-            decoding="async" 
-            src={course.thumbnail} 
+          <img
+            decoding="async"
+            src={course.thumbnail}
             alt={course.title}
             className="course-thumb-image"
-            loading="lazy" 
+            loading="lazy"
           />
         </a>
       </div>
@@ -32,8 +32,8 @@ export default function CourseCard({ course, onViewDetails = () => {}, onPreview
       <div className="inner">
         {/* Course Title with Underline */}
         <h3 className="post-title">
-          <a 
-            href={`#${course.id}`} 
+          <a
+            href={`#${course.id}`}
             onClick={(e) => { e.preventDefault(); onViewDetails(course); }}
           >
             {course.title}
