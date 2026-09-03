@@ -1,5 +1,5 @@
 // ignitoverse: Dedicated Microcredential Video Learning & Interactive Masterclass Watch Page
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Play, 
   Pause, 
@@ -31,17 +31,54 @@ import {
   Clock, 
   ShieldCheck,
   BookOpen,
-  ArrowLeft
+  ArrowLeft,
+  ExternalLink
 } from 'lucide-react';
 import userCertificateImg from '../../assets/e47782ae-798b-479b-99e6-428b70bf4a7a.png';
 import watchNowImg from '../../assets/watchnow.png';
+import { getMicroCourseTopicDetail } from '../../services/microcredentialService';
+import { formatImageUrl } from '../../dto/output/homepageOutputs';
+
+// Helpers for Video duration & YouTube Embed formatting
+function formatDuration(sec) {
+  if (!sec) return '10:00';
+  if (typeof sec === 'string' && sec.includes(':')) return sec;
+  const totalSec = Number(sec) || 0;
+  const mins = Math.floor(totalSec / 60);
+  const secs = Math.floor(totalSec % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function isYouTubeUrl(url) {
+  if (!url) return false;
+  return url.includes('youtube.com') || url.includes('youtu.be');
+}
+
+function getEmbedVideoUrl(url) {
+  if (!url) return '';
+  try {
+    if (url.includes('youtube.com/watch?v=')) {
+      const videoId = url.split('v=')[1]?.split('&')[0];
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`;
+    }
+    if (url.includes('youtu.be/')) {
+      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`;
+    }
+    if (url.includes('youtube.com/embed/')) {
+      return url;
+    }
+  } catch (e) {
+    console.error('Error parsing video URL:', e);
+  }
+  return url;
+}
 
 export default function MicrocredentialWatchPage({ 
   course, 
   onBack = () => {}, 
   onNavigate = () => {} 
 }) {
-  // Course fallback data
   const currentCourse = course || {
     title: 'Stress Management',
     category: 'Management',
@@ -49,59 +86,9 @@ export default function MicrocredentialWatchPage({
     rating: '4.5'
   };
 
-  // Video Playlist Data
-  const playlist = [
-    {
-      id: 1,
-      title: 'INTRODUCTION TO STRESS',
-      code: 'SM U1 V1-Understanding the Stress',
-      org: 'BRAOU eLearning',
-      duration: '12:48',
-      videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-      progress: 33,
-      isLocked: false
-    },
-    {
-      id: 2,
-      title: 'SOURCES OF STRESS',
-      code: 'SM U1 V2-Somatic & Environmental Triggers',
-      org: 'BRAOU eLearning',
-      duration: '14:20',
-      videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-      progress: 0,
-      isLocked: false
-    },
-    {
-      id: 3,
-      title: 'IMPACT OF STRESS',
-      code: 'SM U1 V3-Physiological & Cognitive Toll',
-      org: 'BRAOU eLearning',
-      duration: '16:05',
-      videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-      progress: 0,
-      isLocked: false
-    },
-    {
-      id: 4,
-      title: 'STRESS RESPONSE',
-      code: 'SM U2 V1-Autonomic Regulation & Breathwork',
-      org: 'BRAOU eLearning',
-      duration: '18:15',
-      videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-      progress: 33,
-      isLocked: false
-    },
-    {
-      id: 5,
-      title: 'COPING MECHANISMS',
-      code: 'SM U2 V2-Cognitive Reframing & Meditation',
-      org: 'BRAOU eLearning',
-      duration: '21:30',
-      videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-      progress: 0,
-      isLocked: false
-    }
-  ];
+  const [playlist, setPlaylist] = useState([]);
+  const [downloadDocuments, setDownloadDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [activeLectureIdx, setActiveLectureIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -116,7 +103,82 @@ export default function MicrocredentialWatchPage({
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
 
   const videoRef = useRef(null);
-  const activeLecture = playlist[activeLectureIdx] || playlist[0];
+
+  // Fetch dynamic video topic details and downloadable documents
+  useEffect(() => {
+    let isMounted = true;
+    const courseId = Number(course?.microcredentialCourseId || course?.courseId || course?.id) || 0;
+    const encryptedId = course?.encryptedMicrocredentialCourseId || course?.encryptedId || '';
+    const studentId = 0; // Guest or logged in student
+
+    if (courseId > 0 || encryptedId) {
+      getMicroCourseTopicDetail(courseId, studentId, encryptedId)
+        .then((res) => {
+          if (!isMounted) return;
+          if (res && res.success) {
+            if (Array.isArray(res.getMicroCourseTopicDetailList) && res.getMicroCourseTopicDetailList.length > 0) {
+              const mapped = res.getMicroCourseTopicDetailList.map((item, idx) => {
+                const vidUrl = item.topicVideoUrl || '';
+                return {
+                  id: idx + 1,
+                  title: item.videoTitle || `Topic ${idx + 1}`,
+                  code: item.videoTitle || `Unit ${idx + 1}`,
+                  org: course?.streamName || 'IgnitoLearn Microcredentials',
+                  duration: formatDuration(item.videoDuration),
+                  videoDuration: item.videoDuration,
+                  videoEndTime: item.videoEndTime,
+                  videoUrl: vidUrl,
+                  embedUrl: getEmbedVideoUrl(vidUrl),
+                  isYouTube: isYouTubeUrl(vidUrl),
+                  topicPdf: item.topicPdf ? formatImageUrl(item.topicPdf) : '',
+                  progress: idx === 0 ? 33 : 0,
+                  isLocked: false
+                };
+              });
+              setPlaylist(mapped);
+            }
+
+            if (Array.isArray(res.microcredentialStudentDownloadDocumentList)) {
+              const mappedDocs = res.microcredentialStudentDownloadDocumentList.map((doc, dIdx) => ({
+                id: dIdx + 1,
+                fileName: doc.originalFileName || `Resource-${dIdx + 1}.pdf`,
+                url: doc.microcredentialStudentDownloadDocument ? formatImageUrl(doc.microcredentialStudentDownloadDocument) : ''
+              }));
+              setDownloadDocuments(mappedDocs);
+            }
+          }
+        })
+        .catch((err) => {
+          console.error('Error fetching course topic details:', err);
+        })
+        .finally(() => {
+          if (isMounted) setLoading(false);
+        });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [course]);
+
+  // Fallback playlist if empty
+  const defaultPlaylist = [
+    {
+      id: 1,
+      title: currentCourse.title || 'INTRODUCTION TO COURSE',
+      code: 'Module 1 - Key Concepts',
+      org: currentCourse.category || 'IgnitoLearn eLearning',
+      duration: '12:48',
+      videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      embedUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      isYouTube: false,
+      progress: 33,
+      isLocked: false
+    }
+  ];
+
+  const currentPlaylist = playlist.length > 0 ? playlist : defaultPlaylist;
+  const activeLecture = currentPlaylist[activeLectureIdx] || currentPlaylist[0];
 
   const handleTogglePlay = () => {
     if (!videoRef.current) return;
@@ -150,7 +212,7 @@ export default function MicrocredentialWatchPage({
   };
 
   const handleNextLesson = () => {
-    if (activeLectureIdx < playlist.length - 1) {
+    if (activeLectureIdx < currentPlaylist.length - 1) {
       setActiveLectureIdx(activeLectureIdx + 1);
       setIsPlaying(false);
     }
@@ -180,7 +242,7 @@ export default function MicrocredentialWatchPage({
               <span className="breadcrumb-divider">›</span>
               <span className="breadcrumb-item linkable" onClick={onBack}>{currentCourse.title}</span>
               <span className="breadcrumb-divider">›</span>
-              <span className="breadcrumb-item active">Microcredential Detail</span>
+              <span className="breadcrumb-item active">Microcredential Video Watch</span>
             </div>
           </div>
 
@@ -195,7 +257,7 @@ export default function MicrocredentialWatchPage({
 
             <button type="button" className="btn-back-to-course" onClick={onBack}>
               <ChevronLeft size={16} />
-              <span>{activeLecture.title}</span>
+              <span>Back to Overview</span>
             </button>
           </div>
 
@@ -205,9 +267,11 @@ export default function MicrocredentialWatchPage({
               {/* Top Video Header Overlay */}
               <div className="theater-header-overlay">
                 <div className="theater-channel-badge">
-                  <div className="theater-avatar-box">B</div>
+                  <div className="theater-avatar-box">
+                    {(currentCourse.streamName || currentCourse.category || 'M').charAt(0).toUpperCase()}
+                  </div>
                   <div className="theater-lecture-text">
-                    <h4>{activeLecture.code}</h4>
+                    <h4>{activeLecture.title}</h4>
                     <span className="theater-org-name">{activeLecture.org}</span>
                   </div>
                 </div>
@@ -224,365 +288,420 @@ export default function MicrocredentialWatchPage({
                 </div>
               </div>
 
-              {/* Central Video Frame */}
-              <div className="theater-video-frame" onClick={handleTogglePlay}>
-                <video 
-                  ref={videoRef}
-                  src={activeLecture.videoUrl} 
-                  className="theater-html5-video"
-                  poster={currentCourse.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1200&auto=format&fit=crop&q=80'}
-                  onPlay={() => setIsPlaying(true)}
-                  onPause={() => setIsPlaying(false)}
-                />
+              {/* Central Video Frame: YouTube iframe or HTML5 Video */}
+              <div className="theater-video-frame">
+                {activeLecture?.isYouTube ? (
+                  <iframe 
+                    src={activeLecture.embedUrl} 
+                    title={activeLecture.title}
+                    className="theater-youtube-iframe"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video 
+                    ref={videoRef}
+                    src={activeLecture?.videoUrl || 'https://www.w3schools.com/html/mov_bbb.mp4'} 
+                    className="theater-html5-video"
+                    poster={currentCourse.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1200&auto=format&fit=crop&q=80'}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    controls
+                  />
+                )}
 
-                {/* Big Center Glass Play Button (When Paused) */}
-                {!isPlaying && (
-                  <div className="theater-glass-center-play">
+                {/* Big Center Glass Play Button (When Paused on HTML5 Video) */}
+                {!activeLecture?.isYouTube && !isPlaying && (
+                  <div className="theater-glass-center-play" onClick={handleTogglePlay}>
                     <Play size={28} className="play-triangle-fill" />
                   </div>
                 )}
               </div>
 
-              {/* Bottom Custom Playback Bar */}
-              <div className="theater-bottom-controls-bar">
-                <button type="button" className="btn-ctrl-play" onClick={handleTogglePlay}>
-                  {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-                </button>
-
-                <button type="button" className="btn-ctrl-vol" onClick={handleToggleMute}>
-                  {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-                </button>
-
-                {/* Progress Track Line */}
-                <div className="theater-progress-track">
-                  <div className="theater-progress-fill" style={{ width: '42%' }} />
-                </div>
-
-                <span className="theater-time-code">05:24 / {activeLecture.duration}</span>
-
-                <button type="button" className="btn-ctrl-share" title="Share Lecture">
-                  <Share2 size={16} />
-                </button>
-
-                <button type="button" className="btn-ctrl-settings" title="Settings">
-                  <Settings size={16} />
-                </button>
-
-                <button type="button" className="btn-ctrl-expand" onClick={handleFullscreen} title="Fullscreen">
-                  <Maximize size={16} />
-                </button>
-              </div>
-
-            </div>
-
-            {/* 2. Lesson Navigation & IgnitoAssist AI Bar */}
-            <div className="mc-lesson-navigation-bar">
-              <button 
-                type="button" 
-                className="btn-lesson-nav prev"
-                onClick={handlePrevLesson}
-                disabled={activeLectureIdx === 0}
-              >
-                <ChevronLeft size={16} />
-                <span>Prev Lesson</span>
-              </button>
-
-              <button 
-                type="button" 
-                className="btn-ignito-assist-ai"
-                onClick={() => setAiAssistantOpen(!aiAssistantOpen)}
-              >
-                <Sparkles size={16} className="sparkle-ai-icon" />
-                <span>Ask IgnitoAssist</span>
-              </button>
-
-              <button 
-                type="button" 
-                className="btn-lesson-nav next"
-                onClick={handleNextLesson}
-                disabled={activeLectureIdx === playlist.length - 1}
-              >
-                <span>Next Lesson</span>
-                <ChevronRight size={16} />
-              </button>
-            </div>
-
-            {/* AI Assistant Quick Drawer */}
-            {aiAssistantOpen && (
-              <div className="mc-ai-helper-drawer">
-                <div className="ai-drawer-header">
-                  <div className="ai-bot-title">
-                    <Sparkles size={18} className="ai-brand-svg" />
-                    <strong>IgnitoAssist AI Learning Coach</strong>
-                  </div>
-                  <button type="button" className="btn-close-ai" onClick={() => setAiAssistantOpen(false)}>×</button>
-                </div>
-                <p className="ai-greeting-msg">
-                  "Hello! I am your AI learning assistant for <strong>{currentCourse.title}</strong>. Ask me anything about this video or summarize key stress regulation techniques!"
-                </p>
-                <div className="ai-input-wrap">
-                  <input type="text" placeholder="Ask a question about this lecture..." />
-                  <button type="button" className="btn-ai-send"><Send size={15} /></button>
-                </div>
-              </div>
-            )}
-
-            {/* 3. Discussion & Community Forum */}
-            <div className="mc-discussion-forum-card">
-              
-              {/* Forum Navigation Tabs */}
-              <div className="mc-forum-nav-tabs">
-                <button 
-                  type="button" 
-                  className={`forum-tab-btn ${activeForumTab === 'group' ? 'active' : ''}`}
-                  onClick={() => setActiveForumTab('group')}
-                >
-                  <Users size={16} />
-                  <span>Group Discussion</span>
-                </button>
-
-                <button 
-                  type="button" 
-                  className={`forum-tab-btn ${activeForumTab === 'professor' ? 'active' : ''}`}
-                  onClick={() => setActiveForumTab('professor')}
-                >
-                  <GraduationCap size={16} />
-                  <span>Ask Professor</span>
-                </button>
-              </div>
-
-              {/* Discussion Header */}
-              <div className="forum-main-header-row">
-                <h3 className="forum-section-title">Discussion</h3>
-                <button 
-                  type="button" 
-                  className="btn-ask-question-cta"
-                  onClick={() => setShowAskModal(true)}
-                >
-                  <MessageSquare size={15} />
-                  <span>Ask Question</span>
-                </button>
-              </div>
-
-              {/* Student Question Card */}
-              <div className="forum-question-item">
-                <div className="question-author-meta">
-                  <div className="author-avatar-circle">
-                    <img 
-                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" 
-                      alt="Anjali Sharma" 
-                    />
-                  </div>
-                  <div className="author-name-stamp">
-                    <h4>Anjali Sharma</h4>
-                    <span className="post-timestamp">Posted on 06/27/2026 14:51:14</span>
-                  </div>
-                </div>
-
-                <div className="question-body-heading">
-                  <h3>How can I handle stress?</h3>
-                </div>
-
-                <div className="question-actions-row">
-                  <button 
-                    type="button" 
-                    className={`btn-like-forum ${hasLikedQ.q1 ? 'liked' : ''}`}
-                    onClick={() => handleToggleLike('q1')}
-                  >
-                    <ThumbsUp size={14} />
-                    <span>Liked ({likedQuestions.q1})</span>
+              {/* Bottom Playback Bar for non-iframe videos */}
+              {!activeLecture?.isYouTube && (
+                <div className="theater-bottom-controls-bar">
+                  <button type="button" className="btn-ctrl-play" onClick={handleTogglePlay}>
+                    {isPlaying ? <Pause size={18} /> : <Play size={18} />}
                   </button>
 
-                  <button type="button" className="btn-reply-forum">
-                    <MessageSquare size={14} />
-                    <span>Reply</span>
+                  <button type="button" className="btn-ctrl-vol" onClick={handleToggleMute}>
+                    {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
                   </button>
 
-                  <div className="forum-reply-count-badge">
-                    <MessageSquare size={13} />
-                    <span>1 reply</span>
-                  </div>
-                </div>
-
-                {/* Nested Instructor / Professor Answer Box */}
-                <div className="forum-nested-professor-reply">
-                  <div className="prof-author-meta">
-                    <div className="prof-avatar-circle">
-                      <img 
-                        src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80" 
-                        alt="Leesa Shashikant Mehra" 
-                      />
-                    </div>
-                    <div className="prof-name-stamp">
-                      <h4>Leesa Shashikant Mehra</h4>
-                      <span className="prof-timestamp">24 August, 2026 03:41:06 PM</span>
-                    </div>
+                  <div className="theater-playback-timeline">
+                    <span className="ctrl-time-stamp">00:00 / {activeLecture.duration}</span>
                   </div>
 
-                  <p className="prof-reply-text">
-                    Stress can be managed by identifying its causes, staying organized, taking regular breaks, practicing deep breathing or relaxation exercises, exercising regularly, getting enough sleep, eating healthy, and talking to someone you trust about your concerns. Making time for hobbies and enjoyable activities can also help you relax and maintain a positive mindset.
-                  </p>
+                  <button type="button" className="btn-ctrl-fullscreen" onClick={handleFullscreen}>
+                    <Maximize size={16} />
+                  </button>
                 </div>
-
-              </div>
-
-            </div>
+              )}
 
           </div>
 
-          {/* ======================================================
-              RIGHT COLUMN: LEARNING PROGRESS & VIDEO PLAYLIST SIDEBAR
-              ====================================================== */}
-          <div className="mc-main-right-sidebar mc-watch-right-sidebar">
+          {/* 4. Lesson Navigation Toolbar */}
+          <div className="mc-lesson-navigation-bar">
+            <button 
+              type="button" 
+              className="btn-lesson-nav prev"
+              onClick={handlePrevLesson}
+              disabled={activeLectureIdx === 0}
+            >
+              <ChevronLeft size={16} />
+              <span>Previous Lesson</span>
+            </button>
+
+            <button 
+              type="button" 
+              className="btn-ai-tutor-summon"
+              onClick={() => setAiAssistantOpen(!aiAssistantOpen)}
+            >
+              <Sparkles size={16} />
+              <span>Ask AI Tutor</span>
+            </button>
+
+            <button 
+              type="button" 
+              className="btn-lesson-nav next"
+              onClick={handleNextLesson}
+              disabled={activeLectureIdx === currentPlaylist.length - 1}
+            >
+              <span>Next Lesson</span>
+              <ChevronRight size={16} />
+            </button>
+          </div>
+
+          {/* AI Assistant Quick Drawer */}
+          {aiAssistantOpen && (
+            <div className="mc-ai-helper-drawer">
+              <div className="ai-drawer-header">
+                <div className="ai-bot-title">
+                  <Sparkles size={18} className="ai-brand-svg" />
+                  <strong>IgnitoAssist AI Learning Coach</strong>
+                </div>
+                <button type="button" className="btn-close-ai" onClick={() => setAiAssistantOpen(false)}>×</button>
+              </div>
+              <p className="ai-greeting-msg">
+                "Hello! I am your AI learning assistant for <strong>{currentCourse.title}</strong>. Ask me anything about this video or summarize key topics!"
+              </p>
+              <div className="ai-input-wrap">
+                <input type="text" placeholder="Ask a question about this lecture..." />
+                <button type="button" className="btn-ai-send"><Send size={15} /></button>
+              </div>
+            </div>
+          )}
+
+          {/* 5. Discussion & Community Forum */}
+          <div className="mc-discussion-forum-card">
             
-            {/* 1. Learning Progress Card */}
-            <div className="mc-watch-progress-box">
-              <div className="progress-box-left">
-                <h3 className="progress-box-title">Learning Progress</h3>
-                <div className="progress-stats-visual-row">
-                  
-                  {/* Radial Progress Circle */}
-                  <div className="circular-progress-wrap">
-                    <svg viewBox="0 0 36 36" className="circular-chart blue">
-                      <path 
-                        className="circle-bg" 
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                      />
-                      <path 
-                        className="circle-bar" 
-                        strokeDasharray="33, 100" 
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                      />
-                      <text x="18" y="20.35" className="percentage-text">33%</text>
-                    </svg>
-                  </div>
-
-                  <div className="progress-text-info">
-                    <strong>Overall Progress</strong>
-                    <span>1 of 3 Modules Completed</span>
-                  </div>
-
-                </div>
-              </div>
-
-              {/* 3D Learning Illustration Badge */}
-              <div className="progress-avatar-illustration">
-                <img 
-                  src={watchNowImg} 
-                  alt="Learning Progress Illustration" 
-                  className="progress-watchnow-img"
-                />
-              </div>
-            </div>
-
-            {/* 2. Learning Videos (e-Tutorial) Playlist Card */}
-            <div className="mc-watch-playlist-box">
-              <div className="playlist-header-row">
-                <h3 className="playlist-title">Learning Videos (e-Tutorial)</h3>
-                <span className="playlist-count-label">{activeLectureIdx + 1}/{playlist.length} Videos</span>
-              </div>
-              <div className="playlist-progress-bar-line">
-                <div className="playlist-progress-bar-fill" style={{ width: '20%' }} />
-              </div>
-
-              {/* 5 Video Lecture List Items */}
-              <div className="playlist-items-stack">
-                {playlist.map((item, idx) => {
-                  const isActive = idx === activeLectureIdx;
-                  return (
-                    <div 
-                      key={item.id} 
-                      className={`playlist-item-row ${isActive ? 'active' : ''}`}
-                      onClick={() => {
-                        setActiveLectureIdx(idx);
-                        setIsPlaying(true);
-                      }}
-                    >
-                      <div className="playlist-item-left">
-                        <div className={`playlist-play-icon-circle ${isActive ? 'active' : ''}`}>
-                          <Play size={12} className="play-svg-arrow" />
-                        </div>
-                        <span className="playlist-item-name">{item.title}</span>
-                      </div>
-
-                      <div className="playlist-item-right">
-                        <span className="playlist-item-pct">{item.progress}%</span>
-                        <div className="playlist-lock-icon" title="Lecture Protected">
-                          <Gift size={13} className="gift-red-icon" />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 3. Learning Text e-Content Expandable Card */}
-            <div className="mc-watch-expandable-card">
-              <div 
-                className="expandable-header"
-                onClick={() => setIsTextContentOpen(!isTextContentOpen)}
+            {/* Forum Navigation Tabs */}
+            <div className="mc-forum-nav-tabs">
+              <button 
+                type="button" 
+                className={`forum-tab-btn ${activeForumTab === 'group' ? 'active' : ''}`}
+                onClick={() => setActiveForumTab('group')}
               >
-                <div className="expandable-left">
-                  <BookOpen size={16} className="exp-icon" />
-                  <span>Learning Text e-Content</span>
-                </div>
-                <ChevronDown size={16} className={`chevron-exp ${isTextContentOpen ? 'open' : ''}`} />
-              </div>
+                <Users size={16} />
+                <span>Group Discussion</span>
+              </button>
 
-              {isTextContentOpen && (
-                <div className="expandable-content-body">
-                  <p>Read full downloadable transcript notes, summary checklists, and self-guided relaxation scripts for {activeLecture.title}.</p>
-                </div>
-              )}
+              <button 
+                type="button" 
+                className={`forum-tab-btn ${activeForumTab === 'professor' ? 'active' : ''}`}
+                onClick={() => setActiveForumTab('professor')}
+              >
+                <GraduationCap size={16} />
+                <span>Ask Professor</span>
+              </button>
             </div>
 
-            {/* 4. Quiz Card */}
-            <div className="mc-watch-action-card quiz-card">
-              <div className="action-card-top">
-                <div className="action-icon-circle purple">
-                  <HelpCircle size={16} />
-                </div>
-                <div className="action-title-block">
-                  <h4>Quiz</h4>
-                  <p className="quiz-eligibility-warning">
-                    Please watch at least 95% of the video to unlock the quiz. Eligible on 27-09-2026
-                  </p>
-                </div>
-              </div>
+            {/* Discussion Header */}
+            <div className="forum-main-header-row">
+              <h3 className="forum-section-title">Discussion</h3>
+              <button 
+                type="button" 
+                className="btn-ask-question-cta"
+                onClick={() => setShowAskModal(true)}
+              >
+                <MessageSquare size={15} />
+                <span>Ask Question</span>
+              </button>
             </div>
 
-            {/* 5. Claim your Certificate Card */}
-            <div className="mc-watch-action-card cert-card">
-              <div className="action-card-top">
-                <div className="action-icon-circle blue">
-                  <Award size={16} />
+            {/* Student Question Card */}
+            <div className="forum-question-item">
+              <div className="question-author-meta">
+                <div className="author-avatar-circle">
+                  <img 
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" 
+                    alt="Anjali Sharma" 
+                  />
                 </div>
-                <div className="action-title-block">
-                  <h4>Claim your Certificate</h4>
-                  <span className="action-sub-text">1 Assessment</span>
+                <div className="author-name-stamp">
+                  <h4>Anjali Sharma</h4>
+                  <span className="post-timestamp">Posted recently</span>
                 </div>
               </div>
-            </div>
 
-            {/* 6. Download Notes Card */}
-            <div className="mc-watch-action-card download-card">
-              <div className="action-card-top">
-                <div className="action-icon-circle purple">
-                  <Download size={16} />
-                </div>
-                <div className="action-title-block">
-                  <h4>Download Notes</h4>
-                  <span className="action-sub-text">PDF</span>
+              <div className="question-body-heading">
+                <h3>How can I best apply these concepts in my organization?</h3>
+              </div>
+
+              <div className="question-actions-row">
+                <button 
+                  type="button" 
+                  className={`btn-like-forum ${hasLikedQ.q1 ? 'liked' : ''}`}
+                  onClick={() => handleToggleLike('q1')}
+                >
+                  <ThumbsUp size={14} />
+                  <span>Liked ({likedQuestions.q1})</span>
+                </button>
+
+                <button type="button" className="btn-reply-forum">
+                  <MessageSquare size={14} />
+                  <span>Reply</span>
+                </button>
+
+                <div className="forum-reply-count-badge">
+                  <MessageSquare size={13} />
+                  <span>1 reply</span>
                 </div>
               </div>
+
+              {/* Nested Instructor / Professor Answer Box */}
+              <div className="forum-nested-professor-reply">
+                <div className="prof-author-meta">
+                  <div className="prof-avatar-circle">
+                    <img 
+                      src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80" 
+                      alt="Instructor" 
+                    />
+                  </div>
+                  <div className="prof-name-stamp">
+                    <h4>{currentCourse.instructor || 'Lead Professor'}</h4>
+                    <span className="prof-timestamp">Verified Faculty</span>
+                  </div>
+                </div>
+
+                <p className="prof-reply-text">
+                  Make sure to practice regular application through case studies and downloadable resources. Consistent review and participation in the MCQ assessments solidify practical competence.
+                </p>
+              </div>
+
             </div>
 
           </div>
 
         </div>
 
-        {/* Ask Question Popup Modal */}
+        {/* ======================================================
+            RIGHT COLUMN: LEARNING PROGRESS & VIDEO PLAYLIST SIDEBAR
+            ====================================================== */}
+        <div className="mc-main-right-sidebar mc-watch-right-sidebar">
+          
+          {/* 1. Learning Progress Card */}
+          <div className="mc-watch-progress-box">
+            <div className="progress-box-left">
+              <h3 className="progress-box-title">Learning Progress</h3>
+              <div className="progress-stats-visual-row">
+                
+                {/* Radial Progress Circle */}
+                <div className="circular-progress-wrap">
+                  <svg viewBox="0 0 36 36" className="circular-chart blue">
+                    <path 
+                      className="circle-bg" 
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                    />
+                    <path 
+                      className="circle-bar" 
+                      strokeDasharray="33, 100" 
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                    />
+                    <text x="18" y="20.35" className="percentage-text">33%</text>
+                  </svg>
+                </div>
+
+                <div className="progress-text-info">
+                  <strong>Overall Progress</strong>
+                  <span>{activeLectureIdx + 1} of {currentPlaylist.length} Topics</span>
+                </div>
+
+              </div>
+            </div>
+
+            {/* 3D Learning Illustration Badge */}
+            <div className="progress-avatar-illustration">
+              <img 
+                src={watchNowImg} 
+                alt="Learning Progress Illustration" 
+                className="progress-watchnow-img"
+              />
+            </div>
+          </div>
+
+          {/* 2. Learning Videos (e-Tutorial) Dynamic Playlist Card */}
+          <div className="mc-watch-playlist-box">
+            <div className="playlist-header-row">
+              <h3 className="playlist-title">Learning Videos ({currentPlaylist.length} Topics)</h3>
+              <span className="playlist-count-label">{activeLectureIdx + 1}/{currentPlaylist.length} Topics</span>
+            </div>
+            <div className="playlist-progress-bar-line">
+              <div 
+                className="playlist-progress-bar-fill" 
+                style={{ width: `${Math.round(((activeLectureIdx + 1) / currentPlaylist.length) * 100)}%` }} 
+              />
+            </div>
+
+            {/* Video Lecture List Items */}
+            <div className="playlist-items-stack">
+              {currentPlaylist.map((item, idx) => {
+                const isActive = idx === activeLectureIdx;
+                return (
+                  <div 
+                    key={item.id} 
+                    className={`playlist-item-row ${isActive ? 'active' : ''}`}
+                    onClick={() => {
+                      setActiveLectureIdx(idx);
+                      setIsPlaying(true);
+                    }}
+                  >
+                    <div className="playlist-item-left">
+                      <div className={`playlist-play-icon-circle ${isActive ? 'active' : ''}`}>
+                        <Play size={12} className="play-svg-arrow" />
+                      </div>
+                      <span className="playlist-item-name">{item.title}</span>
+                    </div>
+
+                    <div className="playlist-item-right">
+                      <span className="playlist-item-pct">{item.duration}</span>
+                      <div className="playlist-lock-icon" title="Verified Topic">
+                        <CheckCircle2 size={13} className="check-green-icon" />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. Learning Text e-Content Expandable Card */}
+          <div className="mc-watch-expandable-card">
+            <div 
+              className="expandable-header"
+              onClick={() => setIsTextContentOpen(!isTextContentOpen)}
+            >
+              <div className="expandable-left">
+                <BookOpen size={16} className="exp-icon" />
+                <span>Learning Text e-Content</span>
+              </div>
+              <ChevronDown size={16} className={`chevron-exp ${isTextContentOpen ? 'open' : ''}`} />
+            </div>
+
+            {isTextContentOpen && (
+              <div className="expandable-content-body">
+                <p>Read full downloadable transcript notes, summary checklists, and topic guide for <strong>{activeLecture.title}</strong>.</p>
+                {activeLecture?.topicPdf && (
+                  <a 
+                    href={activeLecture.topicPdf} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="download-topic-pdf-btn"
+                  >
+                    <FileText size={15} />
+                    <span>Open Topic PDF Notes</span>
+                    <ExternalLink size={13} />
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 4. Download Notes & Documents Card */}
+          <div className="mc-watch-action-card download-card">
+            <div className="action-card-top">
+              <div className="action-icon-circle purple">
+                <Download size={16} />
+              </div>
+              <div className="action-title-block">
+                <h4>Download Resources</h4>
+                <span className="action-sub-text">
+                  {downloadDocuments.length > 0 ? `${downloadDocuments.length} Documents Available` : 'Course Resource Documents'}
+                </span>
+              </div>
+            </div>
+
+            {/* Dynamic Document Links */}
+            {downloadDocuments.length > 0 && (
+              <div className="download-docs-list-tray">
+                {downloadDocuments.map((doc) => (
+                  <a
+                    key={doc.id}
+                    href={doc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="download-doc-item-link"
+                    download
+                  >
+                    <FileText size={14} className="doc-icon-blue" />
+                    <span className="doc-item-filename">{doc.fileName}</span>
+                    <Download size={13} className="doc-dl-icon" />
+                  </a>
+                ))}
+              </div>
+            )}
+
+            {activeLecture?.topicPdf && (
+              <div className="download-docs-list-tray">
+                <a
+                  href={activeLecture.topicPdf}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="download-doc-item-link active-topic-pdf"
+                  download
+                >
+                  <BookOpen size={14} className="doc-icon-purple" />
+                  <span className="doc-item-filename">{activeLecture.title} (Topic PDF)</span>
+                  <Download size={13} className="doc-dl-icon" />
+                </a>
+              </div>
+            )}
+          </div>
+
+          {/* 5. Quiz Card */}
+          <div className="mc-watch-action-card quiz-card">
+            <div className="action-card-top">
+              <div className="action-icon-circle purple">
+                <HelpCircle size={16} />
+              </div>
+              <div className="action-title-block">
+                <h4>Quiz</h4>
+                <p className="quiz-eligibility-warning">
+                  Complete video topics to unlock the quiz and assessment benchmarking.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 6. Claim your Certificate Card */}
+          <div className="mc-watch-action-card cert-card">
+            <div className="action-card-top">
+              <div className="action-icon-circle blue">
+                <Award size={16} />
+              </div>
+              <div className="action-title-block">
+                <h4>Claim your Certificate</h4>
+                <span className="action-sub-text">1 Final Assessment</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* Ask Question Popup Modal */}
       {showAskModal && (
         <div className="mc-modal-overlay" onClick={() => setShowAskModal(false)}>
           <div className="mc-modal-card" onClick={e => e.stopPropagation()}>

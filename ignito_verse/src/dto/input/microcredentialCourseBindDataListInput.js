@@ -7,7 +7,9 @@ export function buildMicrocredentialCourseBindDataListInput(
     searchInput = "",
     streamId = 0,
     isAllSelect = false,
-    selectedLevelIds = ''
+    selectedLevelIds = '',
+    microcredentialCourseId = 0
+
 ) {
   
   return {
@@ -24,7 +26,8 @@ export function buildMicrocredentialCourseBindDataListInput(
         searchInput: searchInput,
         streamId: streamId,
         isAllSelect: isAllSelect,
-        selectedLevelIds: selectedLevelIds
+        selectedLevelIds: selectedLevelIds,
+        microcredentialCourseId: microcredentialCourseId
     })
   };
 }

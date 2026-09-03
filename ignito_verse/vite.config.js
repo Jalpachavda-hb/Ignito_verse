@@ -16,6 +16,16 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/TestimonialImage': {
+        target: 'https://verse.ignitolearn.com',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/HomeTrustedLogoImage': {
+        target: 'https://verse.ignitolearn.com',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 })

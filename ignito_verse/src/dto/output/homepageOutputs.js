@@ -17,18 +17,20 @@ export function formatImageUrl(path) {
     return path;
   }
 
-  const customBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || import.meta.env.VITE_API_BASE_URL;
-  if (customBaseUrl && (customBaseUrl.startsWith('http://') || customBaseUrl.startsWith('https://'))) {
-    try {
-      const urlObj = new URL(customBaseUrl);
-      return `${urlObj.origin}/${path.replace(/^\//, '')}`;
-    } catch {
-      return `${customBaseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
-    }
-  }
+  // Strip leading slash or accidental /api/ prefix from image relative path
+  const cleanPath = path.replace(/^\//, '').replace(/^api\//, '');
 
-  // Relative path fallback (e.g. served via Vite proxy for /HomePageImages or same-origin domain)
-  return path.startsWith('/') ? path : `/${path}`;
+  const customBase = import.meta.env.VITE_IMAGE_BASE_URL;
+  const baseUrl = (customBase && (customBase.startsWith('http://') || customBase.startsWith('https://')))
+    ? customBase
+    : 'https://verse.ignitolearn.com';
+
+  try {
+    const urlObj = new URL(baseUrl);
+    return `${urlObj.origin}/${cleanPath}`;
+  } catch {
+    return `${baseUrl.replace(/\/$/, '')}/${cleanPath}`;
+  }
 }
 
 /**

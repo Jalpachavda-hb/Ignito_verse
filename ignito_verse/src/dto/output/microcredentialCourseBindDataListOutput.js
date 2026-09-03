@@ -37,3 +37,6 @@ export function parsemicrocredentialCourseBindDataListErrorOutput(rawJson = {}, 
         rawData: rawJson
     };
 }
+
+export const parseMicrocredentialCourseBindDataListOutput = parsemicrocredentialCourseBindDataListOutput;
+export const parseMicrocredentialCourseBindDataListErrorOutput = parsemicrocredentialCourseBindDataListErrorOutput;

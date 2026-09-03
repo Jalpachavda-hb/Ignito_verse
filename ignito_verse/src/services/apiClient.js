@@ -12,9 +12,10 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
  * @returns {Promise<{ data: any, status: number, statusText: string, ok: boolean, headers: Headers }>}
  */
 export async function apiClient(endpoint, options = {}) {
+  const cleanEndpoint = endpoint.replace(/^\/?api\//i, '').replace(/^\//, '');
   const url = endpoint.startsWith('http://') || endpoint.startsWith('https://')
     ? endpoint
-    : `${BASE_URL.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
+    : `${BASE_URL.replace(/\/$/, '')}/${cleanEndpoint}`;
 
   const defaultHeaders = {
     'Content-Type': 'application/json',
@@ -27,10 +28,18 @@ export async function apiClient(endpoint, options = {}) {
     ...options.headers,
   };
 
-  // Get token if saved in localStorage
-  const token = localStorage.getItem('ignito_auth_token');
-  if (token && !headers['Authorization']) {
-    headers['Authorization'] = `Bearer ${token}`;
+  // Only attach token if endpoint is not explicitly marked public and header not disabled
+  const isExplicitPublic = options.isPublic === true || options.requiresAuth === false;
+  if (!isExplicitPublic && !headers['Authorization']) {
+    const token = localStorage.getItem('ignito_auth_token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
+  // Remove Authorization if explicitly set to null/false/empty
+  if (headers['Authorization'] === null || headers['Authorization'] === false || headers['Authorization'] === '') {
+    delete headers['Authorization'];
   }
 
   try {
@@ -45,6 +54,11 @@ export async function apiClient(endpoint, options = {}) {
       data = await res.json();
     } else {
       data = await res.text();
+    }
+
+    // Auto-clean stale token if 401 occurs on protected endpoint
+    if (res.status === 401) {
+      localStorage.removeItem('ignito_auth_token');
     }
 
     return {

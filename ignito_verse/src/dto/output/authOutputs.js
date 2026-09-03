@@ -43,7 +43,7 @@ export function parseLoginOutput(rawJson = {}, status = 200) {
       avatar
     },
     message: rawJson?.message || 'Login successful'
-  };
+  };                       
 }
 
 /**

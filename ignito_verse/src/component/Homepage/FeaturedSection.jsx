@@ -1,99 +1,70 @@
-// ignitoverse: Section 4 - Featured Microcredentials Preview (Identical to Reference SS)
-import React from 'react';
+// ignitoverse: Section 4 - Featured Microcredentials Preview (Dynamic API Data)
+import React, { useState, useEffect } from 'react';
 import { Edit3, ChevronRight } from 'lucide-react';
 import arrowImg from '../../assets/home/Arrow.webp';
 import noriBg01 from '../../assets/home/nori-background-01.png';
-import noriPost2 from '../../assets/home/nori-post-2-720x720.webp';
 import CourseCard from '../Microcredentials/CourseCard';
+import { getMicrocredentialCourseBindDataList } from '../../services/microcredentialService';
+import { formatImageUrl } from '../../dto/output/homepageOutputs';
 
 export default function FeaturedSection({
   onViewDetails = () => { },
   onViewAll = () => { },
   onPreviewVideo = () => { }
 }) {
-  // 8 courses exactly matching the reference screenshot
-  const coursesList = [
-    {
-      id: 'mc-sales-potential',
-      title: 'Maximizing Your Sales Potential Tips',
-      level: 'Intermediate',
-      priceBadge: 'FREE',
-      thumbnail: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&auto=format&fit=crop&q=80',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do',
-      lecturesCount: 0,
-      studentsCount: 0,
-    },
-    {
-      id: 'mc-web-dev',
-      title: 'Web Development Fully Complete Guideline',
-      level: 'Beginner',
-      priceBadge: 'FREE',
-      thumbnail: noriPost2 || 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&auto=format&fit=crop&q=80',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do',
-      lecturesCount: 0,
-      studentsCount: 0,
-    },
-    {
-      id: 'mc-social-media',
-      title: 'Strategic Social Media & Marketing Policy',
-      level: 'Expert',
-      priceBadge: 'FREE',
-      thumbnail: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&auto=format&fit=crop&q=80',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do',
-      lecturesCount: 0,
-      studentsCount: 0,
-    },
-    {
-      id: 'mc-business-everything',
-      title: 'Everything You Need to Know About Business',
-      level: 'All',
-      priceBadge: 'FREE',
-      thumbnail: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop&q=80',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do',
-      lecturesCount: 0,
-      studentsCount: 0,
-    },
-    {
-      id: 'mc-data-science',
-      title: 'Data Science: Complete Data Science',
-      level: 'Beginner',
-      priceBadge: '$29',
-      thumbnail: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do',
-      lecturesCount: 0,
-      studentsCount: 0,
-    },
-    {
-      id: 'mc-sales-admin',
-      title: 'Sales Administrator Certification Practice',
-      level: 'Intermediate',
-      priceBadge: 'FREE',
-      thumbnail: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=800&auto=format&fit=crop&q=80',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do',
-      lecturesCount: 0,
-      studentsCount: 0,
-    },
-    {
-      id: 'mc-diversity-building',
-      title: 'Exploring Diversity Building Learning',
-      level: 'Expert',
-      priceBadge: 'FREE',
-      thumbnail: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&auto=format&fit=crop&q=80',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do',
-      lecturesCount: 0,
-      studentsCount: 0,
-    },
-    {
-      id: 'mc-spanish-language',
-      title: 'Spanish Language: Beginner to Fluent',
-      level: 'All',
-      priceBadge: 'FREE',
-      thumbnail: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&auto=format&fit=crop&q=80',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do',
-      lecturesCount: 0,
-      studentsCount: 0,
-    }
-  ];
+  const [coursesList, setCoursesList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    // Fetch maximum 8 courses for the homepage preview
+    getMicrocredentialCourseBindDataList(1, 8, 'UpdatedOn', 'DESC', 0, '', 0, false, '')
+      .then((res) => {
+        if (!isMounted) return;
+
+        if (res && res.success && Array.isArray(res.microcredentialCourseBindDatas) && res.microcredentialCourseBindDatas.length > 0) {
+          const mapped = res.microcredentialCourseBindDatas.slice(0, 8).map((item, idx) => {
+            const rawImg = item.microcredentialCourseIntroImage || item.introImage || item.image || item.thumbnail || '';
+            const formattedThumb = rawImg ? formatImageUrl(rawImg) : '';
+            return {
+              id: item.encryptedMicrocredentialCourseId || item.microcredentialCourseId || `mc-${idx}`,
+              courseId: item.microcredentialCourseId,
+              encryptedId: item.encryptedMicrocredentialCourseId,
+              title: item.microcredentialCourseName || 'Microcredential Course',
+              level: item.courseLevel ? item.courseLevel.split('(')[0].trim() : 'All Levels',
+              fullLevel: item.courseLevel || 'Intermediate',
+              price: item.microcredentialCoursePrice,
+              rating: item.microcredentialCourseRating || 5,
+              duration: item.microcredentialCourseDuration || '',
+              streamName: item.streamName || '',
+              language: item.language || 'ENGLISH',
+              thumbnail: formattedThumb,
+              description: item.courseDescription || item.description || `Master ${item.microcredentialCourseName || 'essential skills'} with industry-verified microcredentials.`,
+              lecturesCount: item.lecturesCount || item.lectureCount || 0,
+              studentsCount: item.studentsCount || item.studentCount || 0,
+              rawData: item
+            };
+          });
+
+          setCoursesList(mapped);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch featured courses for homepage:', err);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (!loading && coursesList.length === 0) {
+    return null;
+  }
 
   return (
     <section className="featured-courses-section" id="featured-microcredentials">
@@ -126,8 +97,8 @@ export default function FeaturedSection({
           </p>
         </div>
 
-        {/* 8 Course Cards in 4-Column Grid (414px x 482px model) */}
-        <div className="featured-courses-grid">
+        {/* Course Cards Grid (Up to 8 cards, centered when < 4 courses) */}
+        <div className={`featured-courses-grid ${coursesList.length < 4 ? `centered-count-${coursesList.length}` : ''}`}>
           {coursesList.map((course) => (
             <CourseCard
               key={course.id}

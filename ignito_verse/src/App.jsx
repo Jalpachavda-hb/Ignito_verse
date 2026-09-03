@@ -163,7 +163,10 @@ export default function App() {
             onBack={() => handleNavigate('microcredentials')}
             onBookDemo={() => setIsDemoModalOpen(true)}
             onPreviewVideo={handleOpenVideoPreview}
-            onWatchCourse={() => handleNavigate('watch')}
+            onWatchCourse={(courseObj) => {
+              if (courseObj) setSelectedCourse(courseObj);
+              handleNavigate('watch');
+            }}
           />
         )}
 

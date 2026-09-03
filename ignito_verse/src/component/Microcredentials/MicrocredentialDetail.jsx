@@ -1,25 +1,25 @@
-// ignitoverse: Executive Microcredential Detail Page with Luxury Floating Island Tabs & Enhanced Content UI
-import React, { useState } from 'react';
-import { 
-  Clock, 
-  Star, 
-  CheckCircle2, 
-  PlayCircle, 
-  ShieldCheck, 
-  FileText, 
-  Award, 
-  Building2, 
-  Layers, 
-  BookOpen, 
-  Globe, 
-  DollarSign, 
-  FileCheck, 
-  GraduationCap, 
-  Sparkles, 
-  Check, 
-  Play, 
-  ThumbsUp, 
-  Share2, 
+// ignitoverse: Executive Microcredential Detail Page with Luxury Floating Island Tabs & Dynamic API Data
+import React, { useState, useEffect } from 'react';
+import {
+  Clock,
+  Star,
+  CheckCircle2,
+  PlayCircle,
+  ShieldCheck,
+  FileText,
+  Award,
+  Building2,
+  Layers,
+  BookOpen,
+  Globe,
+  DollarSign,
+  FileCheck,
+  GraduationCap,
+  Sparkles,
+  Check,
+  Play,
+  ThumbsUp,
+  Share2,
   Calendar,
   Brain,
   ChevronRight,
@@ -27,19 +27,71 @@ import {
   Activity
 } from 'lucide-react';
 import userCertificateImg from '../../assets/e47782ae-798b-479b-99e6-428b70bf4a7a.png';
+import { getMicrocredentialCourseBindDataList } from '../../services/microcredentialService';
+import { formatImageUrl } from '../../dto/output/homepageOutputs';
 
-export default function MicrocredentialDetail({ 
-  course, 
-  onBack = () => {}, 
-  onBookDemo = () => {}, 
-  onPreviewVideo = () => {},
-  onWatchCourse = () => {}
+export default function MicrocredentialDetail({
+  course: initialCourse,
+  onBack = () => { },
+  onBookDemo = () => { },
+  onPreviewVideo = () => { },
+  onWatchCourse = () => { }
 }) {
-  const [activeTab, setActiveTab] = useState('content');
+  const [courseData, setCourseData] = useState(initialCourse || {});
+  const [activeTab, setActiveTab] = useState('info');
   const [likedReviews, setLikedReviews] = useState({ review1: 2 });
   const [hasLiked, setHasLiked] = useState({ review1: false });
 
-  if (!course) return null;
+  // Fetch full dynamic details from API using microcredentialCourseId
+  useEffect(() => {
+    const rawCourseId = initialCourse?.microcredentialCourseId || initialCourse?.courseId || initialCourse?.id;
+    const numericCourseId = Number(rawCourseId) || (typeof rawCourseId === 'number' ? rawCourseId : 0);
+
+    if (numericCourseId > 0) {
+      getMicrocredentialCourseBindDataList(1, 10, 'UpdatedOn', 'DESC', 0, '', 0, false, '', numericCourseId)
+        .then((res) => {
+          if (res && res.success && Array.isArray(res.microcredentialCourseBindDatas) && res.microcredentialCourseBindDatas.length > 0) {
+            const apiItem = res.microcredentialCourseBindDatas[0];
+            const rawImg = apiItem.microcredentialCourseIntroImage || apiItem.introImage || apiItem.image || apiItem.thumbnail || '';
+            const formattedThumb = rawImg ? formatImageUrl(rawImg) : (initialCourse?.thumbnail || '');
+
+            setCourseData((prev) => ({
+              ...(prev || {}),
+              ...apiItem,
+              id: apiItem.encryptedMicrocredentialCourseId || apiItem.microcredentialCourseId,
+              microcredentialCourseId: apiItem.microcredentialCourseId,
+              encryptedMicrocredentialCourseId: apiItem.encryptedMicrocredentialCourseId,
+              title: apiItem.microcredentialCourseName || prev?.title || 'Microcredential Course',
+              courseLevel: apiItem.courseLevel || prev?.courseLevel || 'Intermediate (Level 2)',
+              level: apiItem.courseLevel ? apiItem.courseLevel.split('(')[0].trim() : (prev?.level || 'Intermediate'),
+              fullLevel: apiItem.courseLevel || prev?.fullLevel || 'Intermediate (Level 2)',
+              category: apiItem.streamName || prev?.category || 'Management',
+              streamName: apiItem.streamName || prev?.streamName || 'Management',
+              price: apiItem.microcredentialCoursePrice !== undefined ? apiItem.microcredentialCoursePrice : prev?.price,
+              rating: apiItem.microcredentialCourseRating || prev?.rating || 5,
+              duration: apiItem.microcredentialCourseDuration || prev?.duration || '3 Month',
+              thumbnail: formattedThumb,
+              language: apiItem.language || prev?.language || 'ENGLISH',
+              updatedOn: apiItem.updatedOn || prev?.updatedOn || 'August 2026',
+              lastUpdated: apiItem.updatedOn || prev?.lastUpdated || 'August 2026',
+              professorName: apiItem.professorName || prev?.professorName || '',
+              certificateName: apiItem.microcredentialCourseName || prev?.certificateName || 'STRESS MANAGEMENT',
+              about: apiItem.courseAbout || apiItem.about || prev?.about || `This course introduces comprehensive ${apiItem.microcredentialCourseName || 'learning'} methods and practical tools to develop skills and achieve institutional goals in digital education.`,
+              description: apiItem.courseDescription || apiItem.description || prev?.description || `${apiItem.microcredentialCourseName || 'This program'} focuses on developing core competencies and industry-verified expertise through practical exercises.`
+            }));
+          }
+        })
+        .catch((err) => {
+          console.error('Error loading dynamic course detail:', err);
+        });
+    } else if (initialCourse) {
+      setCourseData(initialCourse);
+    }
+  }, [initialCourse]);
+
+  const course = courseData || initialCourse || {};
+
+  if (!course || (!course.title && !course.microcredentialCourseName)) return null;
 
   const handleToggleLike = (reviewId) => {
     setHasLiked(prev => ({
@@ -100,12 +152,12 @@ export default function MicrocredentialDetail({
   return (
     <div className="mc-detail-page-wrapper">
       <div className="mc-fluid-container mc-main-two-col-grid">
-        
+
         {/* ========================================================
             LEFT COLUMN (TABS NAVIGATION & CONTENT)
             ======================================================== */}
         <div className="mc-main-left-column">
-          
+
           {/* 1. Breadcrumbs */}
           <div className="mc-breadcrumb-section">
             <div className="mc-breadcrumb-trail">
@@ -113,7 +165,7 @@ export default function MicrocredentialDetail({
               <span className="breadcrumb-divider">›</span>
               <span className="breadcrumb-item linkable" onClick={onBack}>Microcredentials</span>
               <span className="breadcrumb-divider">›</span>
-              <span className="breadcrumb-item active">{course.title}</span>
+              <span className="breadcrumb-item active">{course.title || course.microcredentialCourseName}</span>
             </div>
           </div>
 
@@ -122,22 +174,22 @@ export default function MicrocredentialDetail({
             <div className="mc-category-pill-wrapper">
               <span className="mc-category-capsule-tag">
                 <span className="mc-cat-indicator-dot" />
-                {course.category ? course.category.toUpperCase() : 'MANAGEMENT'}
+                {(course.streamName || course.category || 'MANAGEMENT').toUpperCase()}
               </span>
             </div>
 
-            <h1 className="mc-hero-title">{course.title}</h1>
+            <h1 className="mc-hero-title">{course.title || course.microcredentialCourseName}</h1>
 
             {/* Quick Metadata Stats */}
             <div className="mc-hero-stats-row">
               <div className="mc-rating-badge">
                 <Star size={14} className="star-icon-filled" />
-                <span className="rating-score">{course.rating || '4.5'}</span>
+                <span className="rating-score">{course.rating || course.microcredentialCourseRating || '5'}</span>
               </div>
               <div className="mc-stat-divider" />
               <div className="mc-stat-item">
                 <Calendar size={15} className="mc-stat-icon" />
-                <span>Last updated {course.lastUpdated || 'August 2026'}</span>
+                <span>Last updated {course.updatedOn || course.lastUpdated || 'August 2026'}</span>
               </div>
             </div>
           </div>
@@ -145,10 +197,10 @@ export default function MicrocredentialDetail({
           {/* 3. LUXURY FLOATING ISLAND TAB BAR */}
           <div className="mc-island-tabs-container">
             <div className="mc-island-tabs-track">
-              
+
               {/* Tab 1: Info */}
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className={`mc-island-tab-item ${activeTab === 'info' ? 'active' : ''}`}
                 onClick={() => setActiveTab('info')}
               >
@@ -161,8 +213,8 @@ export default function MicrocredentialDetail({
               </button>
 
               {/* Tab 2: Content */}
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className={`mc-island-tab-item ${activeTab === 'content' ? 'active' : ''}`}
                 onClick={() => setActiveTab('content')}
               >
@@ -176,8 +228,8 @@ export default function MicrocredentialDetail({
               </button>
 
               {/* Tab 3: Reviews */}
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className={`mc-island-tab-item ${activeTab === 'reviews' ? 'active' : ''}`}
                 onClick={() => setActiveTab('reviews')}
               >
@@ -191,8 +243,8 @@ export default function MicrocredentialDetail({
               </button>
 
               {/* Tab 4: Certificate */}
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className={`mc-island-tab-item ${activeTab === 'certificate' ? 'active' : ''}`}
                 onClick={() => setActiveTab('certificate')}
               >
@@ -218,7 +270,7 @@ export default function MicrocredentialDetail({
 
           {/* 4. ACTIVE TAB CONTENT PANES */}
           <div className="mc-single-page-sections-stack">
-            
+
             {/* TAB 1: MICROCREDENTIAL INFORMATION */}
             {activeTab === 'info' && (
               <>
@@ -275,7 +327,7 @@ export default function MicrocredentialDetail({
             {/* TAB 2: MICROCREDENTIALS CONTENT (LUXURY EXECUTIVE DESIGN) */}
             {activeTab === 'content' && (
               <div className="mc-content-luxury-pane">
-                
+
                 {/* Content Header Banner Card */}
                 <div className="mc-content-banner-card">
                   <div className="banner-left-brand">
@@ -292,8 +344,8 @@ export default function MicrocredentialDetail({
                 {/* Detailed Module Topics List */}
                 <div className="mc-luxury-modules-list">
                   {detailedTopics.map((item) => (
-                    <div 
-                      key={item.id} 
+                    <div
+                      key={item.id}
                       className="mc-module-luxury-card"
                     >
                       <div className="module-card-left">
@@ -325,7 +377,7 @@ export default function MicrocredentialDetail({
 
                 {/* Rating Summary & Star Breakdown Grid */}
                 <div className="mc-reviews-breakdown-grid">
-                  
+
                   {/* Big Score Box */}
                   <div className="mc-big-score-box">
                     <div className="score-number-display">5.0</div>
@@ -362,9 +414,9 @@ export default function MicrocredentialDetail({
                 <div className="mc-student-review-item">
                   <div className="student-review-author-row">
                     <div className="student-avatar-wrap">
-                      <img 
-                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" 
-                        alt="Anjali Sharma" 
+                      <img
+                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
+                        alt="Anjali Sharma"
                       />
                     </div>
                     <div className="student-author-info">
@@ -385,8 +437,8 @@ export default function MicrocredentialDetail({
                   </p>
 
                   <div className="student-review-action-row">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className={`btn-like-review ${hasLiked.review1 ? 'liked' : ''}`}
                       onClick={() => handleToggleLike('review1')}
                     >
@@ -419,9 +471,9 @@ export default function MicrocredentialDetail({
 
                 {/* Realistic Certificate Image Preview */}
                 <div className="mc-certificate-image-canvas">
-                  <img 
-                    src={course.certificateImage || userCertificateImg} 
-                    alt={`${course.title} Certificate of Completion`} 
+                  <img
+                    src={course.certificateImage || userCertificateImg}
+                    alt={`${course.title} Certificate of Completion`}
                     className="mc-certificate-preview-photo"
                   />
                 </div>
@@ -433,8 +485,8 @@ export default function MicrocredentialDetail({
                     <span>Click to verify this accredited certificate authenticity on blockchain</span>
                   </div>
                   <div className="verify-strip-actions">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="btn-cert-share"
                       onClick={() => {
                         if (navigator.clipboard) {
@@ -459,24 +511,23 @@ export default function MicrocredentialDetail({
             RIGHT COLUMN: STICKY SIDEBAR
             ======================================================== */}
         <div className="mc-main-right-sidebar">
-          
+
           {/* 1. Video Player Preview Cover Card */}
           <div className="mc-sidebar-video-box">
-            <div 
+            <div
               className="mc-video-cover-container"
-              onClick={onWatchCourse}
+              onClick={() => onWatchCourse(course)}
               title="Click to start watching"
             >
-              <img 
-                src={course.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80'} 
-                alt={course.title} 
+              <img
+                src={course.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80'}
+                alt={course.title}
                 className="mc-video-cover-img"
               />
               <div className="mc-video-overlay-tint">
-                <div className="mc-video-brand-tag">NISPAHD</div>
+                <div className="mc-video-brand-tag">{(course.streamName || course.category || 'IGNITOVERSE').toUpperCase()}</div>
                 <div className="mc-video-headline-text">
-                  <h3>6 RELAXATION TECHNIQUES</h3>
-                  <p>TO RELIEVE STRESS</p>
+                  <h3>{(course.title || course.microcredentialCourseName || 'MICROCREDENTIAL COURSE').toUpperCase()}</h3>
                 </div>
                 <div className="mc-glass-play-button">
                   <Play size={24} className="play-icon-triangle" />
@@ -486,10 +537,10 @@ export default function MicrocredentialDetail({
 
             {/* Watch Video Dedicated Button */}
             <div className="mc-sidebar-watch-btn-wrapper">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="mc-btn-watch-full"
-                onClick={onWatchCourse}
+                onClick={() => onWatchCourse(course)}
               >
                 <PlayCircle size={18} />
                 <span>Watch Video</span>
@@ -500,9 +551,9 @@ export default function MicrocredentialDetail({
           {/* 2. "Microcredential Includes" Table Card */}
           <div className="mc-sidebar-card-box">
             <h3 className="mc-sidebar-card-title">Microcredential Includes</h3>
-            
+
             <div className="mc-includes-table">
-              
+
               {/* Row 1: Level */}
               <div className="mc-include-row">
                 <div className="include-key-cell">
@@ -510,7 +561,7 @@ export default function MicrocredentialDetail({
                   <span>Level</span>
                 </div>
                 <div className="include-val-cell">
-                  {course.level || 'Beginner (Level 1)'}
+                  {course.courseLevel || course.fullLevel || course.level || 'Beginner (Level 1)'}
                 </div>
               </div>
 
@@ -532,7 +583,7 @@ export default function MicrocredentialDetail({
                   <span>Microcredential Fees</span>
                 </div>
                 <div className="include-val-cell bold-price">
-                  ₹ 5000/-
+                  {course.price !== undefined && course.price !== null ? `₹ ${Number(course.price).toLocaleString()}/-` : '₹ 5000/-'}
                 </div>
               </div>
 
@@ -554,7 +605,7 @@ export default function MicrocredentialDetail({
                   <span>Language</span>
                 </div>
                 <div className="include-val-cell">
-                  {course.language || 'English'}
+                  {course.language || 'ENGLISH'}
                 </div>
               </div>
 
@@ -565,7 +616,7 @@ export default function MicrocredentialDetail({
                   <span>Prerequisites</span>
                 </div>
                 <div className="include-val-cell">
-                  {course.prerequisites ? 'None' : 'None'}
+                  {course.prerequisites || 'None'}
                 </div>
               </div>
 
@@ -598,7 +649,7 @@ export default function MicrocredentialDetail({
                   <span>Certificate Name</span>
                 </div>
                 <div className="include-val-cell cert-title-val">
-                  {course.certificateName || course.title}
+                  {course.certificateName || course.title || course.microcredentialCourseName}
                 </div>
               </div>
 
@@ -609,7 +660,7 @@ export default function MicrocredentialDetail({
                   <span>Exam Format</span>
                 </div>
                 <div className="include-val-cell">
-                  {course.examDetails?.format || 'Multiple Choice'}
+                  {course.examDetails?.format || course.examFormat || 'Multiple Choice'}
                 </div>
               </div>
 
@@ -620,7 +671,7 @@ export default function MicrocredentialDetail({
                   <span>Certification Skill Level</span>
                 </div>
                 <div className="include-val-cell">
-                  {course.skillLevel || 'Beginner-Friendly'}
+                  {course.skillLevel || course.courseLevel || course.level || 'Beginner-Friendly'}
                 </div>
               </div>
 

@@ -16,7 +16,8 @@ export async function getMicrocredentialCourseBindDataList(
     searchInput = "",
     streamId = 0,
     isAllSelect = false,
-    selectedLevelIds = ''
+    selectedLevelIds = '',
+    microcredentialCourseId = 0 
 ) {
     debugger;
     try {
@@ -29,7 +30,8 @@ export async function getMicrocredentialCourseBindDataList(
             searchInput,
             streamId,
             isAllSelect,
-            selectedLevelIds
+            selectedLevelIds,
+            microcredentialCourseId 
         );
         const response = await apiClient('api/IgnitoMicroCredencialAPI/MicrocredentialCourseBindDataList', {
             method: 'POST',

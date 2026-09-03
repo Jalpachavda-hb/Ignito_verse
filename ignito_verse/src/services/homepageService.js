@@ -26,6 +26,7 @@ export async function getHomePageData() {
     // 2. Execute API Call via Centralized API Client
     const response = await apiClient('/HomePageAPI/HomePage', {
       method: 'POST',
+      isPublic: true,
       headers: inputDto.headers,
       body: inputDto.body
     });
@@ -48,6 +49,7 @@ export async function getHomeTrustedLogoList() {
          const inputDto = buildHomeTrustedLogoListInput();
          const response = await apiClient('/HomePageAPI/HomeTrustedLogoList', {
             method: 'POST',
+            isPublic: true,
             headers: inputDto.headers,
             body: inputDto.body
          });
@@ -67,6 +69,7 @@ export async function getTestimonialReviewLists() {
         const inputDto = bindTestimonialReviewInput();
         const response = await apiClient('/HomePageAPI/GetTestimonialReviewList', {
             method: 'POST',
+            isPublic: true,
             headers: inputDto.headers,
             body: inputDto.body
         });

@@ -3,8 +3,7 @@ import {
   ArrowRight,
   Users,
   BookOpen,
-  Building2,
-  Plus
+  Building2
 } from 'lucide-react';
 import heroBgImg from '../../assets/home/hero-bg.png';
 import heroForegroundImg from '../../assets/home/hero-image.png';
@@ -59,7 +58,7 @@ export default function Herosetion({
       setLoading(true);
       getHomePageData()
         .then((res) => {
-          debugger;
+         
           if (res && res.success) {
             const sectionData = res.homePageSectionDataList?.[0] || null;
             const bindData = res.homePageDataBindList?.[0] || null;
@@ -161,56 +160,6 @@ export default function Herosetion({
               e.target.src = heroForegroundImg;
             }}
           />
-
-          {/* Floating Course Completion 93% Metric Card */}
-          <div className="floating-metric-card" aria-label="Course Completion Statistics">
-            <div className="metric-card-header">
-              <div className="metric-plus-icon">
-                <Plus size={15} strokeWidth={3} />
-              </div>
-              <span className="metric-header-title">{completionLabel}</span>
-            </div>
-
-            <div className="metric-stat-body">
-              <h2 className="metric-stat-number">{completionRate}</h2>
-              <p className="metric-stat-sub">{completionSubtext}</p>
-            </div>
-
-            {/* SVG Sparkline Wave Chart */}
-            <div className="metric-chart-container">
-              <svg
-                viewBox="0 0 160 48"
-                className="metric-sparkline-svg"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <defs>
-                  <linearGradient id="chartFillGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2563eb" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-
-                {/* Gradient Area under curve */}
-                <path
-                  d="M 5 36 Q 25 36 35 28 T 65 30 T 95 18 T 125 24 T 152 10 L 152 48 L 5 48 Z"
-                  fill="url(#chartFillGradient)"
-                />
-
-                {/* Curve Line */}
-                <path
-                  d="M 5 36 Q 25 36 35 28 T 65 30 T 95 18 T 125 24 T 152 10"
-                  stroke="#2563eb"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-
-                {/* Dot at end of curve */}
-                <circle cx="152" cy="10" r="3.5" fill="#2563eb" />
-              </svg>
-            </div>
-          </div>
         </div>
       </div>
     </section>

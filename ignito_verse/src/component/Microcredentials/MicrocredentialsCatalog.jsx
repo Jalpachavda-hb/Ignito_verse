@@ -1,228 +1,179 @@
-// ignitoverse: Clean Enterprise Microcredentials Catalog Page (Clean Background & Homepage Card UI)
-import React, { useState, useMemo } from 'react';
-import { ChevronDown, BookOpen } from 'lucide-react';
-import { microcredentialsData } from '../../data/microcredentials';
+// ignitoverse: Executive Certified Microcredentials Catalog Page
+import React, { useState, useEffect, useMemo } from 'react';
+import { Award, BookOpen } from 'lucide-react';
 import CourseCard from './CourseCard';
-
-// Catalog dataset with enriched card metadata
-const catalogCoursesList = [
-  ...microcredentialsData,
-  {
-    id: 'mc-sales-potential',
-    title: 'Maximizing Your Sales Potential Tips',
-    level: 'Intermediate',
-    category: 'Non-Technical',
-    domain: 'Business & Sales',
-    thumbnail: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&auto=format&fit=crop&q=80',
-    description: 'Master enterprise B2B deal negotiation, consultative sales pipelines, objection handling, and executive closing strategies.',
-    lecturesCount: 14,
-    studentsCount: '11,400',
-  },
-  {
-    id: 'mc-web-dev',
-    title: 'Web Development Fully Complete Guideline',
-    level: 'Beginner',
-    category: 'Technical',
-    domain: 'Software Engineering',
-    thumbnail: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&auto=format&fit=crop&q=80',
-    description: 'Comprehensive guideline to modern HTML5, CSS3, modern JavaScript ES6+, React architecture, and responsive layouts.',
-    lecturesCount: 22,
-    studentsCount: '34,200',
-  },
-  {
-    id: 'mc-social-media',
-    title: 'Strategic Social Media & Marketing Policy',
-    level: 'Expert',
-    category: 'Non-Technical',
-    domain: 'Marketing & Brand',
-    thumbnail: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&auto=format&fit=crop&q=80',
-    description: 'Establish enterprise brand authority, compliance guardrails, crisis PR workflows, and data-driven marketing attribution.',
-    lecturesCount: 16,
-    studentsCount: '8,900',
-  },
-  {
-    id: 'mc-business-everything',
-    title: 'Everything You Need to Know About Business',
-    level: 'All Levels',
-    category: 'Non-Technical',
-    domain: 'Business & Management',
-    thumbnail: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop&q=80',
-    description: 'Fundamental cross-functional enterprise literacy covering P&L finance, operational efficiency, HR strategy, and agile delivery.',
-    lecturesCount: 18,
-    studentsCount: '21,500',
-  },
-  {
-    id: 'mc-data-science',
-    title: 'Data Science: Complete Data Science',
-    level: 'Beginner',
-    category: 'Technical',
-    domain: 'Data & AI',
-    thumbnail: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80',
-    description: 'End-to-end data science foundations covering exploratory data analysis, statistical modeling, machine learning, and business storytelling.',
-    lecturesCount: 26,
-    studentsCount: '29,800',
-  },
-  {
-    id: 'mc-sales-admin',
-    title: 'Sales Administrator Certification Practice',
-    level: 'Intermediate',
-    category: 'Non-Technical',
-    domain: 'Business & Sales',
-    thumbnail: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=800&auto=format&fit=crop&q=80',
-    description: 'CRM data hygiene, sales workflow automation, territory forecasting, and proctored certification exam practice scenarios.',
-    lecturesCount: 12,
-    studentsCount: '7,300',
-  },
-  {
-    id: 'mc-diversity-building',
-    title: 'Exploring Diversity Building Learning',
-    level: 'Expert',
-    category: 'Non-Technical',
-    domain: 'Executive Leadership',
-    thumbnail: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&auto=format&fit=crop&q=80',
-    description: 'Strategic DEI framework implementation, unconscious bias mitigation, and psychological safety in multinational engineering teams.',
-    lecturesCount: 15,
-    studentsCount: '12,600',
-  },
-  {
-    id: 'mc-spanish-language',
-    title: 'Spanish Language: Beginner to Fluent',
-    level: 'All Levels',
-    category: 'Non-Technical',
-    domain: 'Language & Culture',
-    thumbnail: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&auto=format&fit=crop&q=80',
-    description: 'Corporate Spanish communication for global teams, international business vocabulary, and cultural etiquette.',
-    lecturesCount: 20,
-    studentsCount: '15,100',
-  }
-];
+import { getMicrocredentialCourseBindDataList } from '../../services/microcredentialService';
+import { formatImageUrl } from '../../dto/output/homepageOutputs';
+import mheroBg from '../../assets/home/mhero-bg.png';
 
 export default function MicrocredentialsCatalog({
   onViewDetails = () => { },
-  onPreviewVideo = () => { },
-  initialCategory = 'All'
+  onPreviewVideo = () => { }
 }) {
+  const [coursesList, setCoursesList] = useState([]);
+  const [levelList, setLevelList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedLevel, setSelectedLevel] = useState('All');
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
 
-  const categoriesList = useMemo(() => {
-    const categoriesSet = new Set();
-    categoriesSet.add('All');
-    categoriesSet.add('Technical');
-    categoriesSet.add('Non-Technical');
-    catalogCoursesList.forEach(course => {
-      if (course.domain) categoriesSet.add(course.domain);
-    });
-    return Array.from(categoriesSet);
+  useEffect(() => {
+    let isMounted = true;
+    getMicrocredentialCourseBindDataList(1, 50, 'UpdatedOn', 'DESC', 0, '', 0, false, '')
+      .then((res) => {
+        if (!isMounted) return;
+        if (res && res.success) {
+          if (Array.isArray(res.courseLevelCount)) {
+            setLevelList(res.courseLevelCount);
+          }
+
+          if (Array.isArray(res.microcredentialCourseBindDatas) && res.microcredentialCourseBindDatas.length > 0) {
+            const mapped = res.microcredentialCourseBindDatas.map((item, idx) => {
+              const rawImg = item.microcredentialCourseIntroImage || item.introImage || item.image || item.thumbnail || '';
+              const formattedThumb = rawImg ? formatImageUrl(rawImg) : '';
+              return {
+                id: item.encryptedMicrocredentialCourseId || item.microcredentialCourseId || `mc-${idx}`,
+                courseId: item.microcredentialCourseId,
+                microcredentialCourseId: item.microcredentialCourseId,
+                encryptedId: item.encryptedMicrocredentialCourseId,
+                encryptedMicrocredentialCourseId: item.encryptedMicrocredentialCourseId,
+                title: item.microcredentialCourseName || 'Microcredential Course',
+                level: item.courseLevel ? item.courseLevel.split('(')[0].trim() : 'All Levels',
+                courseLevel: item.courseLevel || 'Intermediate',
+                fullLevel: item.courseLevel || 'Intermediate',
+                category: item.streamName || 'Management',
+                streamName: item.streamName || 'Management',
+                domain: item.streamName || 'Management',
+                price: item.microcredentialCoursePrice,
+                rating: item.microcredentialCourseRating || 5,
+                duration: item.microcredentialCourseDuration || '3 Month',
+                language: item.language || 'ENGLISH',
+                thumbnail: formattedThumb,
+                description: item.courseDescription || item.description || `Master ${item.microcredentialCourseName || 'essential skills'} with industry-verified microcredentials.`,
+                lecturesCount: item.lecturesCount || item.lectureCount || 0,
+                studentsCount: item.studentsCount || item.studentCount || 0,
+                rawData: item
+              };
+            });
+            setCoursesList(mapped);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching catalog courses:', err);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
+  // Filter courses by level
   const filteredCourses = useMemo(() => {
-    return catalogCoursesList.filter((course) => {
-      const matchesLevel =
-        selectedLevel === 'All' ||
-        (selectedLevel === 'Beginner' && (course.level?.toLowerCase().includes('beginner') || course.level === 'All' || course.level === 'All Levels')) ||
-        (selectedLevel === 'Intermediate' && course.level?.toLowerCase().includes('intermediate')) ||
-        (selectedLevel === 'Expert' && (course.level?.toLowerCase().includes('expert') || course.level?.toLowerCase().includes('advanced'))) ||
-        (selectedLevel === 'All Levels' && (course.level === 'All' || course.level === 'All Levels'));
+    if (selectedLevel === 'All') return coursesList;
 
-      const matchesCategory =
-        selectedCategory === 'All' ||
-        course.category === selectedCategory ||
-        course.domain === selectedCategory;
-
-      return matchesLevel && matchesCategory;
+    return coursesList.filter((course) => {
+      return (
+        course.courseLevel === selectedLevel ||
+        course.fullLevel === selectedLevel ||
+        course.level === selectedLevel ||
+        (course.courseLevel && course.courseLevel.toLowerCase().includes(selectedLevel.toLowerCase()))
+      );
     });
-  }, [selectedLevel, selectedCategory]);
+  }, [coursesList, selectedLevel]);
 
   return (
-    <div className="catalog-page-container">
-      <div className="catalog-clean-container">
-        {/* Section Header */}
-        <div className="section-header-center">
-          <h1 className="section-main-title">
-            Explore Certified <span className="b2b-blue-text">Microcredentials</span>
-          </h1>
+    <div className="catalog-luxury-wrapper">
+      {/* 1. Full Width Hero Header Banner with mhero-bg.png spanning edge-to-edge */}
+      <section 
+        className="catalog-hero-full-width-banner"
+        style={{ backgroundImage: `url(${mheroBg})` }}
+      >
+        <div className="catalog-hero-full-inner-container">
+          <div className="catalog-hero-content-left">
+            <div className="catalog-hero-cert-badge">
+              <Award size={15} className="cert-badge-ribbon-icon" />
+              <span>CERTIFIED MICROCREDENTIALS</span>
+            </div>
 
-          <p className="section-subtitle">
-            Industry-aligned technical architectures and professional leadership masterclasses with proctored MCQ benchmarking.
-          </p>
+            <h1 className="catalog-hero-main-title">
+              Master High-Impact Skills <br />
+              <span className="purple-gradient-text">Industry-Recognized Credentials</span>
+            </h1>
+
+            <p className="catalog-hero-desc">
+              Accelerate your professional growth and organizational leadership through specialized, accredited microcredentials designed with enterprise partners.
+            </p>
+          </div>
         </div>
+      </section>
 
-        {/* Clean 2-Filter Bar (Skill Level & Category) */}
-        <div className="catalog-two-filters-bar">
-          {/* Filter 1: Skill Level */}
-          <div className="catalog-filter-select-wrapper">
-            <label className="filter-select-label">Skill Level</label>
-            <div className="custom-select-box">
-              <select
-                value={selectedLevel}
-                onChange={(e) => setSelectedLevel(e.target.value)}
-                aria-label="Filter by Skill Level"
+      {/* 2. Main Content Section (Tabs & Course Cards) */}
+      <section className="catalog-main-body-section">
+        <div className="catalog-body-container">
+          {/* Filter Pills Tabs Bar (All Programs, Level 1, Level 2) */}
+          <div className="catalog-tabs-bar-row">
+            <div className="catalog-tabs-pills-list">
+              <button
+                type="button"
+                className={`catalog-pill-btn ${selectedLevel === 'All' ? 'active' : ''}`}
+                onClick={() => setSelectedLevel('All')}
               >
-                <option value="All">All Skill Levels</option>
-                <option value="Beginner">Beginner</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Expert">Expert / Advanced</option>
-                <option value="All Levels">All Levels</option>
-              </select>
-              <ChevronDown size={16} className="select-chevron-icon" />
+                <span>All Programs</span>
+                <span className="pill-count-circle">{coursesList.length}</span>
+              </button>
+
+              {levelList.map((lvl) => (
+                <button
+                  key={lvl.levelValue ?? lvl.levelName}
+                  type="button"
+                  className={`catalog-pill-btn ${selectedLevel === lvl.levelName ? 'active' : ''}`}
+                  onClick={() => setSelectedLevel(lvl.levelName)}
+                >
+                  <span>{lvl.levelName}</span>
+                  {lvl.courseCount && (
+                    <span className="pill-count-circle">{lvl.courseCount}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <div className="catalog-showing-counter">
+              Showing <strong>{filteredCourses.length}</strong> {filteredCourses.length === 1 ? 'Program' : 'Programs'}
             </div>
           </div>
 
-          {/* Filter 2: Category */}
-          <div className="catalog-filter-select-wrapper">
-            <label className="filter-select-label">Category</label>
-            <div className="custom-select-box">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                aria-label="Filter by Category"
-              >
-                <option value="All">All Categories</option>
-                <option value="Technical">Technical</option>
-                <option value="Non-Technical">Non-Technical</option>
-                {categoriesList
-                  .filter(cat => !['All', 'Technical', 'Non-Technical'].includes(cat))
-                  .map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))
-                }
-              </select>
-              <ChevronDown size={16} className="select-chevron-icon" />
+          {/* Course Cards Grid */}
+          {filteredCourses.length > 0 ? (
+            <div className={`catalog-exact-grid ${filteredCourses.length < 3 ? `grid-count-${filteredCourses.length}` : ''}`}>
+              {filteredCourses.map((course) => (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  onViewDetails={onViewDetails}
+                  onPreviewVideo={onPreviewVideo}
+                />
+              ))}
             </div>
-          </div>
+          ) : (
+            <div className="catalog-empty-state">
+              <BookOpen size={48} className="empty-icon" />
+              <h3>No courses found</h3>
+              <p>Try selecting a different skill level or view all programs.</p>
+              <button
+                type="button"
+                className="btn-reset-empty"
+                onClick={() => {
+                  setSelectedLevel('All');
+                }}
+              >
+                Reset All Filters
+              </button>
+            </div>
+          )}
         </div>
-
-        {/* 4-Column Course Cards Grid (Exact Homepage Card UI & Grid) */}
-        {filteredCourses.length > 0 ? (
-          <div className="featured-courses-grid catalog-courses-clean-grid">
-            {filteredCourses.map((course) => (
-              <CourseCard
-                key={course.id}
-                course={course}
-                onViewDetails={onViewDetails}
-                onPreviewVideo={onPreviewVideo}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="catalog-empty-state">
-            <BookOpen size={48} className="empty-icon" />
-            <h3>No courses found for selected filters</h3>
-            <p>Try selecting a different skill level or category.</p>
-            <button
-              type="button"
-              className="btn-reset-empty"
-              onClick={() => {
-                setSelectedLevel('All');
-                setSelectedCategory('All');
-              }}
-            >
-              Reset Filters
-            </button>
-          </div>
-        )}
-      </div>
+      </section>
     </div>
   );
 }
