@@ -28,6 +28,11 @@ export async function apiClient(endpoint, options = {}) {
     ...options.headers,
   };
 
+  // If request body is FormData, browser must set Content-Type header with boundary
+  if (options.body instanceof FormData) {
+    delete headers['Content-Type'];
+  }
+
   // Only attach token if endpoint is not explicitly marked public and header not disabled
   const isExplicitPublic = options.isPublic === true || options.requiresAuth === false;
   if (!isExplicitPublic && !headers['Authorization']) {
@@ -50,7 +55,9 @@ export async function apiClient(endpoint, options = {}) {
 
     let data = null;
     const contentType = res.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
+    if (options.responseType === 'blob' || (contentType && (contentType.includes('spreadsheetml') || contentType.includes('octet-stream') || contentType.includes('application/vnd')))) {
+      data = await res.blob();
+    } else if (contentType && contentType.includes('application/json')) {
       data = await res.json();
     } else {
       data = await res.text();
