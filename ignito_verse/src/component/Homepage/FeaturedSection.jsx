@@ -97,8 +97,8 @@ export default function FeaturedSection({
           </p>
         </div>
 
-        {/* Course Cards Grid (Up to 8 cards, centered when < 4 courses) */}
-        <div className={`featured-courses-grid ${coursesList.length < 4 ? `centered-count-${coursesList.length}` : ''}`}>
+        {/* Course Cards Grid (4 cards in one row) */}
+        <div className="featured-courses-grid">
           {coursesList.map((course) => (
             <CourseCard
               key={course.id}

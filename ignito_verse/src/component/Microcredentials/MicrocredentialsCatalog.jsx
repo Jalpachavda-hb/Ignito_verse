@@ -1,14 +1,15 @@
 // ignitoverse: Executive Certified Microcredentials Catalog Page
 import React, { useState, useEffect, useMemo } from 'react';
-import { Award, BookOpen } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import CourseCard from './CourseCard';
 import { getMicrocredentialCourseBindDataList } from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
-import mheroBg from '../../assets/home/mhero-bg.png';
+import mcbg from '../../assets/mcbg.jpg';
 
 export default function MicrocredentialsCatalog({
   onViewDetails = () => { },
-  onPreviewVideo = () => { }
+  onPreviewVideo = () => { },
+  onNavigate = () => { }
 }) {
   const [coursesList, setCoursesList] = useState([]);
   const [levelList, setLevelList] = useState([]);
@@ -84,36 +85,35 @@ export default function MicrocredentialsCatalog({
   }, [coursesList, selectedLevel]);
 
   return (
-    <div className="catalog-luxury-wrapper">
-      {/* 1. Full Width Hero Header Banner with mhero-bg.png spanning edge-to-edge */}
+    <div className="mc-catalog-page-wrapper">
+      
+      {/* 1. Full-Width Hero Header Banner with mcbg.jpg */}
       <section 
-        className="catalog-hero-full-width-banner"
-        style={{ backgroundImage: `url(${mheroBg})` }}
+        className="mc-catalog-hero-banner"
+        style={{ backgroundImage: `url(${mcbg})` }}
       >
-        <div className="catalog-hero-full-inner-container">
-          <div className="catalog-hero-content-left">
-            <div className="catalog-hero-cert-badge">
-              <Award size={15} className="cert-badge-ribbon-icon" />
-              <span>CERTIFIED MICROCREDENTIALS</span>
-            </div>
-
-            <h1 className="catalog-hero-main-title">
-              Master High-Impact Skills <br />
-              <span className="purple-gradient-text">Industry-Recognized Credentials</span>
-            </h1>
-
-            <p className="catalog-hero-desc">
-              Accelerate your professional growth and organizational leadership through specialized, accredited microcredentials designed with enterprise partners.
-            </p>
+        <div className="mc-catalog-hero-overlay" />
+        <div className="mc-catalog-hero-inner">
+          {/* Breadcrumb Trail */}
+          <div className="mc-catalog-hero-breadcrumb">
+            <span className="crumb-link" onClick={() => onNavigate('home')}>HOME</span>
+            <span className="crumb-slash">/</span>
+            <span className="crumb-current">MICROCREDENTIALS</span>
           </div>
+
+          {/* Hero Centered Heading */}
+          <h1 className="mc-catalog-hero-heading">
+            Microcredentials
+          </h1>
         </div>
       </section>
 
-      {/* 2. Main Content Section (Tabs & Course Cards) */}
-      <section className="catalog-main-body-section">
-        <div className="catalog-body-container">
-          {/* Filter Pills Tabs Bar (All Programs, Level 1, Level 2) */}
-          <div className="catalog-tabs-bar-row">
+      {/* 2. Main Content Section in Curved Top Container */}
+      <section className="mc-catalog-curved-sheet">
+        <div className="mc-catalog-container">
+          
+          {/* Top Row: Results Counter & Level Tabs */}
+          <div className="mc-catalog-header-bar">
             <div className="catalog-tabs-pills-list">
               <button
                 type="button"
@@ -139,14 +139,14 @@ export default function MicrocredentialsCatalog({
               ))}
             </div>
 
-            <div className="catalog-showing-counter">
-              Showing <strong>{filteredCourses.length}</strong> {filteredCourses.length === 1 ? 'Program' : 'Programs'}
+            <div className="mc-catalog-count-text">
+              We found <strong>{filteredCourses.length}</strong> courses available for you
             </div>
           </div>
 
-          {/* Course Cards Grid */}
+          {/* 3. Full-Width 4-Column Course Cards Grid */}
           {filteredCourses.length > 0 ? (
-            <div className={`catalog-exact-grid ${filteredCourses.length < 3 ? `grid-count-${filteredCourses.length}` : ''}`}>
+            <div className="catalog-courses-clean-grid">
               {filteredCourses.map((course) => (
                 <CourseCard
                   key={course.id}
@@ -172,8 +172,10 @@ export default function MicrocredentialsCatalog({
               </button>
             </div>
           )}
+
         </div>
       </section>
+
     </div>
   );
 }

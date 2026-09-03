@@ -8442,14 +8442,54 @@ a {
   color: #ffffff;
 }
 
+.anti-skip-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
 .theater-video-frame {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 21 / 9;
   background: #000000;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+/* YouTube Custom API Frame & Shield */
+.theater-yt-api-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: #000000;
+}
+
+.theater-yt-api-wrapper iframe,
+#yt-custom-player-container {
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Prevents YouTube native UI clicks & overlays */
+  border: none;
+}
+
+/* Transparent Interaction Shield: handles custom play/pause clicks safely */
+.theater-interaction-shield {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: transparent;
   cursor: pointer;
 }
 
@@ -8457,29 +8497,71 @@ a {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  cursor: pointer;
 }
 
 .theater-glass-center-play {
   position: absolute;
-  width: 68px;
-  height: 68px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #00385E;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.45);
+  box-shadow: 0 8px 30px rgba(0, 56, 94, 0.5);
   transition: transform 0.25s ease;
+  z-index: 15;
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.25);
 }
 
 .theater-video-frame:hover .theater-glass-center-play {
-  transform: scale(1.12);
+  transform: scale(1.1);
+  background: #002b48;
 }
 
 .play-triangle-fill {
   fill: #ffffff;
   margin-left: 4px;
+}
+
+/* Anti-Skip Warning Notification Toast */
+.anti-skip-warning-toast {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid #ef4444;
+  color: #ffffff;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 25;
+  animation: slideToastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.anti-skip-warning-toast svg {
+  color: #ef4444;
+}
+
+@keyframes slideToastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 /* Bottom Controls Bar */
@@ -8490,13 +8572,15 @@ a {
   padding: 12px 20px;
   background: #081120;
   color: #ffffff;
+  position: relative;
+  z-index: 20;
 }
 
 .btn-ctrl-play,
 .btn-ctrl-vol,
 .btn-ctrl-share,
 .btn-ctrl-settings,
-.btn-ctrl-expand {
+.btn-ctrl-fullscreen {
   background: none;
   border: none;
   color: #ffffff;
@@ -8504,40 +8588,102 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
-  opacity: 0.85;
-  transition: opacity 0.2s ease;
+  padding: 6px;
+  opacity: 0.88;
+  transition: all 0.2s ease;
+  border-radius: 6px;
 }
 
 .btn-ctrl-play:hover,
 .btn-ctrl-vol:hover,
 .btn-ctrl-share:hover,
 .btn-ctrl-settings:hover,
-.btn-ctrl-expand:hover {
+.btn-ctrl-fullscreen:hover {
   opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  color: #38bdf8;
 }
 
-.theater-progress-track {
+/* Custom Anti-Skip Protected Progress Bar */
+.theater-custom-progress-track {
   flex: 1;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.2);
+  height: 6px;
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 999px;
   cursor: pointer;
   position: relative;
-  overflow: hidden;
+  transition: height 0.2s ease;
 }
 
-.theater-progress-fill {
+.theater-custom-progress-track:hover {
+  height: 8px;
+}
+
+/* Unlocked Watched Portion */
+.theater-progress-unlocked {
+  position: absolute;
+  top: 0;
+  left: 0;
   height: 100%;
-  background: #6366f1;
+  background: rgba(56, 189, 248, 0.35);
   border-radius: 999px;
+  pointer-events: none;
 }
 
-.theater-time-code {
-  font-size: 0.8rem;
+/* Current Playback Head */
+.theater-progress-current {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #00385E 0%, #38bdf8 100%);
+  border-radius: 999px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.theater-progress-scrubber-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+  margin-right: -6px;
+  flex-shrink: 0;
+}
+
+.theater-playback-timeline {
+  font-size: 0.82rem;
   color: #94a3b8;
-  font-weight: 600;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  min-width: 95px;
+  text-align: right;
+}
+
+.btn-ai-tutor-summon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f5f3ff;
+  border: 1.5px solid #ddd6fe;
+  color: #6d28d9;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.92rem;
+  font-weight: 800;
+  padding: 8px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(109, 40, 217, 0.08);
+}
+
+.btn-ai-tutor-summon:hover {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+  transform: translateY(-1px);
 }
 
 /* Lesson Navigation Bar */
@@ -9388,6 +9534,246 @@ a {
 }
 
 /* ========================================================
+   SECTION 4: MODERN COURSE CARD (EXACT REFERENCE DESIGN)
+   ======================================================== */
+.featured-courses-section {
+  position: relative;
+  background: #ffffff;
+  padding: 80px 0 100px;
+  margin: 0 20px;
+  width: calc(100% - 40px);
+  border-radius: 32px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.featured-full-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0 clamp(20px, 3.5vw, 60px);
+  box-sizing: border-box;
+}
+
+.nori-header-bg-watermark {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 860px;
+  height: 240px;
+  background-size: contain;
+  background-position: center top;
+  background-repeat: no-repeat;
+  opacity: 0.95;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.doodle-arrow-left {
+  position: absolute;
+  top: 40px;
+  left: clamp(20px, 6vw, 100px);
+  width: 72px;
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.doodle-arrow-left img {
+  width: 100%;
+}
+
+.featured-header-simple {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 48px;
+  position: relative;
+  z-index: 3;
+}
+
+.section-popular-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ede9fe;
+  color: #6d28d9;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 999px;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+
+.badge-sparkle-icon {
+  color: #7c3aed;
+}
+
+.featured-courses-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+
+/* Modern Rounded Course Card */
+.nori-modern-course-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 16px;
+  border: 1px solid #eef2f6;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.nori-modern-course-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 36px rgba(0, 56, 94, 0.1);
+  border-color: #cbd5e1;
+}
+
+/* Card Thumbnail Container */
+.modern-card-thumb-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.modern-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 18px;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+.nori-modern-course-card:hover .modern-card-img {
+  transform: scale(1.04);
+}
+
+/* Card Body */
+.modern-card-body {
+  padding: 4px 4px 4px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.modern-card-title {
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color 0.2s ease;
+}
+
+.nori-modern-course-card:hover .modern-card-title {
+  color: #00385E;
+}
+
+.modern-card-description {
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Bottom Course Level Row */
+.modern-card-bottom-row {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.modern-card-level-bottom-tag {
+  display: inline-flex;
+  align-items: center;
+  background: #ede9fe;
+  color: #6d28d9;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 4px 14px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+.featured-bottom-floating-action {
+  text-align: center;
+  margin-top: 40px;
+  position: relative;
+  z-index: 2;
+}
+
+.btn-browse-more-courses {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #00385E;
+  color: #ffffff;
+  border: none;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.92rem;
+  font-weight: 800;
+  padding: 12px 28px;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 56, 94, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-browse-more-courses:hover {
+  background: #002540;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 1200px) {
+  .featured-courses-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .featured-courses-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 580px) {
+  .featured-courses-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================================
    SECTION 21: CLEAN MICROCREDENTIALS CATALOG PAGE
    ======================================================== */
 .catalog-page-container {
@@ -9493,7 +9879,118 @@ a {
 
 /* 4-Column Grid */
 .catalog-courses-clean-grid {
-  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 26px;
+  width: 100%;
+}
+
+/* ==========================================================================
+   IGNITOVERSE: MICROCREDENTIALS CATALOG HERO BANNER & CLEAN 4-COL GRID
+   ========================================================================== */
+.mc-catalog-page-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  background: #ffffff;
+  overflow-x: hidden;
+}
+
+.mc-catalog-hero-banner {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+  background-image: url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1600&auto=format&fit=crop&q=80');
+  background-size: cover;
+  background-position: center 30%;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px 100px;
+  box-sizing: border-box;
+}
+
+.mc-catalog-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10, 25, 47, 0.72) 0%, rgba(0, 56, 94, 0.88) 100%);
+  z-index: 1;
+}
+
+.mc-catalog-hero-inner {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.mc-catalog-hero-breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+.crumb-link {
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.crumb-link:hover {
+  color: #ffffff;
+}
+
+.crumb-slash {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.crumb-current {
+  color: #ffffff;
+}
+
+.mc-catalog-hero-heading {
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.mc-catalog-curved-sheet {
+  position: relative;
+  z-index: 10;
+  margin-top: -60px;
+  background: #ffffff;
+  border-radius: 44px 44px 0 0;
+  padding: 40px 0 80px;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.05);
+}
+
+.mc-catalog-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 60px);
+  box-sizing: border-box;
+}
+
+.mc-catalog-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
 }
 
 /* Empty State */

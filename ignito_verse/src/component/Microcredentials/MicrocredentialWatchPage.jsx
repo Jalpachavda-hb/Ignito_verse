@@ -32,46 +32,33 @@ import {
   ShieldCheck,
   BookOpen,
   ArrowLeft,
-  ExternalLink
+  ExternalLink,
+  AlertCircle
 } from 'lucide-react';
 import userCertificateImg from '../../assets/e47782ae-798b-479b-99e6-428b70bf4a7a.png';
 import watchNowImg from '../../assets/watchnow.png';
-import { getMicroCourseTopicDetail } from '../../services/microcredentialService';
+import { getMicroCourseTopicDetail, microCredencialWatchvideoAddUpdate } from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
 
-// Helpers for Video duration & YouTube Embed formatting
+// Helpers for Video duration & YouTube formatting
 function formatDuration(sec) {
-  if (!sec) return '10:00';
+  if (!sec) return '00:00';
   if (typeof sec === 'string' && sec.includes(':')) return sec;
-  const totalSec = Number(sec) || 0;
+  const totalSec = Math.floor(Number(sec) || 0);
   const mins = Math.floor(totalSec / 60);
   const secs = Math.floor(totalSec % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+function getYouTubeVideoId(url) {
+  if (!url) return '';
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  return match ? match[1] : '';
 }
 
 function isYouTubeUrl(url) {
   if (!url) return false;
   return url.includes('youtube.com') || url.includes('youtu.be');
-}
-
-function getEmbedVideoUrl(url) {
-  if (!url) return '';
-  try {
-    if (url.includes('youtube.com/watch?v=')) {
-      const videoId = url.split('v=')[1]?.split('&')[0];
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`;
-    }
-    if (url.includes('youtu.be/')) {
-      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`;
-    }
-    if (url.includes('youtube.com/embed/')) {
-      return url;
-    }
-  } catch (e) {
-    console.error('Error parsing video URL:', e);
-  }
-  return url;
 }
 
 export default function MicrocredentialWatchPage({ 
@@ -102,59 +89,92 @@ export default function MicrocredentialWatchPage({
   const [newQuestionText, setNewQuestionText] = useState('');
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
 
+  // Custom Player & Anti-Skip States
+  const [currentTime, setCurrentTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [maxWatchedTime, setMaxWatchedTime] = useState(0);
+  const [showSkipWarning, setShowSkipWarning] = useState(false);
+
   const videoRef = useRef(null);
+  const theaterCardRef = useRef(null);
+  const ytPlayerRef = useRef(null);
+  const ytContainerRef = useRef(null);
+  const intervalRef = useRef(null);
+  const maxWatchedRef = useRef(0);
+
+  // Load YouTube IFrame API Script globally once
+  useEffect(() => {
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    }
+  }, []);
 
   // Fetch dynamic video topic details and downloadable documents
   useEffect(() => {
     let isMounted = true;
-    const courseId = Number(course?.microcredentialCourseId || course?.courseId || course?.id) || 0;
-    const encryptedId = course?.encryptedMicrocredentialCourseId || course?.encryptedId || '';
-    const studentId = 0; // Guest or logged in student
+    const rawId = course?.microcredentialCourseId || course?.courseId || course?.id || course?.rawData?.microcredentialCourseId;
+    const courseId = Number(rawId) || 2;
+    const encryptedId = course?.encryptedMicrocredentialCourseId || course?.encryptedId || course?.rawData?.encryptedMicrocredentialCourseId || '';
+    
+    let studentId = 0;
+    try {
+      const storedUser = localStorage.getItem('ignito_user') || localStorage.getItem('user');
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        studentId = Number(parsed?.studentId || parsed?.id || parsed?.userId || 0);
+      }
+    } catch (e) {}
 
-    if (courseId > 0 || encryptedId) {
-      getMicroCourseTopicDetail(courseId, studentId, encryptedId)
-        .then((res) => {
-          if (!isMounted) return;
-          if (res && res.success) {
-            if (Array.isArray(res.getMicroCourseTopicDetailList) && res.getMicroCourseTopicDetailList.length > 0) {
-              const mapped = res.getMicroCourseTopicDetailList.map((item, idx) => {
-                const vidUrl = item.topicVideoUrl || '';
-                return {
-                  id: idx + 1,
-                  title: item.videoTitle || `Topic ${idx + 1}`,
-                  code: item.videoTitle || `Unit ${idx + 1}`,
-                  org: course?.streamName || 'IgnitoLearn Microcredentials',
-                  duration: formatDuration(item.videoDuration),
-                  videoDuration: item.videoDuration,
-                  videoEndTime: item.videoEndTime,
-                  videoUrl: vidUrl,
-                  embedUrl: getEmbedVideoUrl(vidUrl),
-                  isYouTube: isYouTubeUrl(vidUrl),
-                  topicPdf: item.topicPdf ? formatImageUrl(item.topicPdf) : '',
-                  progress: idx === 0 ? 33 : 0,
-                  isLocked: false
-                };
-              });
-              setPlaylist(mapped);
-            }
-
-            if (Array.isArray(res.microcredentialStudentDownloadDocumentList)) {
-              const mappedDocs = res.microcredentialStudentDownloadDocumentList.map((doc, dIdx) => ({
-                id: dIdx + 1,
-                fileName: doc.originalFileName || `Resource-${dIdx + 1}.pdf`,
-                url: doc.microcredentialStudentDownloadDocument ? formatImageUrl(doc.microcredentialStudentDownloadDocument) : ''
-              }));
-              setDownloadDocuments(mappedDocs);
-            }
+    getMicroCourseTopicDetail(courseId, studentId, encryptedId)
+      .then((res) => {
+        if (!isMounted) return;
+        if (res && res.success) {
+          if (Array.isArray(res.getMicroCourseTopicDetailList) && res.getMicroCourseTopicDetailList.length > 0) {
+            const mapped = res.getMicroCourseTopicDetailList.map((item, idx) => {
+              const vidUrl = item.topicVideoUrl || '';
+              const ytId = getYouTubeVideoId(vidUrl);
+              const rawDuration = Number(item.videoEndTime) || Number(item.videoDuration) || 0;
+              return {
+                id: item.microCourseTopicId || (idx + 1),
+                title: item.topicName || item.videoTitle || `Topic ${idx + 1}`,
+                videoTitle: item.videoTitle || item.topicName || `Topic ${idx + 1}`,
+                code: `Unit ${idx + 1}`,
+                org: course?.streamName || course?.category || 'Management',
+                duration: formatDuration(rawDuration),
+                videoDuration: Math.round(rawDuration),
+                videoStartTime: Number(item.videoStartTime || 0),
+                videoEndTime: Number(item.videoEndTime || 0),
+                videoUrl: vidUrl,
+                ytId: ytId,
+                isYouTube: Boolean(ytId || isYouTubeUrl(vidUrl)),
+                topicPdf: item.topicPdf ? formatImageUrl(item.topicPdf) : '',
+                progress: 0,
+                isLocked: false,
+                rawData: item
+              };
+            });
+            setPlaylist(mapped);
           }
-        })
-        .catch((err) => {
-          console.error('Error fetching course topic details:', err);
-        })
-        .finally(() => {
-          if (isMounted) setLoading(false);
-        });
-    }
+
+          if (Array.isArray(res.microcredentialStudentDownloadDocumentList)) {
+            const mappedDocs = res.microcredentialStudentDownloadDocumentList.map((doc, dIdx) => ({
+              id: doc.microcredentialStudentDownloadDocumentId || (dIdx + 1),
+              fileName: doc.originalFileName || doc.givenFileName || `Resource-${dIdx + 1}.pdf`,
+              url: doc.microcredentialStudentDownloadDocument ? formatImageUrl(doc.microcredentialStudentDownloadDocument) : ''
+            }));
+            setDownloadDocuments(mappedDocs);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching course topic details:', err);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
 
     return () => {
       isMounted = false;
@@ -165,14 +185,16 @@ export default function MicrocredentialWatchPage({
   const defaultPlaylist = [
     {
       id: 1,
-      title: currentCourse.title || 'INTRODUCTION TO COURSE',
-      code: 'Module 1 - Key Concepts',
-      org: currentCourse.category || 'IgnitoLearn eLearning',
-      duration: '12:48',
-      videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-      embedUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-      isYouTube: false,
-      progress: 33,
+      title: 'Topic-1 Understanding Stress and Mental Relaxation',
+      videoTitle: 'Understanding Stress and Mental Relaxation',
+      code: 'Unit 1',
+      org: currentCourse.category || 'Management',
+      duration: '08:51',
+      videoDuration: 531,
+      videoUrl: 'https://www.youtube.com/watch?v=8ihY2TZXuz0',
+      ytId: '8ihY2TZXuz0',
+      isYouTube: true,
+      progress: 0,
       isLocked: false
     }
   ];
@@ -180,27 +202,214 @@ export default function MicrocredentialWatchPage({
   const currentPlaylist = playlist.length > 0 ? playlist : defaultPlaylist;
   const activeLecture = currentPlaylist[activeLectureIdx] || currentPlaylist[0];
 
+  // Initialize or update custom YouTube Player instance
+  useEffect(() => {
+    let isCancelled = false;
+    let timer = null;
+    setCurrentTime(0);
+    setMaxWatchedTime(0);
+    maxWatchedRef.current = 0;
+    setIsPlaying(false);
+
+    if (!activeLecture.isYouTube || !activeLecture.ytId) {
+      return;
+    }
+
+    const checkAndInit = () => {
+      if (isCancelled) return;
+      if (window.YT && window.YT.Player) {
+        const container = document.getElementById('yt-custom-player-container');
+        if (!container) {
+          timer = setTimeout(checkAndInit, 100);
+          return;
+        }
+
+        try {
+          if (ytPlayerRef.current && typeof ytPlayerRef.current.destroy === 'function') {
+            ytPlayerRef.current.destroy();
+          }
+        } catch (e) {}
+
+        try {
+          ytPlayerRef.current = new window.YT.Player('yt-custom-player-container', {
+            videoId: activeLecture.ytId,
+            playerVars: {
+              autoplay: 0,
+              controls: 0, // Hides default YouTube player controls completely
+              disablekb: 1, // Disables keyboard skipping
+              modestbranding: 1,
+              rel: 0, // Prevents external suggested videos
+              showinfo: 0,
+              iv_load_policy: 3,
+              fs: 0, // Hides native fullscreen button
+              playsinline: 1,
+              enablejsapi: 1,
+              origin: window.location.origin
+            },
+            events: {
+              onReady: (event) => {
+                if (isCancelled) return;
+                const dur = event.target.getDuration();
+                if (dur && dur > 0) setVideoDuration(dur);
+                else if (activeLecture.videoDuration) setVideoDuration(activeLecture.videoDuration);
+              },
+              onStateChange: (event) => {
+                if (isCancelled) return;
+                if (event.data === window.YT.PlayerState.PLAYING) {
+                  setIsPlaying(true);
+                  startProgressTracking();
+                } else {
+                  setIsPlaying(false);
+                  stopProgressTracking();
+                }
+              }
+            }
+          });
+        } catch (err) {
+          console.error('Error creating YouTube Player instance:', err);
+        }
+      } else {
+        timer = setTimeout(checkAndInit, 150);
+      }
+    };
+
+    checkAndInit();
+
+    return () => {
+      isCancelled = true;
+      if (timer) clearTimeout(timer);
+      stopProgressTracking();
+    };
+  }, [activeLectureIdx, activeLecture.ytId, activeLecture.videoUrl]);
+
+  // Anti-skip enforcement & Progress tracking interval
+  const startProgressTracking = () => {
+    stopProgressTracking();
+    intervalRef.current = setInterval(() => {
+      if (activeLecture.isYouTube && ytPlayerRef.current && typeof ytPlayerRef.current.getCurrentTime === 'function') {
+        const curr = ytPlayerRef.current.getCurrentTime() || 0;
+        const dur = ytPlayerRef.current.getDuration() || activeLecture.videoDuration || 0;
+        if (dur > 0) setVideoDuration(dur);
+        setCurrentTime(curr);
+
+        // Anti-Skip: User attempted to skip ahead past watched progress
+        if (curr > maxWatchedRef.current + 2.5) {
+          ytPlayerRef.current.seekTo(maxWatchedRef.current, true);
+          setCurrentTime(maxWatchedRef.current);
+          triggerSkipWarning();
+        } else if (curr > maxWatchedRef.current) {
+          maxWatchedRef.current = curr;
+          setMaxWatchedTime(curr);
+        }
+      }
+    }, 300);
+  };
+
+  const stopProgressTracking = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  const triggerSkipWarning = () => {
+    setShowSkipWarning(true);
+    setTimeout(() => {
+      setShowSkipWarning(false);
+    }, 3000);
+  };
+
+  // Custom Controls Handlers
   const handleTogglePlay = () => {
-    if (!videoRef.current) return;
-    if (isPlaying) {
-      videoRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      videoRef.current.play();
-      setIsPlaying(true);
+    if (activeLecture.isYouTube && ytPlayerRef.current) {
+      if (isPlaying) {
+        if (typeof ytPlayerRef.current.pauseVideo === 'function') ytPlayerRef.current.pauseVideo();
+        setIsPlaying(false);
+      } else {
+        if (typeof ytPlayerRef.current.playVideo === 'function') ytPlayerRef.current.playVideo();
+        setIsPlaying(true);
+      }
+    } else if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        videoRef.current.play();
+        setIsPlaying(true);
+      }
     }
   };
 
   const handleToggleMute = () => {
+    if (activeLecture.isYouTube && ytPlayerRef.current) {
+      if (isMuted) {
+        if (typeof ytPlayerRef.current.unMute === 'function') ytPlayerRef.current.unMute();
+        setIsMuted(false);
+      } else {
+        if (typeof ytPlayerRef.current.mute === 'function') ytPlayerRef.current.mute();
+        setIsMuted(true);
+      }
+    } else if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  // Anti-skip protected seek bar click handler
+  const handleSeek = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const targetPct = Math.max(0, Math.min(1, clickX / rect.width));
+    const targetSeconds = targetPct * (videoDuration || activeLecture.videoDuration || 1);
+
+    // Only allow seeking up to the maximum watched point
+    if (targetSeconds > maxWatchedRef.current + 1) {
+      triggerSkipWarning();
+      // Snap to maximum allowed watched point
+      if (activeLecture.isYouTube && ytPlayerRef.current && typeof ytPlayerRef.current.seekTo === 'function') {
+        ytPlayerRef.current.seekTo(maxWatchedRef.current, true);
+        setCurrentTime(maxWatchedRef.current);
+      } else if (videoRef.current) {
+        videoRef.current.currentTime = maxWatchedRef.current;
+        setCurrentTime(maxWatchedRef.current);
+      }
+    } else {
+      // Seeking backward to already watched portions is permitted
+      if (activeLecture.isYouTube && ytPlayerRef.current && typeof ytPlayerRef.current.seekTo === 'function') {
+        ytPlayerRef.current.seekTo(targetSeconds, true);
+        setCurrentTime(targetSeconds);
+      } else if (videoRef.current) {
+        videoRef.current.currentTime = targetSeconds;
+        setCurrentTime(targetSeconds);
+      }
+    }
+  };
+
+  // HTML5 Video anti-skip handling
+  const handleHtml5TimeUpdate = () => {
     if (!videoRef.current) return;
-    videoRef.current.muted = !isMuted;
-    setIsMuted(!isMuted);
+    const curr = videoRef.current.currentTime;
+    const dur = videoRef.current.duration || activeLecture.videoDuration || 0;
+    if (dur > 0) setVideoDuration(dur);
+    setCurrentTime(curr);
+
+    if (curr > maxWatchedRef.current + 2.5) {
+      videoRef.current.currentTime = maxWatchedRef.current;
+      setCurrentTime(maxWatchedRef.current);
+      triggerSkipWarning();
+    } else if (curr > maxWatchedRef.current) {
+      maxWatchedRef.current = curr;
+      setMaxWatchedTime(curr);
+    }
   };
 
   const handleFullscreen = () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.requestFullscreen) {
-      videoRef.current.requestFullscreen();
+    if (theaterCardRef.current) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else if (theaterCardRef.current.requestFullscreen) {
+        theaterCardRef.current.requestFullscreen();
+      }
     }
   };
 
@@ -225,6 +434,10 @@ export default function MicrocredentialWatchPage({
       [id]: prev[id] + (hasLikedQ[id] ? -1 : 1)
     }));
   };
+
+  const activeDuration = videoDuration || activeLecture.videoDuration || 600;
+  const currentPct = Math.min(100, Math.max(0, (currentTime / (activeDuration || 1)) * 100));
+  const maxWatchedPct = Math.min(100, Math.max(0, (maxWatchedTime / (activeDuration || 1)) * 100));
 
   return (
     <div className="mc-detail-page-wrapper">
@@ -261,43 +474,30 @@ export default function MicrocredentialWatchPage({
             </button>
           </div>
 
-          {/* 3. Interactive Video Screen Card */}
-          <div className="mc-theater-player-card">
+          {/* 3. Interactive Theater Player Card */}
+          <div className="mc-theater-player-card" ref={theaterCardRef}>
               
-              {/* Top Video Header Overlay */}
-              <div className="theater-header-overlay">
-                <div className="theater-channel-badge">
-                  <div className="theater-avatar-box">
-                    {(currentCourse.streamName || currentCourse.category || 'M').charAt(0).toUpperCase()}
+              {/* Central Video Frame with Custom Shield Layer */}
+              <div className="theater-video-frame custom-player-frame">
+                
+                {/* Anti-Skip Warning Notification Toast */}
+                {showSkipWarning && (
+                  <div className="anti-skip-warning-toast">
+                    <AlertCircle size={16} />
+                    <span>Fast-forwarding is locked. Please watch through to earn credential hours.</span>
                   </div>
-                  <div className="theater-lecture-text">
-                    <h4>{activeLecture.title}</h4>
-                    <span className="theater-org-name">{activeLecture.org}</span>
-                  </div>
-                </div>
+                )}
 
-                <div className="theater-header-actions">
-                  <button 
-                    type="button" 
-                    className={`btn-theater-icon ${isBookmarked ? 'active' : ''}`}
-                    onClick={() => setIsBookmarked(!isBookmarked)}
-                    title={isBookmarked ? 'Bookmarked' : 'Save bookmark'}
-                  >
-                    {isBookmarked ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Central Video Frame: YouTube iframe or HTML5 Video */}
-              <div className="theater-video-frame">
+                {/* YouTube API Container */}
                 {activeLecture?.isYouTube ? (
-                  <iframe 
-                    src={activeLecture.embedUrl} 
-                    title={activeLecture.title}
-                    className="theater-youtube-iframe"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                  />
+                  <div className="theater-yt-api-wrapper" key={activeLecture?.ytId || activeLecture?.id}>
+                    <div id="yt-custom-player-container" />
+                    {/* Transparent Interaction Shield: intercepts clicks so YouTube UI never opens */}
+                    <div 
+                      className="theater-interaction-shield" 
+                      onClick={handleTogglePlay}
+                    />
+                  </div>
                 ) : (
                   <video 
                     ref={videoRef}
@@ -306,38 +506,76 @@ export default function MicrocredentialWatchPage({
                     poster={currentCourse.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1200&auto=format&fit=crop&q=80'}
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
-                    controls
+                    onTimeUpdate={handleHtml5TimeUpdate}
+                    controlsList="nodownload nofullscreen noremoteplayback"
+                    disablePictureInPicture
+                    onClick={handleTogglePlay}
                   />
                 )}
 
-                {/* Big Center Glass Play Button (When Paused on HTML5 Video) */}
-                {!activeLecture?.isYouTube && !isPlaying && (
+                {/* Big Center Glass Play/Pause Button */}
+                {!isPlaying && (
                   <div className="theater-glass-center-play" onClick={handleTogglePlay}>
                     <Play size={28} className="play-triangle-fill" />
                   </div>
                 )}
               </div>
 
-              {/* Bottom Playback Bar for non-iframe videos */}
-              {!activeLecture?.isYouTube && (
-                <div className="theater-bottom-controls-bar">
-                  <button type="button" className="btn-ctrl-play" onClick={handleTogglePlay}>
-                    {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-                  </button>
+              {/* Bottom Custom Playback Bar (Full Custom UI with Anti-Skip Progress Bar) */}
+              <div className="theater-bottom-controls-bar">
+                <button 
+                  type="button" 
+                  className="btn-ctrl-play" 
+                  onClick={handleTogglePlay}
+                  title={isPlaying ? 'Pause' : 'Play'}
+                >
+                  {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+                </button>
 
-                  <button type="button" className="btn-ctrl-vol" onClick={handleToggleMute}>
-                    {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-                  </button>
+                <button 
+                  type="button" 
+                  className="btn-ctrl-vol" 
+                  onClick={handleToggleMute}
+                  title={isMuted ? 'Unmute' : 'Mute'}
+                >
+                  {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                </button>
 
-                  <div className="theater-playback-timeline">
-                    <span className="ctrl-time-stamp">00:00 / {activeLecture.duration}</span>
+                {/* Custom Protected Timeline Progress Bar */}
+                <div 
+                  className="theater-custom-progress-track"
+                  onClick={handleSeek}
+                  title="Seeking forward is locked to watched time"
+                >
+                  {/* Progress unlocked so far */}
+                  <div 
+                    className="theater-progress-unlocked" 
+                    style={{ width: `${maxWatchedPct}%` }} 
+                  />
+                  {/* Current playback head */}
+                  <div 
+                    className="theater-progress-current" 
+                    style={{ width: `${currentPct}%` }} 
+                  >
+                    <div className="theater-progress-scrubber-dot" />
                   </div>
-
-                  <button type="button" className="btn-ctrl-fullscreen" onClick={handleFullscreen}>
-                    <Maximize size={16} />
-                  </button>
                 </div>
-              )}
+
+                <div className="theater-playback-timeline">
+                  <span className="ctrl-time-stamp">
+                    {formatDuration(currentTime)} / {formatDuration(activeDuration)}
+                  </span>
+                </div>
+
+                <button 
+                  type="button" 
+                  className="btn-ctrl-fullscreen" 
+                  onClick={handleFullscreen}
+                  title="Toggle Fullscreen"
+                >
+                  <Maximize size={16} />
+                </button>
+              </div>
 
           </div>
 

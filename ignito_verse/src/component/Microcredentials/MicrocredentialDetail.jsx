@@ -516,18 +516,18 @@ export default function MicrocredentialDetail({
           <div className="mc-sidebar-video-box">
             <div
               className="mc-video-cover-container"
-              onClick={() => onWatchCourse(course)}
+              onClick={() => onWatchCourse(courseData || initialCourse)}
               title="Click to start watching"
             >
               <img
-                src={course.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80'}
-                alt={course.title}
+                src={courseData.thumbnail || initialCourse?.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80'}
+                alt={courseData.title || initialCourse?.title}
                 className="mc-video-cover-img"
               />
               <div className="mc-video-overlay-tint">
-                <div className="mc-video-brand-tag">{(course.streamName || course.category || 'IGNITOVERSE').toUpperCase()}</div>
+                <div className="mc-video-brand-tag">{(courseData.streamName || courseData.category || 'IGNITOVERSE').toUpperCase()}</div>
                 <div className="mc-video-headline-text">
-                  <h3>{(course.title || course.microcredentialCourseName || 'MICROCREDENTIAL COURSE').toUpperCase()}</h3>
+                  <h3>{(courseData.title || courseData.microcredentialCourseName || 'MICROCREDENTIAL COURSE').toUpperCase()}</h3>
                 </div>
                 <div className="mc-glass-play-button">
                   <Play size={24} className="play-icon-triangle" />
@@ -540,7 +540,7 @@ export default function MicrocredentialDetail({
               <button
                 type="button"
                 className="mc-btn-watch-full"
-                onClick={() => onWatchCourse(course)}
+                onClick={() => onWatchCourse(courseData || initialCourse)}
               >
                 <PlayCircle size={18} />
                 <span>Watch Video</span>
@@ -561,7 +561,7 @@ export default function MicrocredentialDetail({
                   <span>Level</span>
                 </div>
                 <div className="include-val-cell">
-                  {course.courseLevel || course.fullLevel || course.level || 'Beginner (Level 1)'}
+                  {courseData.courseLevel || courseData.fullLevel || courseData.level || 'Beginner (Level 1)'}
                 </div>
               </div>
 
@@ -572,7 +572,7 @@ export default function MicrocredentialDetail({
                   <span>Duration</span>
                 </div>
                 <div className="include-val-cell">
-                  {course.duration || '2 Month'}
+                  {courseData.duration || courseData.microcredentialCourseDuration || '2 Month'}
                 </div>
               </div>
 
@@ -583,7 +583,7 @@ export default function MicrocredentialDetail({
                   <span>Microcredential Fees</span>
                 </div>
                 <div className="include-val-cell bold-price">
-                  {course.price !== undefined && course.price !== null ? `₹ ${Number(course.price).toLocaleString()}/-` : '₹ 5000/-'}
+                  {courseData.price !== undefined && courseData.price !== null ? `₹ ${Number(courseData.price).toLocaleString()}/-` : '₹ 5000/-'}
                 </div>
               </div>
 
@@ -594,7 +594,7 @@ export default function MicrocredentialDetail({
                   <span>Format</span>
                 </div>
                 <div className="include-val-cell">
-                  {course.format || 'Multiple Choice'}
+                  {courseData.format || 'Multiple Choice'}
                 </div>
               </div>
 
@@ -605,7 +605,7 @@ export default function MicrocredentialDetail({
                   <span>Language</span>
                 </div>
                 <div className="include-val-cell">
-                  {course.language || 'ENGLISH'}
+                  {courseData.language || 'ENGLISH'}
                 </div>
               </div>
 
@@ -616,7 +616,7 @@ export default function MicrocredentialDetail({
                   <span>Prerequisites</span>
                 </div>
                 <div className="include-val-cell">
-                  {course.prerequisites || 'None'}
+                  {courseData.prerequisites || 'None'}
                 </div>
               </div>
 
@@ -649,7 +649,7 @@ export default function MicrocredentialDetail({
                   <span>Certificate Name</span>
                 </div>
                 <div className="include-val-cell cert-title-val">
-                  {course.certificateName || course.title || course.microcredentialCourseName}
+                  {courseData.certificateName || courseData.title || courseData.microcredentialCourseName}
                 </div>
               </div>
 
@@ -660,7 +660,7 @@ export default function MicrocredentialDetail({
                   <span>Exam Format</span>
                 </div>
                 <div className="include-val-cell">
-                  {course.examDetails?.format || course.examFormat || 'Multiple Choice'}
+                  {courseData.examDetails?.format || courseData.examFormat || 'Multiple Choice'}
                 </div>
               </div>
 
@@ -671,7 +671,7 @@ export default function MicrocredentialDetail({
                   <span>Certification Skill Level</span>
                 </div>
                 <div className="include-val-cell">
-                  {course.skillLevel || course.courseLevel || course.level || 'Beginner-Friendly'}
+                  {courseData.skillLevel || courseData.courseLevel || courseData.level || 'Beginner-Friendly'}
                 </div>
               </div>
 
@@ -682,7 +682,7 @@ export default function MicrocredentialDetail({
                   <span>Certificate</span>
                 </div>
                 <div className="include-val-cell">
-                  {course.certificateType || 'Certificate of completion'}
+                  {courseData.certificateType || 'Certificate of completion'}
                 </div>
               </div>
 
