@@ -34,9 +34,8 @@ export default function WhatWeOffer({ onLearnMore = () => {} }) {
         <div className="pillars-grid">
           {valuePillars.map((pillar, idx) => (
             <div key={pillar.id} className="pillar-card">
-              {/* Top Row: Number & Icon Box */}
+              {/* Top Row: Icon Box */}
               <div className="pillar-top-row">
-                <span className="pillar-number">{pillar.number}</span>
                 <div className="pillar-icon-box">
                   {getPillarIcon(idx)}
                 </div>
