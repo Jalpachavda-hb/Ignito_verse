@@ -15,6 +15,32 @@ import { buildIgnitoMicroStudentReviewInsertInput } from '../dto/input/ignitoMic
 import { parseIgnitoMicroStudentReviewInsertOutput, parseIgnitoMicroStudentReviewInsertErrorOutput } from '../dto/output/ignitoMicroStudentReviewInsertOutput';
 import { buildMicrocredentialStudentReviewLikeInsertInput } from '../dto/input/microcredentialStudentReviewLikeInsertInput';
 import { parseMicrocredentialStudentReviewLikeInsertOutput, parseMicrocredentialStudentReviewLikeInsertErrorOutput } from '../dto/output/microcredentialStudentReviewLikeInsertOutput';
+import { buildGetMicrocredentialStudentWatchVideoDataInput } from '../dto/input/getMicrocredentialStudentWatchVideoDataInput';
+import { parseGetMicrocredentialStudentWatchVideoDataOutput, parseGetMicrocredentialStudentWatchVideoDataErrorOutput } from '../dto/output/getMicrocredentialStudentWatchVideoDataOutput';
+import { buildMicrocredentialTranscriptByTimeInput } from '../dto/input/microcredentialTranscriptByTimeInput';
+import { parseMicrocredentialTranscriptByTimeOutput, parseMicrocredentialTranscriptByTimeErrorOutput } from '../dto/output/microcredentialTranscriptByTimeOutput';
+import { buildGetStudentMicrocredentialRaiseHandAnswerListInput } from '../dto/input/getStudentMicrocredentialRaiseHandAnswerListInput';
+import { parseGetStudentMicrocredentialRaiseHandAnswerListOutput, parseGetStudentMicrocredentialRaiseHandAnswerListErrorOutput } from '../dto/output/getStudentMicrocredentialRaiseHandAnswerListOutput';
+import { buildMicrocredentialQuizPasswordGetUsingMicrocredentialCourseIdInput } from '../dto/input/microcredentialQuizPasswordGetUsingMicrocredentialCourseIdInput';
+import { parseMicrocredentialQuizPasswordGetUsingMicrocredentialCourseIdOutput, parseMicrocredentialQuizPasswordGetUsingMicrocredentialCourseIdErrorOutput } from '../dto/output/microcredentialQuizPasswordGetUsingMicrocredentialCourseIdOutput';
+import { buildMicrocredentialQuizStudentAttemptDetailInput } from '../dto/input/microcredentialQuizStudentAttemptDetailInput';
+import { parseMicrocredentialQuizStudentAttemptDetailOutput, parseMicrocredentialQuizStudentAttemptDetailErrorOutput } from '../dto/output/microcredentialQuizStudentAttemptDetailOutput';
+import { buildGetMicroManyDiscussionQuestionInput } from '../dto/input/getMicroManyDiscussionQuestionInput';
+import { parseGetMicroManyDiscussionQuestionOutput, parseGetMicroManyDiscussionQuestionErrorOutput } from '../dto/output/getMicroManyDiscussionQuestionOutput';
+import { buildInsertMicroManyDiscussionQuestionInput } from '../dto/input/insertMicroManyDiscussionQuestionInput';
+import { parseInsertMicroManyDiscussionQuestionOutput, parseInsertMicroManyDiscussionQuestionErrorOutput } from '../dto/output/insertMicroManyDiscussionQuestionOutput';
+import { buildMicroCourseDiscussionQuestionLikeInput } from '../dto/input/microCourseDiscussionQuestionLikeInput';
+import { parseMicroCourseDiscussionQuestionLikeOutput, parseMicroCourseDiscussionQuestionLikeErrorOutput } from '../dto/output/microCourseDiscussionQuestionLikeOutput';
+import { buildInsertMicroManyDiscussionReplyInput } from '../dto/input/insertMicroManyDiscussionReplyInput';
+import { parseInsertMicroManyDiscussionReplyOutput, parseInsertMicroManyDiscussionReplyErrorOutput } from '../dto/output/insertMicroManyDiscussionReplyOutput';
+
+
+
+
+
+
+
+
 
 // To get list of Microcredential Courses
 export async function getMicrocredentialCourseBindDataList(
@@ -258,6 +284,328 @@ export async function microcredentialStudentReviewLikeInsert(
         return parseMicrocredentialStudentReviewLikeInsertErrorOutput({ message: error.message }, 500);
     }
 }
+
+/**
+ * Fetches student watch video progress and quiz eligibility data for a course.
+ * API: POST /api/IgnitoMicroCredencialAPI/GetMicrocredentialStudentWatchVideoData
+ * 
+ * @param {number} [studentId=0] - Student identifier (0 defaults to session StudentId on backend)
+ * @param {number} [microcredentialCourseId=0] - Microcredential course identifier
+ * @returns {Promise<object>} Parsed output containing overall percentage, student watch video details, and quiz metadata
+ */
+export async function getMicrocredentialStudentWatchVideoData(studentId = 0, microcredentialCourseId = 0) {
+    try {
+        const inputDto = buildGetMicrocredentialStudentWatchVideoDataInput(studentId, microcredentialCourseId);
+        const response = await apiClient('api/IgnitoMicroCredencialAPI/GetMicrocredentialStudentWatchVideoData', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseGetMicrocredentialStudentWatchVideoDataErrorOutput(response.data, response.status);
+        }
+
+        const outputDto = parseGetMicrocredentialStudentWatchVideoDataOutput(response.data, response.status);
+        return outputDto;
+    } catch (error) {
+        console.error('Error in getMicrocredentialStudentWatchVideoData:', error);
+        return parseGetMicrocredentialStudentWatchVideoDataErrorOutput({ message: error.message }, 500);
+    }
+}
+
+/**
+ * Submits raise-hand question and fetches AI/transcript answer.
+ * API: POST /api/IgnitoMicroCredencialAPI/MicrocredentialTranscriptByTime
+ * 
+ * @param {number} [studentId=0] - Student identifier
+ * @param {number} [studentDegreeAdmissionId=0] - Student degree admission identifier
+ * @param {string} [videoId=''] - Video identifier
+ * @param {string} [question=''] - Question text
+ * @param {number} [microcredentialCourseId=0] - Microcredential course identifier
+ * @param {number} [handRaiseTime=0] - Hand raise timestamp/seconds
+ * @param {string} [econtent=''] - E-content text
+ * @param {boolean} [isEcontent=false] - Flag indicating if content is E-content
+ * @returns {Promise<object>} Parsed output containing raise hand answer DTO
+ */
+export async function microcredentialTranscriptByTime(
+    studentId = 0,
+    studentDegreeAdmissionId = 0,
+    videoId = '',
+    question = '',
+    microcredentialCourseId = 0,
+    handRaiseTime = 0,
+    econtent = '',
+    isEcontent = false
+) {
+    try {
+        const inputDto = buildMicrocredentialTranscriptByTimeInput(
+            studentId,
+            studentDegreeAdmissionId,
+            videoId,
+            question,
+            microcredentialCourseId,
+            handRaiseTime,
+            econtent,
+            isEcontent
+        );
+        const response = await apiClient('api/IgnitoMicroCredencialAPI/MicrocredentialTranscriptByTime', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseMicrocredentialTranscriptByTimeErrorOutput(response.data, response.status);
+        }
+
+        const outputDto = parseMicrocredentialTranscriptByTimeOutput(response.data, response.status);
+        return outputDto;
+    } catch (error) {
+        console.error('Error in microcredentialTranscriptByTime:', error);
+        return parseMicrocredentialTranscriptByTimeErrorOutput({ message: error.message }, 500);
+    }
+}
+
+/**
+ * Fetches list of student microcredential raise hand answers.
+ * API: POST /api/IgnitoMicroCredencialAPI/GetStudentMicrocredentialRaiseHandAnswerList
+ * 
+ * @param {number} [studentId=0] - Student identifier
+ * @param {number} [studentDegreeAdmissionId=0] - Student degree admission identifier
+ * @param {number} [microcredentialCourseId=0] - Microcredential course identifier
+ * @param {string} [videoId=''] - Video identifier
+ * @param {number} [pageNumber=1] - Page number
+ * @param {number} [pageSize=10] - Page size
+ * @returns {Promise<object>} Parsed output containing getStudentMicrocredentialRaiseHandAnswer list
+ */
+export async function getStudentMicrocredentialRaiseHandAnswerList(
+    studentId = 0,
+    studentDegreeAdmissionId = 0,
+    microcredentialCourseId = 0,
+    videoId = '',
+    pageNumber = 1,
+    pageSize = 10
+) {
+    try {
+        const inputDto = buildGetStudentMicrocredentialRaiseHandAnswerListInput(
+            studentId,
+            studentDegreeAdmissionId,
+            microcredentialCourseId,
+            videoId,
+            pageNumber,
+            pageSize
+        );
+        const response = await apiClient('api/IgnitoMicroCredencialAPI/GetStudentMicrocredentialRaiseHandAnswerList', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseGetStudentMicrocredentialRaiseHandAnswerListErrorOutput(response.data, response.status);
+        }
+
+        const outputDto = parseGetStudentMicrocredentialRaiseHandAnswerListOutput(response.data, response.status);
+        return outputDto;
+    } catch (error) {
+        console.error('Error in getStudentMicrocredentialRaiseHandAnswerList:', error);
+        return parseGetStudentMicrocredentialRaiseHandAnswerListErrorOutput({ message: error.message }, 500);
+    }
+}
+
+
+/**
+ * Fetches student quiz attempt details and attempt history for a microcredential course.
+ * API: POST /api/IgnitoMicroCredencialAPI/MicrocredentialQuizStudentAttemptDetail
+ * 
+ * @param {number} [microcredentialCourseId=0] - Microcredential course ID
+ * @param {number} [studentId=0] - Student ID (0 uses session studentId on backend)
+ * @returns {Promise<object>} Parsed output containing studentAttemptDetail and attempt history list
+ */
+export async function microcredentialQuizStudentAttemptDetail(
+    microcredentialCourseId = 0,
+    studentId = 0
+) {
+    try {
+        const inputDto = buildMicrocredentialQuizStudentAttemptDetailInput(microcredentialCourseId, studentId);
+        const response = await apiClient('api/IgnitoMicroCredencialAPI/MicrocredentialQuizStudentAttemptDetail', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseMicrocredentialQuizStudentAttemptDetailErrorOutput(response.data, response.status);
+        }
+
+        const outputDto = parseMicrocredentialQuizStudentAttemptDetailOutput(response.data, response.status);
+        return outputDto;
+    } catch (error) {
+        console.error('Error in microcredentialQuizStudentAttemptDetail:', error);
+        return parseMicrocredentialQuizStudentAttemptDetailErrorOutput({ message: error.message }, 500);
+    }
+}
+
+/**
+ * Fetches list of discussion questions for a microcredential course.
+ * API: POST /api/IgnitoMicroCredencialAPI/GetMicroManyDiscussionQuestion
+ * 
+ * @param {number} [microCorseId=0] - Microcredential course ID
+ * @param {number} [studentId=0] - Student ID (0 defaults to session StudentId on backend)
+ * @returns {Promise<object>} Parsed output containing microDiscussionQuestions list
+ */
+export async function getMicroManyDiscussionQuestion(microCorseId = 0, studentId = 0) {
+    try {
+        const inputDto = buildGetMicroManyDiscussionQuestionInput(microCorseId, studentId);
+        const response = await apiClient('api/IgnitoMicroCredencialAPI/GetMicroManyDiscussionQuestion', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseGetMicroManyDiscussionQuestionErrorOutput(response.data, response.status);
+        }
+
+        const outputDto = parseGetMicroManyDiscussionQuestionOutput(response.data, response.status);
+        return outputDto;
+    } catch (error) {
+        console.error('Error in getMicroManyDiscussionQuestion:', error);
+        return parseGetMicroManyDiscussionQuestionErrorOutput({ message: error.message }, 500);
+    }
+}
+
+/**
+ * Inserts/submits a discussion question for a microcredential course.
+ * API: POST /api/IgnitoMicroCredencialAPI/InsertMicroManyDiscussionQuestion
+ * 
+ * @param {number} [studentId=0] - Student ID (0 defaults to session StudentId on backend)
+ * @param {number} [professorId=0] - Professor ID
+ * @param {number} [microCorseId=0] - Microcredential course ID
+ * @param {string} [question=''] - Discussion question text
+ * @returns {Promise<object>} Parsed output containing `{ success, message, status, errorDescription, rawData }`
+ */
+export async function insertMicroManyDiscussionQuestion(
+    studentId = 0,
+    professorId = 0,
+    microCorseId = 0,
+    question = ''
+) {
+    try {
+        const inputDto = buildInsertMicroManyDiscussionQuestionInput(
+            studentId,
+            professorId,
+            microCorseId,
+            question
+        );
+        const response = await apiClient('api/IgnitoMicroCredencialAPI/InsertMicroManyDiscussionQuestion', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseInsertMicroManyDiscussionQuestionErrorOutput(response.data, response.status);
+        }
+
+        const outputDto = parseInsertMicroManyDiscussionQuestionOutput(response.data, response.status);
+        return outputDto;
+    } catch (error) {
+        console.error('Error in insertMicroManyDiscussionQuestion:', error);
+        return parseInsertMicroManyDiscussionQuestionErrorOutput({ message: error.message }, 500);
+    }
+}
+
+/**
+ * Likes or un-likes a microcourse discussion question.
+ * API: POST /api/IgnitoMicroCredencialAPI/MicroCourseDiscussionQuestionLike
+ * 
+ * @param {number} [microCourseDiscussionQuestionId=0] - Microcourse discussion question ID
+ * @param {number} [studentId=0] - Student ID (0 defaults to session StudentId on backend)
+ * @param {number} [microCourseId=0] - Microcredential course ID
+ * @returns {Promise<object>} Parsed output containing `{ success, message, status, errorDescription, rawData }`
+ */
+export async function microCourseDiscussionQuestionLike(
+    microCourseDiscussionQuestionId = 0,
+    studentId = 0,
+    microCourseId = 0
+) {
+    try {
+        const inputDto = buildMicroCourseDiscussionQuestionLikeInput(
+            microCourseDiscussionQuestionId,
+            studentId,
+            microCourseId
+        );
+        const response = await apiClient('api/IgnitoMicroCredencialAPI/MicroCourseDiscussionQuestionLike', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseMicroCourseDiscussionQuestionLikeErrorOutput(response.data, response.status);
+        }
+
+        const outputDto = parseMicroCourseDiscussionQuestionLikeOutput(response.data, response.status);
+        return outputDto;
+    } catch (error) {
+        console.error('Error in microCourseDiscussionQuestionLike:', error);
+        return parseMicroCourseDiscussionQuestionLikeErrorOutput({ message: error.message }, 500);
+    }
+}
+
+/**
+ * Inserts/submits a reply to a microcourse discussion question.
+ * API: POST /api/IgnitoMicroCredencialAPI/InsertManyMicroCourseDiscussionReply
+ * 
+ * @param {number} [microCourseDiscussionQuestionId=0] - Microcourse discussion question ID
+ * @param {number} [studentId=0] - Student ID (0 defaults to session StudentId on backend)
+ * @param {number} [professorId=0] - Professor ID
+ * @param {number} [microCorseId=0] - Microcredential course ID
+ * @param {string} [reply=''] - Discussion reply text
+ * @returns {Promise<object>} Parsed output containing `{ success, message, status, errorDescription, rawData }`
+ */
+export async function insertManyMicroCourseDiscussionReply(
+    microCourseDiscussionQuestionId = 0,
+    studentId = 0,
+    professorId = 0,
+    microCorseId = 0,
+    reply = ''
+) {
+    try {
+        const inputDto = buildInsertMicroManyDiscussionReplyInput(
+            microCourseDiscussionQuestionId,
+            studentId,
+            professorId,
+            microCorseId,
+            reply
+        );
+        const response = await apiClient('api/IgnitoMicroCredencialAPI/InsertManyMicroCourseDiscussionReply', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseInsertMicroManyDiscussionReplyErrorOutput(response.data, response.status);
+        }
+
+        const outputDto = parseInsertMicroManyDiscussionReplyOutput(response.data, response.status);
+        return outputDto;
+    } catch (error) {
+        console.error('Error in insertManyMicroCourseDiscussionReply:', error);
+        return parseInsertMicroManyDiscussionReplyErrorOutput({ message: error.message }, 500);
+    }
+}
+
+
+
+
+
+
+
+
 
 
 
