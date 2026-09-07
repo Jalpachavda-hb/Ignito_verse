@@ -4,6 +4,9 @@
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
+// Static development token (replace with your development bearer token if needed)
+const DEV_STATIC_TOKEN = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IndESWJPVm1hNnNTbXd5NTEtU1dGViJ9.eyJuaWNrbmFtZSI6ImhhY2tiZXJyeTEyMyIsIm5hbWUiOiJIYWNrYmVycnlzb2Z0ZWNoIiwicGljdHVyZSI6Imh0dHBzOi8vcy5ncmF2YXRhci5jb20vYXZhdGFyLzlhMTU1ZjBmYjU4NzlkMzdiNDRkYzU2OTM2OWI3YzU0P3M9NDgwJnI9cGcmZD1odHRwcyUzQSUyRiUyRmNkbi5hdXRoMC5jb20lMkZhdmF0YXJzJTJGaGEucG5nIiwidXBkYXRlZF9hdCI6IjIwMjYtMDItMjhUMDY6NTA6MzIuNzUzWiIsImVtYWlsIjoiaGFja2JlcnJ5MTIzQGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiaXNzIjoiaHR0cHM6Ly9kZXYtYmZpeDFjZnpscG50d3QzOC51cy5hdXRoMC5jb20vIiwiYXVkIjoiYkVTZVlObWtNN3Vab0RPcm9ieFZHVEVSb2FYa3M2bk8iLCJzdWIiOiJhdXRoMHw2OTZhMjk4ZmRiZmFjNGJlNGIxY2YwYTkiLCJpYXQiOjE3NzIyNjE0MzIsImV4cCI6MTc3MjI5NzQzMn0.W-V24PgukePt2Th2qmDab0yVsciDCUhd3TfdYXd0rhiafh9Wa4IVz_gDjjl0tLEaHZBdIyC0y06ZTlwNlaIHGTx7sK3mgv_KfLOHTrrNUjHWVISC3D9JpDiPc583GPJiu61NB3aPqzlkMb4PRMYkJntFVTb_whYjVcyCQNWAcOyPW2nJ5LtqmqWtf1QcpsW6rs7oPGlHn9knroDv1xf_9NuSZDQWQ9D8gw2jOsI-ANaeeyqIZQXzNXfJxmhxv-lachm_9h-yEYs08_fDCS9vYwndo51kd1kiqMYOTeaqIDi_GFzAmI1wCHj3tsv5mW_vRe7pRTQt_0tInU5FKJJFSQ';
+
 /**
  * Custom fetch wrapper for API communication.
  * 
@@ -36,7 +39,9 @@ export async function apiClient(endpoint, options = {}) {
   // Only attach token if endpoint is not explicitly marked public and header not disabled
   const isExplicitPublic = options.isPublic === true || options.requiresAuth === false;
   if (!isExplicitPublic && !headers['Authorization']) {
-    const token = localStorage.getItem('ignito_auth_token');
+    const token = localStorage.getItem('ignito_auth_token')
+      || localStorage.getItem('AccessToken')
+      || DEV_STATIC_TOKEN;
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -49,6 +54,7 @@ export async function apiClient(endpoint, options = {}) {
 
   try {
     const res = await fetch(url, {
+      credentials: options.credentials || 'include',
       ...options,
       headers,
     });
@@ -66,6 +72,8 @@ export async function apiClient(endpoint, options = {}) {
     // Auto-clean stale token if 401 occurs on protected endpoint
     if (res.status === 401) {
       localStorage.removeItem('ignito_auth_token');
+      localStorage.removeItem('AccessToken');
+      localStorage.removeItem('ignito_auth_user');
     }
 
     return {
