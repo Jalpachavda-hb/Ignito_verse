@@ -21,8 +21,6 @@ import { buildMicrocredentialTranscriptByTimeInput } from '../dto/input/microcre
 import { parseMicrocredentialTranscriptByTimeOutput, parseMicrocredentialTranscriptByTimeErrorOutput } from '../dto/output/microcredentialTranscriptByTimeOutput';
 import { buildGetStudentMicrocredentialRaiseHandAnswerListInput } from '../dto/input/getStudentMicrocredentialRaiseHandAnswerListInput';
 import { parseGetStudentMicrocredentialRaiseHandAnswerListOutput, parseGetStudentMicrocredentialRaiseHandAnswerListErrorOutput } from '../dto/output/getStudentMicrocredentialRaiseHandAnswerListOutput';
-import { buildMicrocredentialQuizPasswordGetUsingMicrocredentialCourseIdInput } from '../dto/input/microcredentialQuizPasswordGetUsingMicrocredentialCourseIdInput';
-import { parseMicrocredentialQuizPasswordGetUsingMicrocredentialCourseIdOutput, parseMicrocredentialQuizPasswordGetUsingMicrocredentialCourseIdErrorOutput } from '../dto/output/microcredentialQuizPasswordGetUsingMicrocredentialCourseIdOutput';
 import { buildMicrocredentialQuizStudentAttemptDetailInput } from '../dto/input/microcredentialQuizStudentAttemptDetailInput';
 import { parseMicrocredentialQuizStudentAttemptDetailOutput, parseMicrocredentialQuizStudentAttemptDetailErrorOutput } from '../dto/output/microcredentialQuizStudentAttemptDetailOutput';
 import { buildGetMicroManyDiscussionQuestionInput } from '../dto/input/getMicroManyDiscussionQuestionInput';
