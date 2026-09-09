@@ -1,31 +1,38 @@
-// ignitoverse: Executive Enterprise Interactive Login Page
+// ignitoverse: Executive Enterprise Interactive Login Page with OTP Authentication
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  ShieldCheck, TrendingUp, GraduationCap, Mail, Lock, 
-  ArrowRight, Eye, EyeOff, BookOpen, ArrowLeft, Check, CheckCircle2,
-  LockKeyhole, Sparkles
+  ShieldCheck, TrendingUp, GraduationCap, Mail, Phone, 
+  ArrowRight, BookOpen, ArrowLeft, Check, CheckCircle2,
+  LockKeyhole, Sparkles, RefreshCw
 } from 'lucide-react';
 import logoImg from '../../assets/Ignitoverse Logo.png';
 import loginMainImg from '../../assets/home/login_main.png';
 import loginBadgeImg from '../../assets/login_page.png';
-import { loginUser } from '../../services/authService';
+import { sendStudentLoginOTP, validateStudentLoginOTP } from '../../services/authService';
 
 export default function LoginPage({ 
   onLoginSuccess = () => {}, 
   onNavigateHome = () => {} 
 }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+  // Login Mode & Step State
+  const [step, setStep] = useState('send_otp'); // 'send_otp' | 'verify_otp'
+  const [emailOrMobile, setEmailOrMobile] = useState('');
+  const [otp, setOtp] = useState('');
+  
+  // OTP Session Details from Backend
+  const [studentId, setStudentId] = useState(0);
+  const [otpId, setOtpId] = useState(0);
   
   // Interaction & Focus States
-  const [focusedField, setFocusedField] = useState(null); // 'email' | 'password' | null
+  const [focusedField, setFocusedField] = useState(null); // 'identifier' | 'otp' | null
   const [authStage, setAuthStage] = useState('idle'); // 'idle' | 'verifying' | 'granted'
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   
   // Validation
-  const isEmailValid = email.length > 3 && email.includes('@') && email.includes('.');
+  const isEmail = emailOrMobile.includes('@');
+  const isInputValid = emailOrMobile.trim().length >= 4;
+  const isOtpValid = otp.trim().length >= 4;
 
   // Canvas & Background Particle Mesh
   const canvasRef = useRef(null);
@@ -142,31 +149,69 @@ export default function LoginPage({
       window.removeEventListener('mouseleave', handleCanvasMouseLeave);
     };
   }, []);
-  
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+
+  // Handle Requesting OTP
+  const handleSendOTP = async (e) => {
+    if (e) e.preventDefault();
     if (authStage !== 'idle') return;
 
     setErrorMessage('');
+    setSuccessMessage('');
     setAuthStage('verifying');
 
     try {
-      // Execute login against .NET Web API + MSSQL DB using Input/Output DTOs
-      const result = await loginUser(email, password);
+      const payload = isEmail 
+        ? { email: emailOrMobile.trim(), mobileNumber: '' } 
+        : { email: '', mobileNumber: emailOrMobile.trim() };
 
-      if (result.success && result.user) {
+      const result = await sendStudentLoginOTP(payload);
+
+      if (result.isSuccess || result.success) {
+        setStudentId(result.studentId || 0);
+        setOtpId(result.otpId || 0);
+        setStep('verify_otp');
+        setAuthStage('idle');
+        setSuccessMessage(result.message || 'OTP sent successfully! Please check your inbox/SMS.');
+      } else {
+        setAuthStage('idle');
+        setErrorMessage(result.message || result.error || 'Failed to send OTP. Please check your Email or Mobile Number.');
+      }
+    } catch (err) {
+      console.error('[LoginPage] Send OTP Exception:', err);
+      setAuthStage('idle');
+      setErrorMessage(err.message || 'An error occurred while sending OTP.');
+    }
+  };
+
+  // Handle Validating OTP & Logging In
+  const handleValidateOTP = async (e) => {
+    if (e) e.preventDefault();
+    if (authStage !== 'idle') return;
+
+    setErrorMessage('');
+    setSuccessMessage('');
+    setAuthStage('verifying');
+
+    try {
+      const result = await validateStudentLoginOTP({
+        studentId,
+        otpId,
+        otp: otp.trim()
+      });
+
+      if (result.isSuccess || result.success) {
         setAuthStage('granted');
         setTimeout(() => {
           onLoginSuccess(result.user);
         }, 700);
       } else {
         setAuthStage('idle');
-        setErrorMessage(result.error || 'Authentication failed. Please check your credentials or API connection.');
+        setErrorMessage(result.message || result.error || 'Invalid OTP. Please check and try again.');
       }
     } catch (err) {
-      console.error('[LoginPage] Auth Exception:', err);
+      console.error('[LoginPage] Validate OTP Exception:', err);
       setAuthStage('idle');
-      setErrorMessage(err.message || 'An error occurred during authentication.');
+      setErrorMessage(err.message || 'An error occurred while validating OTP.');
     }
   };
 
@@ -192,7 +237,7 @@ export default function LoginPage({
       <div className={`executive-container-box ${authStage === 'granted' ? 'box-auth-granted' : ''}`}>
         
         {/* LEFT PANEL: Deep Navy Brand & Dynamic Security Shield */}
-        <div className={`executive-box-left ${focusedField === 'password' ? 'shield-mode-active' : ''} ${authStage === 'granted' ? 'shield-mode-granted' : ''}`}>
+        <div className={`executive-box-left ${focusedField === 'otp' ? 'shield-mode-active' : ''} ${authStage === 'granted' ? 'shield-mode-granted' : ''}`}>
           <div className="executive-box-glow" aria-hidden="true" />
           
           {/* Top-Right Molecular Lattice Pattern */}
@@ -236,7 +281,7 @@ export default function LoginPage({
                 <span className="executive-cyan-gradient">Measurable Impact.</span>
               </h1>
               <p className="executive-desc">
-                Ignitoverse empowers organizations to build future-ready teams with verified microcredentials and measurable learning outcomes.
+                Ignitoverse empowers organizations to build future-ready teams with verified microcredentials and passwordless OTP login.
               </p>
             </div>
 
@@ -247,8 +292,8 @@ export default function LoginPage({
                   <ShieldCheck size={18} />
                 </div>
                 <div className="feature-card-info">
-                  <h4>Trusted & Secure</h4>
-                  <p>Enterprise-grade security with SOC 2 Type II compliance.</p>
+                  <h4>Trusted & Secure OTP</h4>
+                  <p>Enterprise-grade passwordless authentication.</p>
                 </div>
               </div>
 
@@ -299,8 +344,36 @@ export default function LoginPage({
             </div>
 
             {/* Title & Tagline */}
-            <h2 className="executive-card-heading">Welcome Back</h2>
-            <p className="executive-card-subheading">Access your IgnitoVerse account</p>
+            <h2 className="executive-card-heading">
+              {step === 'send_otp' ? 'Student Login' : 'Enter Verification OTP'}
+            </h2>
+            <p className="executive-card-subheading">
+              {step === 'send_otp' 
+                ? 'Sign in via One-Time Password (OTP)' 
+                : `We sent a code to ${emailOrMobile}`}
+            </p>
+
+            {/* Success Banner */}
+            {successMessage && (
+              <div 
+                style={{
+                  background: 'rgba(34, 197, 94, 0.12)',
+                  border: '1px solid rgba(34, 197, 94, 0.35)',
+                  color: '#4ade80',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  fontSize: '13px',
+                  lineHeight: '1.4',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <span>✅</span>
+                <span>{successMessage}</span>
+              </div>
+            )}
 
             {/* Error Banner */}
             {errorMessage && (
@@ -324,118 +397,144 @@ export default function LoginPage({
               </div>
             )}
 
-            {/* Form */}
-            <form className="executive-login-form" onSubmit={handleSubmit}>
-              
-              {/* Email Address */}
-              <div className="executive-field-group">
-                <label htmlFor="exec-email" className="executive-label">
-                  Email
-                </label>
-                <div className={`executive-input-wrapper ${focusedField === 'email' ? 'field-focused' : ''}`}>
-                  <input
-                    type="email"
-                    id="exec-email"
-                    required
-                    placeholder="name@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onFocus={() => setFocusedField('email')}
-                    onBlur={() => setFocusedField(null)}
-                    autoComplete="email"
-                    className="executive-input"
-                  />
-                  <div className="input-trailing-icon">
-                    {isEmailValid ? (
-                      <CheckCircle2 size={17} className="valid-email-check" />
-                    ) : (
-                      <Mail size={17} className="default-input-icon" />
-                    )}
+            {/* STEP 1: Send OTP Form */}
+            {step === 'send_otp' && (
+              <form className="executive-login-form" onSubmit={handleSendOTP}>
+                <div className="executive-field-group">
+                  <label htmlFor="exec-identifier" className="executive-label">
+                    Email or Mobile Number
+                  </label>
+                  <div className={`executive-input-wrapper ${focusedField === 'identifier' ? 'field-focused' : ''}`}>
+                    <input
+                      type="text"
+                      id="exec-identifier"
+                      required
+                      placeholder="student@company.com or +1234567890"
+                      value={emailOrMobile}
+                      onChange={(e) => setEmailOrMobile(e.target.value)}
+                      onFocus={() => setFocusedField('identifier')}
+                      onBlur={() => setFocusedField(null)}
+                      autoComplete="username"
+                      className="executive-input"
+                    />
+                    <div className="input-trailing-icon">
+                      {isEmail ? (
+                        <Mail size={17} className="default-input-icon" />
+                      ) : (
+                        <Phone size={17} className="default-input-icon" />
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Password */}
-              <div className="executive-field-group">
-                <div className="password-header-row">
-                  <label htmlFor="exec-pwd" className="executive-label">
-                    Password
-                  </label>
-                  <a 
-                    href="#forgot" 
-                    className="executive-forgot-link"
-                    onClick={(e) => e.preventDefault()}
-                  >
-                    Forgot Password?
-                  </a>
+                <button 
+                  type="submit" 
+                  className={`executive-cta-button ${authStage}`}
+                  disabled={authStage !== 'idle' || !isInputValid}
+                >
+                  {authStage === 'idle' && (
+                    <>
+                      <span>Send OTP</span>
+                      <ArrowRight size={17} className="cta-arrow-icon" />
+                    </>
+                  )}
+                  {authStage === 'verifying' && (
+                    <>
+                      <span className="spinner-dot" />
+                      <span>Sending OTP...</span>
+                    </>
+                  )}
+                  {authStage === 'granted' && (
+                    <>
+                      <Check size={18} strokeWidth={3} className="granted-check" />
+                      <span>OTP Sent</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+
+            {/* STEP 2: Validate OTP Form */}
+            {step === 'verify_otp' && (
+              <form className="executive-login-form" onSubmit={handleValidateOTP}>
+                <div className="executive-field-group">
+                  <div className="password-header-row">
+                    <label htmlFor="exec-otp" className="executive-label">
+                      One-Time Password (OTP)
+                    </label>
+                    <button 
+                      type="button" 
+                      className="executive-forgot-link"
+                      onClick={() => {
+                        setStep('send_otp');
+                        setOtp('');
+                        setErrorMessage('');
+                        setSuccessMessage('');
+                      }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    >
+                      Change Contact
+                    </button>
+                  </div>
+                  <div className={`executive-input-wrapper ${focusedField === 'otp' ? 'field-focused' : ''}`}>
+                    <input
+                      type="text"
+                      id="exec-otp"
+                      required
+                      placeholder="Enter OTP"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      onFocus={() => setFocusedField('otp')}
+                      onBlur={() => setFocusedField(null)}
+                      autoComplete="one-time-code"
+                      className="executive-input"
+                      maxLength={10}
+                    />
+                    <div className="input-trailing-icon">
+                      <LockKeyhole size={17} className="default-input-icon" />
+                    </div>
+                  </div>
                 </div>
-                <div className={`executive-input-wrapper ${focusedField === 'password' ? 'field-focused' : ''}`}>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    id="exec-pwd"
-                    required
-                    placeholder="••••••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onFocus={() => setFocusedField('password')}
-                    onBlur={() => setFocusedField(null)}
-                    autoComplete="current-password"
-                    className="executive-input"
-                  />
+
+                <div className="executive-remember-row" style={{ justifyContent: 'space-between' }}>
                   <button
                     type="button"
-                    className="input-eye-toggle-btn"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="executive-forgot-link"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
+                    onClick={handleSendOTP}
+                    disabled={authStage !== 'idle'}
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    <RefreshCw size={12} /> Resend OTP
                   </button>
                 </div>
-              </div>
 
-              {/* Remember Me Checkbox */}
-              <div className="executive-remember-row">
-                <label className="executive-checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="exec-native-chk"
-                  />
-                  <span className="exec-chk-box">
-                    {rememberMe && <Check size={12} strokeWidth={3.5} />}
-                  </span>
-                  <span className="exec-chk-text">Remember this device</span>
-                </label>
-              </div>
+                <button 
+                  type="submit" 
+                  className={`executive-cta-button ${authStage}`}
+                  disabled={authStage !== 'idle' || !isOtpValid}
+                >
+                  {authStage === 'idle' && (
+                    <>
+                      <span>Verify & Sign In</span>
+                      <ArrowRight size={17} className="cta-arrow-icon" />
+                    </>
+                  )}
+                  {authStage === 'verifying' && (
+                    <>
+                      <span className="spinner-dot" />
+                      <span>Verifying OTP...</span>
+                    </>
+                  )}
+                  {authStage === 'granted' && (
+                    <>
+                      <Check size={18} strokeWidth={3} className="granted-check" />
+                      <span>Access Granted</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
 
-              {/* Multi-Stage Dynamic Sign In CTA */}
-              <button 
-                type="submit" 
-                className={`executive-cta-button ${authStage}`}
-                disabled={authStage !== 'idle'}
-              >
-                {authStage === 'idle' && (
-                  <>
-                    <span>Sign In</span>
-                    <ArrowRight size={17} className="cta-arrow-icon" />
-                  </>
-                )}
-                {authStage === 'verifying' && (
-                  <>
-                    <span className="spinner-dot" />
-                    <span>Verifying credentials...</span>
-                  </>
-                )}
-                {authStage === 'granted' && (
-                  <>
-                    <Check size={18} strokeWidth={3} className="granted-check" />
-                    <span>Access Granted</span>
-                  </>
-                )}
-              </button>
-
-            </form>
           </div>
         </div>
 

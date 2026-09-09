@@ -89,3 +89,7 @@ export function parseAuthErrorOutput(rawJson = {}, status = 400) {
     user: null
   };
 }
+
+export { parseSendStudentLoginOTPOutput } from './sendStudentLoginOTPOutput';
+export { parseValidateStudentLoginOTPOutput } from './validateStudentLoginOTPOutput';
+
