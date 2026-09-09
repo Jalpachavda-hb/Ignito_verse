@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import profileBgImg from '../../assets/profilebg.png';
 import badgesImg from '../../assets/badges.png';
-import { getStudentEnrolledMicrocredentialCourse } from '../../services/microcredentialService';
+import { getStudentEnrolledMicrocredentialCourse } from '../../services/profileService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
 
 export default function ProfilePage({ 
@@ -43,14 +43,38 @@ export default function ProfilePage({
   const [apiEnrolledCourses, setApiEnrolledCourses] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
 
-  // Fetch student enrolled microcredentials from backend API (StudentId: 3, EnrolledMode: 1)
+  // Helper to extract studentId from session storage / user context
+  const getSessionStudentId = () => {
+    const storedStudentId = localStorage.getItem('StudentId');
+    if (storedStudentId && !isNaN(Number(storedStudentId)) && Number(storedStudentId) > 0) {
+      return Number(storedStudentId);
+    }
+    if (user && (user.studentId || user.id || user.empId)) {
+      const parsedId = Number(user.studentId || user.id || user.empId);
+      if (!isNaN(parsedId) && parsedId > 0) {
+        return parsedId;
+      }
+    }
+    try {
+      const rawUser = localStorage.getItem('ignito_auth_user');
+      if (rawUser) {
+        const parsedUser = JSON.parse(rawUser);
+        const parsedId = Number(parsedUser.studentId || parsedUser.id || parsedUser.empId || 0);
+        if (!isNaN(parsedId) && parsedId > 0) return parsedId;
+      }
+    } catch {}
+    return 0;
+  };
+
+  // Fetch student enrolled microcredentials from backend API using session studentId (enrolledMode: 1 default)
   useEffect(() => {
     let isMounted = true;
     async function fetchEnrolledCourses() {
       try {
         setLoadingCourses(true);
-        const res = await getStudentEnrolledMicrocredentialCourse(3, 1);
-        if (isMounted && res.success && Array.isArray(res.getStudentEnrolledMicrocredentialCourseList) && res.getStudentEnrolledMicrocredentialCourseList.length > 0) {
+        const studentId = getSessionStudentId();
+        const res = await getStudentEnrolledMicrocredentialCourse(studentId, 1);
+        if (isMounted && res.success && Array.isArray(res.getStudentEnrolledMicrocredentialCourseList)) {
           setApiEnrolledCourses(res.getStudentEnrolledMicrocredentialCourseList);
         }
       } catch (err) {
@@ -61,49 +85,9 @@ export default function ProfilePage({
     }
     fetchEnrolledCourses();
     return () => { isMounted = false; };
-  }, []);
+  }, [user]);
 
-  // Fallback in-progress courses data
-  const fallbackEnrolledCourses = [
-    {
-      studentId: 3,
-      microcredentialCourseId: 1,
-      microcredentialCourseName: 'STRESS MANAGEMENT',
-      courseLevel: 'Intermediate (Level 2)',
-      streamName: 'Management',
-      microcredentialCoursePrice: '8000.00',
-      microcredentialCourseRating: '5.00',
-      microcredentialCourseDuration: '3 Month',
-      microcredentialCourseIntroImage: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80',
-      language: 'ENGLISH',
-      updatedOn: '26 August 2026',
-      encryptedMicrocredentialCourseId: 'XBpgFL2fjGBdCAEULYBdXt6Wpa9vxSeT53e_GTkPl1E',
-      courseStatus: 'In Progress',
-      progress: 90,
-      completedLessons: '14/16 Lessons',
-      timeSpent: '9h 00m'
-    },
-    {
-      studentId: 3,
-      microcredentialCourseId: 2,
-      microcredentialCourseName: 'Java Enterprise Architecture & Spring Boot',
-      courseLevel: 'Advanced (Level 3)',
-      streamName: 'Computer Science',
-      microcredentialCoursePrice: '9500.00',
-      microcredentialCourseRating: '4.90',
-      microcredentialCourseDuration: '4 Month',
-      microcredentialCourseIntroImage: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80',
-      language: 'ENGLISH',
-      updatedOn: '28 August 2026',
-      encryptedMicrocredentialCourseId: '',
-      courseStatus: 'In Progress',
-      progress: 68,
-      completedLessons: '16/24 Lessons',
-      timeSpent: '12h 30m'
-    }
-  ];
-
-  const displayedEnrolledCourses = apiEnrolledCourses.length > 0 ? apiEnrolledCourses : fallbackEnrolledCourses;
+  const displayedEnrolledCourses = apiEnrolledCourses;
 
 
   // Completed earned certificates matching user screenshot
@@ -328,70 +312,161 @@ export default function ProfilePage({
               </button>
             </div>
 
-            <div className="profile-inprogress-grid-3col">
-              {displayedEnrolledCourses.map((c, idx) => {
-                const title = c.microcredentialCourseName || c.title || 'Microcredential Course';
-                const courseId = c.microcredentialCourseId || c.id || idx;
-                const thumb = formatImageUrl(c.microcredentialCourseIntroImage) || c.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80';
-                const progressPct = c.progress || (idx === 0 ? 90 : 65);
-                const duration = c.microcredentialCourseDuration || c.timeSpent || '3 Month';
-                const rating = c.microcredentialCourseRating || '5.00';
-                const level = c.courseLevel || c.streamName || 'Intermediate';
+            {loadingCourses ? (
+              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#64748b' }}>
+                <p>Loading your enrolled microcredential courses...</p>
+              </div>
+            ) : displayedEnrolledCourses.length === 0 ? (
+              <div 
+                className="profile-empty-courses-card" 
+                style={{
+                  textAlign: 'center',
+                  padding: '3rem 1.5rem',
+                  background: '#ffffff',
+                  borderRadius: '16px',
+                  border: '1px dashed #cbd5e1',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.75rem',
+                  margin: '1rem 0'
+                }}
+              >
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  background: '#eff6ff',
+                  color: '#2563eb',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '0.25rem'
+                }}>
+                  <BookOpen size={28} />
+                </div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                  No Enrolled Courses Found
+                </h3>
+                <p style={{ fontSize: '0.9rem', color: '#64748b', maxWidth: '460px', margin: '0 0 0.75rem 0', lineHeight: 1.5 }}>
+                  You haven't enrolled in any microcredential courses yet. Browse our executive course catalog to start learning!
+                </p>
+                <button 
+                  type="button"
+                  className="btn-card-continue-learning"
+                  style={{ width: 'auto', padding: '0.65rem 1.5rem', fontSize: '0.875rem' }}
+                  onClick={onExploreCatalog}
+                >
+                  <Sparkles size={15} />
+                  <span>Explore Course Catalog</span>
+                </button>
+              </div>
+            ) : (
+              <div className="profile-inprogress-grid-3col">
+                {displayedEnrolledCourses.map((c, idx) => {
+                  const title = c.microcredentialCourseName || c.title || 'Microcredential Course';
+                  const courseId = c.microcredentialCourseId || c.id || idx;
+                  const thumb = formatImageUrl(c.microcredentialCourseIntroImage) || c.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80';
+                  const progressPct = c.progress || (idx === 0 ? 90 : 65);
+                  const duration = c.microcredentialCourseDuration || c.timeSpent || '3 Month';
+                  const rating = c.microcredentialCourseRating || '5.00';
+                  const level = c.courseLevel || c.streamName || 'Intermediate';
 
-                return (
-                  <div key={courseId} className="profile-inprogress-card">
-                    {/* Card Top: Thumbnail + Details */}
-                    <div className="profile-inprogress-top">
-                      <div className="profile-inprogress-thumb-box">
-                        <img src={thumb} alt={title} className="profile-inprogress-thumb-img" />
-                        <span className="profile-inprogress-percent-tag">{progressPct}%</span>
+                  return (
+                    <div key={courseId} className="profile-inprogress-card">
+                      {/* Card Top: Thumbnail + Details */}
+                      <div className="profile-inprogress-top">
+                        <div className="profile-inprogress-thumb-box">
+                          <img src={thumb} alt={title} className="profile-inprogress-thumb-img" />
+                          <span className="profile-inprogress-percent-tag">{progressPct}%</span>
+                        </div>
+
+                        <div className="profile-inprogress-info">
+                          <div className="profile-inprogress-level-badge" style={{ fontSize: '0.72rem', color: '#00385E', fontWeight: 700, marginBottom: '2px' }}>
+                            {level}
+                          </div>
+                          <h3 className="profile-inprogress-title" title={title}>{title}</h3>
+                          
+                          <div className="profile-inprogress-meta-line">
+                            <span><Clock size={13} className="meta-icon-indigo" /> {duration}</span>
+                            <span><Star size={13} style={{ color: '#f59e0b', fill: '#f59e0b' }} /> {rating}</span>
+                          </div>
+
+                          <div className="profile-inprogress-progress-bar-track">
+                            <div 
+                              className="profile-inprogress-progress-bar-fill" 
+                              style={{ width: `${progressPct}%` }} 
+                            />
+                          </div>
+
+                          {/* Enrollment & Expiry Dates */}
+                          {(c.enrollmentDate || c.expiryDate) && (
+                            <div 
+                              className="profile-inprogress-dates-block" 
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr',
+                                gap: '8px',
+                                padding: '8px 10px',
+                                background: '#f8fafc',
+                                borderRadius: '8px',
+                                marginTop: '10px',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '0.73rem'
+                              }}
+                            >
+                              {c.enrollmentDate && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                  <span style={{ color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <Calendar size={12} style={{ color: '#2563eb' }} /> Enrolled On
+                                  </span>
+                                  <strong style={{ color: '#1e293b', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {c.enrollmentDate}
+                                  </strong>
+                                </div>
+                              )}
+                              {c.expiryDate && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                  <span style={{ color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <Clock size={12} style={{ color: '#e11d48' }} /> Expires On
+                                  </span>
+                                  <strong style={{ color: '#1e293b', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {c.expiryDate}
+                                  </strong>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="profile-inprogress-info">
-                        <div className="profile-inprogress-level-badge" style={{ fontSize: '0.72rem', color: '#00385E', fontWeight: 700, marginBottom: '2px' }}>
-                          {level}
-                        </div>
-                        <h3 className="profile-inprogress-title" title={title}>{title}</h3>
-                        
-                        <div className="profile-inprogress-meta-line">
-                          <span><Clock size={13} className="meta-icon-indigo" /> {duration}</span>
-                          <span><Star size={13} style={{ color: '#f59e0b', fill: '#f59e0b' }} /> {rating}</span>
-                        </div>
-
-                        <div className="profile-inprogress-progress-bar-track">
-                          <div 
-                            className="profile-inprogress-progress-bar-fill" 
-                            style={{ width: `${progressPct}%` }} 
-                          />
-                        </div>
-                      </div>
+                      {/* Card Bottom Button */}
+                      <button 
+                        type="button" 
+                        className="btn-card-continue-learning"
+                        onClick={() => onViewCourse({
+                          id: courseId,
+                          microcredentialCourseId: courseId,
+                          encryptedMicrocredentialCourseId: c.encryptedMicrocredentialCourseId || '',
+                          title: title,
+                          name: title,
+                          thumbnail: thumb,
+                          category: c.streamName || 'Management',
+                          level: level,
+                          duration: duration,
+                          rating: rating,
+                          ...c
+                        })}
+                      >
+                        <PlayCircle size={15} />
+                        <span>Continue Learning</span>
+                      </button>
                     </div>
-
-                    {/* Card Bottom Button */}
-                    <button 
-                      type="button" 
-                      className="btn-card-continue-learning"
-                      onClick={() => onViewCourse({
-                        id: courseId,
-                        microcredentialCourseId: courseId,
-                        encryptedMicrocredentialCourseId: c.encryptedMicrocredentialCourseId || '',
-                        title: title,
-                        name: title,
-                        thumbnail: thumb,
-                        category: c.streamName || 'Management',
-                        level: level,
-                        duration: duration,
-                        rating: rating,
-                        ...c
-                      })}
-                    >
-                      <PlayCircle size={15} />
-                      <span>Continue Learning</span>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

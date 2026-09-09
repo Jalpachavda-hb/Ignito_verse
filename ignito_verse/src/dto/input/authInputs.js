@@ -54,6 +54,9 @@ export function buildRegisterInput({ fullName, email, password, companyName = ''
   };
 }
 
+export { buildSendStudentLoginOTPInput } from './sendStudentLoginOTPInput';
+export { buildValidateStudentLoginOTPInput } from './validateStudentLoginOTPInput';
+
 /**
  * Builds input parameter body for Token Refresh POST request.
  * @param {string} token - Current JWT Token
@@ -73,3 +76,4 @@ export function buildRefreshTokenInput(token, refreshToken) {
     })
   };
 }
+
