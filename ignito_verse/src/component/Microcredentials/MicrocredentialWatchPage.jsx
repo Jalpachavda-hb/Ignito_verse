@@ -122,7 +122,7 @@ export default function MicrocredentialWatchPage({
   const [isQuizOpen, setIsQuizOpen] = useState(false);
 
   // Student Watch Video Progress states (POST /api/MicroCredencialStudentWatchVideoAPI/GetMicrocredentialStudentWatchVideoData)
-  const [overallWatchPct, setOverallWatchPct] = useState(33);
+  const [overallWatchPct, setOverallWatchPct] = useState(0);
   const [videoProgressMap, setVideoProgressMap] = useState({});
   const [isQuizEligible, setIsQuizEligible] = useState(false);
   const [quizStatusMessage, setQuizStatusMessage] = useState('');
@@ -556,9 +556,18 @@ export default function MicrocredentialWatchPage({
   // Fetch student watch progress & quiz status (POST /api/MicroCredencialStudentWatchVideoAPI/GetMicrocredentialStudentWatchVideoData)
   const fetchStudentWatchData = async () => {
     try {
-      const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 1;
+      let studentId = 0;
+      try {
+        const storedUser = localStorage.getItem('ignito_user') || localStorage.getItem('user');
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          studentId = Number(parsed?.studentId || parsed?.id || parsed?.userId || 0);
+        }
+      } catch (e) {}
+
+      const rawId = currentCourse.microcredentialCourseId || currentCourse.courseId || currentCourse.id || 1;
       const courseId = Number(rawId) || 1;
-      const res = await getMicrocredentialStudentWatchVideoData(3, courseId);
+      const res = await getMicrocredentialStudentWatchVideoData(studentId, courseId);
       if (res && res.success) {
         if (typeof res.overallPercentage === 'number' && res.overallPercentage >= 0) {
           setOverallWatchPct(Math.round(res.overallPercentage));
@@ -580,6 +589,22 @@ export default function MicrocredentialWatchPage({
             }
           });
           setVideoProgressMap(map);
+          videoProgressMapRef.current = map;
+
+          // Resume active lecture position if video is at 0
+          const curLecture = activeLectureRef.current || activeLecture;
+          const curVid = curLecture?.ytId || getYouTubeVideoId(curLecture?.videoUrl) || curLecture?.videoId || curLecture?.rawData?.videoId || String(curLecture?.id || '');
+          const savedSec = Number(map[curVid]?.watchedSeconds || 0);
+          if (savedSec > 0 && currentTimeRef.current === 0) {
+            setCurrentTime(savedSec);
+            setMaxWatchedTime(savedSec);
+            maxWatchedRef.current = savedSec;
+            if (ytPlayerRef.current && typeof ytPlayerRef.current.seekTo === 'function') {
+              try { ytPlayerRef.current.seekTo(savedSec, true); } catch (e) {}
+            } else if (videoRef.current) {
+              try { videoRef.current.currentTime = savedSec; } catch (e) {}
+            }
+          }
         }
       }
     } catch (err) {
@@ -591,35 +616,92 @@ export default function MicrocredentialWatchPage({
     fetchStudentWatchData();
   }, [course]);
 
+  // Refs to maintain real-time playback state without stale closures
+  const currentTimeRef = useRef(0);
+  const videoDurationRef = useRef(0);
+  const isPlayingRef = useRef(false);
+  const activeLectureRef = useRef(null);
+  const currentPlaylistRef = useRef([]);
+  const videoProgressMapRef = useRef({});
+  const courseRef = useRef(course);
+
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
+
+  useEffect(() => {
+    videoDurationRef.current = videoDuration;
+  }, [videoDuration]);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  useEffect(() => {
+    activeLectureRef.current = activeLecture;
+  }, [activeLecture]);
+
+  useEffect(() => {
+    currentPlaylistRef.current = currentPlaylist;
+  }, [currentPlaylist]);
+
+  useEffect(() => {
+    videoProgressMapRef.current = videoProgressMap;
+  }, [videoProgressMap]);
+
+  useEffect(() => {
+    courseRef.current = course;
+  }, [course]);
+
   // Save / update video watch progress (POST /api/MicroCredencialStudentWatchVideoAPI/MicroCredencialWatchvideoAddUpdate)
   const saveCurrentWatchProgress = async (watchedSec, totalDur) => {
     try {
-      const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 1;
+      const curCourse = courseRef.current || currentCourse;
+      const rawId = curCourse.microcredentialCourseId || curCourse.courseId || curCourse.id || 1;
       const courseId = Number(rawId) || 1;
-      const vId = activeLecture?.ytId || 
-                  getYouTubeVideoId(activeLecture?.videoUrl) || 
-                  activeLecture?.videoId || 
-                  activeLecture?.rawData?.videoId || 
-                  '8ihY2TZXuz0';
 
-      const sec = Math.round(Number(watchedSec || currentTime || 0));
-      const dur = Math.round(Number(totalDur || videoDuration || activeLecture?.videoDuration || 1));
-      const pct = Math.min(100, Math.max(0, Math.round((sec / dur) * 100)));
+      let studentId = 0;
+      try {
+        const storedUser = localStorage.getItem('ignito_user') || localStorage.getItem('user');
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          studentId = Number(parsed?.studentId || parsed?.id || parsed?.userId || 0);
+        }
+      } catch (e) {}
+
+      const curLecture = activeLectureRef.current || activeLecture;
+      const vId = curLecture?.ytId || 
+                  getYouTubeVideoId(curLecture?.videoUrl) || 
+                  curLecture?.videoId || 
+                  curLecture?.rawData?.videoId || 
+                  String(curLecture?.id || '8ihY2TZXuz0');
+
+      const sec = Math.round(Number(watchedSec ?? currentTimeRef.current ?? 0));
+      const dur = Math.round(Number(totalDur ?? videoDurationRef.current ?? curLecture?.videoDuration ?? 1));
+      if (sec <= 0 && dur <= 0) return;
+
+      // Detect completion: strictly 100% only when the video actually reaches full duration
+      const isCompleted = dur > 0 && sec >= dur;
+      const finalSec = isCompleted ? dur : sec;
+      const pct = isCompleted ? 100 : Math.min(99, Math.max(0, Math.floor((finalSec / (dur || 1)) * 100)));
 
       // Update local progress map optimistically
+      const prevMap = videoProgressMapRef.current || {};
       const updatedMap = {
-        ...videoProgressMap,
+        ...prevMap,
         [vId]: {
-          percentageWatched: Math.max(pct, videoProgressMap[vId]?.percentageWatched || 0),
-          watchedSeconds: Math.max(sec, videoProgressMap[vId]?.watchedSeconds || 0),
+          percentageWatched: Math.max(pct, prevMap[vId]?.percentageWatched || 0),
+          watchedSeconds: Math.max(finalSec, prevMap[vId]?.watchedSeconds || 0),
           totalDuration: dur
         }
       };
       setVideoProgressMap(updatedMap);
+      videoProgressMapRef.current = updatedMap;
 
-      const totalUnits = currentPlaylist.length || 1;
+      const playlistItems = currentPlaylistRef.current?.length > 0 ? currentPlaylistRef.current : currentPlaylist;
+      const totalUnits = playlistItems.length || 1;
       let sumPct = 0;
-      currentPlaylist.forEach(pItem => {
+      playlistItems.forEach(pItem => {
         const itemVid = pItem.ytId || getYouTubeVideoId(pItem.videoUrl) || pItem.id;
         sumPct += (updatedMap[itemVid]?.percentageWatched || 0);
       });
@@ -629,13 +711,13 @@ export default function MicrocredentialWatchPage({
       const payloadDetails = [
         {
           VideoId: vId,
-          WatchedSeconds: sec,
+          WatchedSeconds: finalSec,
           TotalDuration: dur,
           PercentageWatched: pct
         }
       ];
 
-      await microCredencialWatchvideoAddUpdate(3, courseId, calcOverall, payloadDetails);
+      await microCredencialWatchvideoAddUpdate(studentId, courseId, calcOverall, payloadDetails);
     } catch (err) {
       console.error('Error saving video watch progress:', err);
     }
@@ -644,14 +726,14 @@ export default function MicrocredentialWatchPage({
   // Periodic watch progress auto-saver (every 2 minutes) and on page unload
   useEffect(() => {
     const autoSaveInterval = setInterval(() => {
-      if (isPlaying && !selectedPdf && currentTime > 0) {
-        saveCurrentWatchProgress(currentTime, videoDuration);
+      if (isPlayingRef.current && currentTimeRef.current > 0) {
+        saveCurrentWatchProgress(currentTimeRef.current, videoDurationRef.current);
       }
-    }, 120000); // 2 minutes
+    }, 120000); // exactly every 2 minutes (120,000 ms)
 
     const handleBeforeUnload = () => {
-      if (currentTime > 0) {
-        saveCurrentWatchProgress(currentTime, videoDuration);
+      if (currentTimeRef.current > 0) {
+        saveCurrentWatchProgress(currentTimeRef.current, videoDurationRef.current);
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -659,8 +741,11 @@ export default function MicrocredentialWatchPage({
     return () => {
       clearInterval(autoSaveInterval);
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (currentTimeRef.current > 0) {
+        saveCurrentWatchProgress(currentTimeRef.current, videoDurationRef.current);
+      }
     };
-  }, [isPlaying, currentTime, videoDuration, activeLectureIdx, selectedPdf]);
+  }, []);
 
   // Fallback default questions if no backend questions exist yet
   const defaultQuestions = [
@@ -695,9 +780,18 @@ export default function MicrocredentialWatchPage({
   useEffect(() => {
     let isCancelled = false;
     let timer = null;
-    setCurrentTime(0);
-    setMaxWatchedTime(0);
-    maxWatchedRef.current = 0;
+
+    const curVid = activeLecture.ytId || 
+                  getYouTubeVideoId(activeLecture.videoUrl) || 
+                  activeLecture.videoId || 
+                  activeLecture.rawData?.videoId || 
+                  String(activeLecture.id || '');
+    const savedProgress = videoProgressMap[curVid] || videoProgressMapRef.current[curVid];
+    const initialResumeSec = Number(savedProgress?.watchedSeconds || 0);
+
+    setCurrentTime(initialResumeSec);
+    setMaxWatchedTime(initialResumeSec);
+    maxWatchedRef.current = initialResumeSec;
     setIsPlaying(false);
 
     if (!activeLecture.isYouTube || !activeLecture.ytId) {
@@ -733,6 +827,7 @@ export default function MicrocredentialWatchPage({
               fs: 0, // Hides native fullscreen button
               playsinline: 1,
               enablejsapi: 1,
+              start: initialResumeSec > 0 ? Math.floor(initialResumeSec) : undefined,
               origin: window.location.origin
             },
             events: {
@@ -741,12 +836,32 @@ export default function MicrocredentialWatchPage({
                 const dur = event.target.getDuration();
                 if (dur && dur > 0) setVideoDuration(dur);
                 else if (activeLecture.videoDuration) setVideoDuration(activeLecture.videoDuration);
+
+                if (initialResumeSec > 0) {
+                  try {
+                    event.target.seekTo(initialResumeSec, true);
+                  } catch (e) {}
+                }
               },
               onStateChange: (event) => {
                 if (isCancelled) return;
                 if (event.data === window.YT.PlayerState.PLAYING) {
                   setIsPlaying(true);
                   startProgressTracking();
+                } else if (event.data === window.YT.PlayerState.ENDED) {
+                  setIsPlaying(false);
+                  stopProgressTracking();
+                  const finalDur = ytPlayerRef.current?.getDuration() || activeLecture.videoDuration || videoDurationRef.current || 1;
+                  setCurrentTime(finalDur);
+                  setMaxWatchedTime(finalDur);
+                  maxWatchedRef.current = finalDur;
+                  saveCurrentWatchProgress(finalDur, finalDur);
+                } else if (event.data === window.YT.PlayerState.PAUSED) {
+                  setIsPlaying(false);
+                  stopProgressTracking();
+                  const curr = ytPlayerRef.current?.getCurrentTime() || currentTimeRef.current;
+                  const dur = ytPlayerRef.current?.getDuration() || videoDurationRef.current || activeLecture.videoDuration;
+                  saveCurrentWatchProgress(curr, dur);
                 } else {
                   setIsPlaying(false);
                   stopProgressTracking();
@@ -789,6 +904,36 @@ export default function MicrocredentialWatchPage({
         } else if (curr > maxWatchedRef.current) {
           maxWatchedRef.current = curr;
           setMaxWatchedTime(curr);
+        }
+
+        // Live progress synchronization into videoProgressMap
+        if (dur > 0) {
+          const isCompleted = curr >= dur;
+          const livePct = isCompleted ? 100 : Math.min(99, Math.floor((Math.max(curr, maxWatchedRef.current) / dur) * 100));
+          const curLecture = activeLectureRef.current || activeLecture;
+          const vId = curLecture?.ytId || 
+                      getYouTubeVideoId(curLecture?.videoUrl) || 
+                      curLecture?.videoId || 
+                      curLecture?.rawData?.videoId || 
+                      String(curLecture?.id || '');
+          if (vId) {
+            setVideoProgressMap(prev => {
+              const currentSaved = prev[vId]?.percentageWatched || 0;
+              if (livePct > currentSaved) {
+                const next = {
+                  ...prev,
+                  [vId]: {
+                    percentageWatched: livePct,
+                    watchedSeconds: Math.round(Math.max(curr, maxWatchedRef.current)),
+                    totalDuration: Math.round(dur)
+                  }
+                };
+                videoProgressMapRef.current = next;
+                return next;
+              }
+              return prev;
+            });
+          }
         }
       }
     }, 300);
@@ -889,6 +1034,35 @@ export default function MicrocredentialWatchPage({
     } else if (curr > maxWatchedRef.current) {
       maxWatchedRef.current = curr;
       setMaxWatchedTime(curr);
+    }
+
+    if (dur > 0) {
+      const isCompleted = curr >= dur;
+      const livePct = isCompleted ? 100 : Math.min(99, Math.floor((Math.max(curr, maxWatchedRef.current) / dur) * 100));
+      const curLecture = activeLectureRef.current || activeLecture;
+      const vId = curLecture?.ytId || 
+                  getYouTubeVideoId(curLecture?.videoUrl) || 
+                  curLecture?.videoId || 
+                  curLecture?.rawData?.videoId || 
+                  String(curLecture?.id || '');
+      if (vId) {
+        setVideoProgressMap(prev => {
+          const currentSaved = prev[vId]?.percentageWatched || 0;
+          if (livePct > currentSaved) {
+            const next = {
+              ...prev,
+              [vId]: {
+                percentageWatched: livePct,
+                watchedSeconds: Math.round(Math.max(curr, maxWatchedRef.current)),
+                totalDuration: Math.round(dur)
+              }
+            };
+            videoProgressMapRef.current = next;
+            return next;
+          }
+          return prev;
+        });
+      }
     }
   };
 
@@ -1036,8 +1210,32 @@ export default function MicrocredentialWatchPage({
                         src={activeLecture?.videoUrl || 'https://www.w3schools.com/html/mov_bbb.mp4'} 
                         className="theater-html5-video"
                         poster={currentCourse.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1200&auto=format&fit=crop&q=80'}
+                        onLoadedMetadata={(e) => {
+                          const curVid = activeLecture.ytId || getYouTubeVideoId(activeLecture.videoUrl) || activeLecture.videoId || String(activeLecture.id || '');
+                          const savedProgress = videoProgressMap[curVid] || videoProgressMapRef.current[curVid];
+                          const initialResumeSec = Number(savedProgress?.watchedSeconds || 0);
+                          if (initialResumeSec > 0) {
+                            e.target.currentTime = initialResumeSec;
+                            setCurrentTime(initialResumeSec);
+                            setMaxWatchedTime(initialResumeSec);
+                            maxWatchedRef.current = initialResumeSec;
+                          }
+                        }}
                         onPlay={() => setIsPlaying(true)}
-                        onPause={() => setIsPlaying(false)}
+                        onPause={() => {
+                          setIsPlaying(false);
+                          if (videoRef.current) {
+                            saveCurrentWatchProgress(videoRef.current.currentTime, videoRef.current.duration);
+                          }
+                        }}
+                        onEnded={() => {
+                          setIsPlaying(false);
+                          const dur = videoRef.current?.duration || videoDurationRef.current || 1;
+                          setCurrentTime(dur);
+                          setMaxWatchedTime(dur);
+                          maxWatchedRef.current = dur;
+                          saveCurrentWatchProgress(dur, dur);
+                        }}
                         onTimeUpdate={handleHtml5TimeUpdate}
                         controlsList="nodownload nofullscreen noremoteplayback"
                         disablePictureInPicture
@@ -1619,49 +1817,70 @@ export default function MicrocredentialWatchPage({
         <div className="mc-main-right-sidebar mc-watch-right-sidebar">
           
           {/* 1. Learning Progress Card */}
-          <div className="mc-watch-progress-box">
-            <div className="progress-box-left">
-              <h3 className="progress-box-title">Learning Progress</h3>
-              <div className="progress-stats-visual-row">
-                
-                {/* Radial Progress Circle */}
-                <div className="circular-progress-wrap">
-                  <svg viewBox="0 0 36 36" className="circular-chart blue">
-                    <path 
-                      className="circle-bg" 
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                    />
-                    <path 
-                      className="circle-bar" 
-                      strokeDasharray={`${overallWatchPct || 33}, 100`} 
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                    />
-                    <text x="18" y="20.35" className="percentage-text">{overallWatchPct || 33}%</text>
-                  </svg>
+          {(() => {
+            const playlistItems = currentPlaylist.length > 0 ? currentPlaylist : [];
+            const curLecture = activeLecture;
+            const activeVid = curLecture?.ytId || getYouTubeVideoId(curLecture?.videoUrl) || curLecture?.videoId || String(curLecture?.id || '');
+            const activeDur = videoDuration || curLecture?.videoDuration || 1;
+            const liveSec = Math.max(currentTime, maxWatchedTime);
+            const liveActivePct = activeDur > 0
+              ? (liveSec >= activeDur ? 100 : Math.min(99, Math.floor((liveSec / activeDur) * 100)))
+              : 0;
+
+            let sum = 0;
+            let completedCount = 0;
+            playlistItems.forEach(pItem => {
+              const pVid = pItem.ytId || getYouTubeVideoId(pItem.videoUrl) || pItem.id;
+              const rawPct = videoProgressMap[pVid]?.percentageWatched || 0;
+              const finalPct = pVid === activeVid ? Math.max(rawPct, liveActivePct) : rawPct;
+              sum += finalPct;
+              if (finalPct >= 100) completedCount++;
+            });
+            const liveOverallPct = playlistItems.length > 0 ? Math.min(100, Math.max(overallWatchPct || 0, Math.round(sum / playlistItems.length))) : (overallWatchPct || 0);
+
+            return (
+              <div className="mc-watch-progress-box">
+                <div className="progress-box-left">
+                  <h3 className="progress-box-title">Learning Progress</h3>
+                  <div className="progress-stats-visual-row">
+                    
+                    {/* Radial Progress Circle */}
+                    <div className="circular-progress-wrap">
+                      <svg viewBox="0 0 36 36" className="circular-chart blue">
+                        <path 
+                          className="circle-bg" 
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                        />
+                        <path 
+                          className="circle-bar" 
+                          strokeDasharray={`${liveOverallPct}, 100`} 
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                        />
+                        <text x="18" y="20.35" className="percentage-text">{liveOverallPct}%</text>
+                      </svg>
+                    </div>
+
+                    <div className="progress-text-info">
+                      <strong>Overall Progress</strong>
+                      <span>
+                        {completedCount} of {playlistItems.length} Topics
+                      </span>
+                    </div>
+
+                  </div>
                 </div>
 
-                <div className="progress-text-info">
-                  <strong>Overall Progress</strong>
-                  <span>
-                    {currentPlaylist.filter(pItem => {
-                      const itemVid = pItem.ytId || getYouTubeVideoId(pItem.videoUrl) || pItem.id;
-                      return (videoProgressMap[itemVid]?.percentageWatched || 0) >= 90;
-                    }).length || (overallWatchPct > 0 ? Math.max(1, Math.round((overallWatchPct / 100) * currentPlaylist.length)) : 1)} of {currentPlaylist.length} Topics
-                  </span>
+                {/* 3D Learning Illustration Badge */}
+                <div className="progress-avatar-illustration">
+                  <img 
+                    src={watchNowImg} 
+                    alt="Learning Progress Illustration" 
+                    className="progress-watchnow-img"
+                  />
                 </div>
-
               </div>
-            </div>
-
-            {/* 3D Learning Illustration Badge */}
-            <div className="progress-avatar-illustration">
-              <img 
-                src={watchNowImg} 
-                alt="Learning Progress Illustration" 
-                className="progress-watchnow-img"
-              />
-            </div>
-          </div>
+            );
+          })()}
 
           {/* 2. Learning Videos (e-Tutorial) Dynamic Playlist Card */}
           <div className="mc-watch-playlist-box">
@@ -1681,7 +1900,17 @@ export default function MicrocredentialWatchPage({
               {currentPlaylist.map((item, idx) => {
                 const isActive = idx === activeLectureIdx && !selectedPdf;
                 const itemVid = item.ytId || getYouTubeVideoId(item.videoUrl) || item.id;
-                const itemProgress = videoProgressMap[itemVid]?.percentageWatched ?? (idx === 0 ? (overallWatchPct > 0 ? overallWatchPct : 39) : 0);
+                const rawSavedPct = videoProgressMap[itemVid]?.percentageWatched || 0;
+                
+                let itemProgress = rawSavedPct;
+                if (isActive) {
+                  const activeDur = videoDuration || item.videoDuration || 1;
+                  const liveSec = Math.max(currentTime, maxWatchedTime);
+                  const livePct = activeDur > 0
+                    ? (liveSec >= activeDur ? 100 : Math.min(99, Math.floor((liveSec / activeDur) * 100)))
+                    : 0;
+                  itemProgress = Math.max(livePct, rawSavedPct);
+                }
 
                 return (
                   <div 
@@ -1704,7 +1933,7 @@ export default function MicrocredentialWatchPage({
                     <div className="playlist-item-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span className="playlist-item-pct">{item.duration}</span>
                       
-                      {/* Mini Circular Progress Ring matching Screenshot 2 */}
+                      {/* Mini Circular Progress Ring */}
                       <div 
                         style={{ 
                           position: 'relative', 
@@ -1766,7 +1995,7 @@ export default function MicrocredentialWatchPage({
             >
               <div className="expandable-left" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00385E', fontWeight: 800 }}>
                 <BookOpen size={16} style={{ color: '#00385E' }} />
-                <span>^ Learning Text e-Content</span>
+                <span>Learning Text e-Content</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#00385E', background: '#f0f7fc', padding: '2px 8px', borderRadius: '999px', border: '1px solid #c9dfef' }}>
@@ -1804,21 +2033,22 @@ export default function MicrocredentialWatchPage({
                         }}
                         className="mc-topic-pdf-item-row"
                       >
-                        {/* Theme Color PDF Badge (#00385E with #0284C7 fold accent) */}
+                        {/* Theme White PDF Document Badge */}
                         <div 
                           style={{
                             width: '32px',
                             height: '38px',
-                            background: 'linear-gradient(135deg, #00385E 0%, #002b48 100%)',
-                            borderRadius: '4px',
+                            background: '#ffffff',
+                            borderRadius: '5px',
                             position: 'relative',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
                             flexShrink: 0,
-                            boxShadow: '0 2px 5px rgba(0,56,94,0.25)',
-                            border: '1px solid #0284C7'
+                            boxShadow: '0 2px 6px rgba(0, 56, 94, 0.08)',
+                            border: '1.5px solid #00385E',
+                            overflow: 'hidden'
                           }}
                         >
                           <div 
@@ -1826,33 +2056,35 @@ export default function MicrocredentialWatchPage({
                               position: 'absolute',
                               top: 0,
                               right: 0,
-                              width: '9px',
-                              height: '9px',
-                              background: '#0284C7',
+                              width: '8px',
+                              height: '8px',
+                              background: '#00385E',
                               borderBottomLeftRadius: '3px'
                             }} 
                           />
-                          <span style={{ fontSize: '0.62rem', fontWeight: 900, color: '#ffffff', letterSpacing: '0.04em' }}>PDF</span>
+                          <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#00385E', letterSpacing: '0.04em' }}>PDF</span>
                         </div>
 
                         {/* Themed Topic Link */}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <span 
                             style={{ 
-                              fontSize: '0.82rem', 
-                              fontWeight: 800, 
-                              color: isSelected ? '#0284C7' : '#00385E', 
-                              textDecoration: 'underline',
+                              fontSize: '0.8rem', 
+                              fontWeight: 700, 
+                              color: isSelected ? '#00385E' : '#334155', 
+                              textDecoration: 'none',
                               textTransform: 'uppercase',
-                              letterSpacing: '0.02em',
                               lineHeight: 1.3,
-                              display: 'block'
+                              display: 'block',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
                             }}
                             className="mc-topic-pdf-link"
                           >
                             {topicItem.title}
                           </span>
-                          <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                          <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block', marginTop: '2px', fontWeight: 600 }}>
                             Unit {idx + 1} • Interactive Study Notes
                           </span>
                         </div>
@@ -1929,13 +2161,13 @@ export default function MicrocredentialWatchPage({
               <div className="action-title-block">
                 <h4>Download Resources</h4>
                 <span className="action-sub-text">
-                  {downloadDocuments.length > 0 ? `${downloadDocuments.length} Documents Available` : 'Course Resource Documents'}
+                  {downloadDocuments.length} {downloadDocuments.length === 1 ? 'Document Available' : 'Documents Available'}
                 </span>
               </div>
             </div>
 
-            {/* Dynamic Document Links */}
-            {downloadDocuments.length > 0 && (
+            {/* Dynamic Document Links from microcredentialStudentDownloadDocumentList */}
+            {downloadDocuments.length > 0 ? (
               <div className="download-docs-list-tray">
                 {downloadDocuments.map((doc) => (
                   <a
@@ -1952,36 +2184,11 @@ export default function MicrocredentialWatchPage({
                   </a>
                 ))}
               </div>
-            )}
-
-            {activeLecture?.topicPdf && (
-              <div className="download-docs-list-tray">
-                <a
-                  href={activeLecture.topicPdf}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="download-doc-item-link active-topic-pdf"
-                  download
-                >
-                  <BookOpen size={14} className="doc-icon-purple" />
-                  <span className="doc-item-filename">{activeLecture.title} (Topic PDF)</span>
-                  <Download size={13} className="doc-dl-icon" />
-                </a>
+            ) : (
+              <div style={{ padding: '8px 4px', fontSize: '0.8rem', color: '#64748B' }}>
+                No documents available for download.
               </div>
             )}
-          </div>
-
-          {/* 6. Claim your Certificate Card */}
-          <div className="mc-watch-action-card cert-card">
-            <div className="action-card-top">
-              <div className="action-icon-circle blue">
-                <Award size={16} />
-              </div>
-              <div className="action-title-block">
-                <h4>Claim your Certificate</h4>
-                <span className="action-sub-text">1 Final Assessment</span>
-              </div>
-            </div>
           </div>
 
 
