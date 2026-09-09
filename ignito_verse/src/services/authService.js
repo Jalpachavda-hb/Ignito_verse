@@ -30,7 +30,7 @@ export async function sendStudentLoginOTP(emailOrPayload, mobileNumber = '') {
   const inputDto = buildSendStudentLoginOTPInput(emailOrPayload, mobileNumber);
 
   // 2. Send request to .NET Web API endpoint [Route("SendStudentLoginOTP")]
-  const response = await apiClient('SendStudentLoginOTP', {
+  const response = await apiClient('api/StudentAPI/SendStudentLoginOTP', {
     method: 'POST',
     headers: inputDto.headers,
     body: inputDto.body,
@@ -70,7 +70,7 @@ export async function validateStudentLoginOTP(
   const inputDto = buildValidateStudentLoginOTPInput(params);
 
   // 2. Send request to .NET Web API endpoint [Route("ValidateStudentLoginOTP")]
-  const response = await apiClient('ValidateStudentLoginOTP', {
+  const response = await apiClient('api/StudentAPI/ValidateStudentLoginOTP', {
     method: 'POST',
     headers: inputDto.headers,
     body: inputDto.body,

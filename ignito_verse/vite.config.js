@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://verse.ignitolearn.com/',
+        target: 'https://1ejrtfddba.execute-api.ap-south-1.amazonaws.com/default/',
         changeOrigin: true,
         secure: false, // Allows self-signed SSL certificates in local development
       },
