@@ -1,17 +1,24 @@
 export function buildGetMicroCourseTopicDetailInput(
     microcredentialCourseId,
-    studentId,
+    studentId = 0,
     encryptedMicrocredentialCourseId = ''
 ) {
+    const numCourseId = Number(microcredentialCourseId);
+    const resolvedCourseId = (!isNaN(numCourseId) && numCourseId > 0) ? numCourseId : microcredentialCourseId;
+    const numStudentId = Number(studentId) || 0;
+
     return {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            microcredentialCourseId: microcredentialCourseId,
-            studentId: studentId,
-            encryptedMicrocredentialCourseId: encryptedMicrocredentialCourseId
+            MicrocredentialCourseId: resolvedCourseId,
+            microcredentialCourseId: resolvedCourseId,
+            StudentId: numStudentId,
+            studentId: numStudentId,
+            EncryptedMicrocredentialCourseId: encryptedMicrocredentialCourseId || '',
+            encryptedMicrocredentialCourseId: encryptedMicrocredentialCourseId || ''
         })
     };
 }

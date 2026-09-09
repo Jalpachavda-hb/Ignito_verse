@@ -6,13 +6,15 @@
  * @returns {object} Formatted request headers and JSON stringified body payload
  */
 export function buildGetMicroCourseLearnDataInput(microcredentialCourseId = 0) {
+    const numId = Number(microcredentialCourseId) || 0;
     return {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            microcredentialCourseId: microcredentialCourseId
+            MicrocredentialCourseId: numId,
+            microcredentialCourseId: numId
         })
     };
 }

@@ -34,7 +34,11 @@ import {
   getMicrocredentialCourseBindDataList,
   getMicrocredentialCourseDetail,
   getMicroCourseTopicDetail,
-  getReviewByMicroCourseId
+  getReviewByMicroCourseId,
+  getMicroCourseLearnData,
+  getMicroCourseMaterialIncludeData,
+  ignitoMicroStudentReviewInsert,
+  microcredentialStudentReviewLikeInsert
 } from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
 
@@ -51,14 +55,25 @@ export default function MicrocredentialDetail({
   const [activeTab, setActiveTab] = useState('info');
   const [topicsList, setTopicsList] = useState([]);
   const [reviewsList, setReviewsList] = useState([]);
+  const [learnList, setLearnList] = useState([]);
+  const [materialList, setMaterialList] = useState([]);
   const [likedReviews, setLikedReviews] = useState({});
   const [hasLiked, setHasLiked] = useState({});
+  const [certImgFailed, setCertImgFailed] = useState(false);
+
+  // Review submission state
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [newReviewStar, setNewReviewStar] = useState(5);
+  const [newReviewText, setNewReviewText] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [reviewSubmitMessage, setReviewSubmitMessage] = useState('');
 
   // Fetch full dynamic details from API securely using microcredentialCourseId or encryptedMicrocredentialCourseId
   useEffect(() => {
     let isMounted = true;
     setLoadingDetail(true);
     setCourseNotFound(false);
+    setCertImgFailed(false);
 
     const rawCourseId = initialCourse?.microcredentialCourseId || initialCourse?.courseId || initialCourse?.id;
     const numericCourseId = Number(rawCourseId) || (typeof rawCourseId === 'number' ? rawCourseId : 0);
@@ -68,14 +83,22 @@ export default function MicrocredentialDetail({
       const merged = { ...bindObj, ...detailObj };
       const rawImg = merged.microcredentialCourseIntroImage || merged.introImage || merged.image || merged.thumbnail || '';
       const formattedThumb = rawImg ? formatImageUrl(rawImg) : (initialCourse?.thumbnail || '');
-      const rawCertImg = merged.certificateImage || '';
-      const formattedCert = rawCertImg ? formatImageUrl(rawCertImg) : userCertificateImg;
+      const rawCertImg = (merged.certificateImage && merged.certificateImage !== 'null' && merged.certificateImage !== 'undefined') ? String(merged.certificateImage).trim() : '';
+      const formattedCert = rawCertImg ? formatImageUrl(rawCertImg) : '';
 
-      const learnList = Array.isArray(merged.microCourseLearnOutputList) && merged.microCourseLearnOutputList.length > 0
-        ? merged.microCourseLearnOutputList.map(item => item.microCourseLearnDescription || item.learnDescription || item.description || item).filter(Boolean)
-        : null;
+      const directLearn = Array.isArray(merged.microCourseLearnOutputList) && merged.microCourseLearnOutputList.length > 0
+        ? merged.microCourseLearnOutputList.map(item => item.microCourseLearnDescription || item.learnDescription || item.microCourseLearn || item.description || item).filter(Boolean)
+        : [];
 
       const courseTitle = merged.microcredentialCourseName || merged.title || 'Microcredential Course';
+
+      if (directLearn.length > 0) {
+        setLearnList(directLearn);
+      }
+
+      if (Array.isArray(merged.materialIncludeOutputList) && merged.materialIncludeOutputList.length > 0) {
+        setMaterialList(merged.materialIncludeOutputList);
+      }
 
       setCourseData({
         ...merged,
@@ -84,34 +107,34 @@ export default function MicrocredentialDetail({
         encryptedMicrocredentialCourseId: merged.encryptedMicrocredentialCourseId || encryptedId,
         title: courseTitle,
         microcredentialCourseName: courseTitle,
-        courseLevel: merged.courseLevel || 'Intermediate (Level 2)',
-        level: merged.courseLevel ? merged.courseLevel.split('(')[0].trim() : 'Intermediate',
-        fullLevel: merged.courseLevel || 'Intermediate (Level 2)',
-        category: merged.streamName || 'Management',
-        streamName: merged.streamName || 'Management',
-        price: merged.microcredentialCoursePrice !== undefined ? merged.microcredentialCoursePrice : 5000,
-        rating: merged.microcredentialCourseRating || 5,
-        duration: merged.microcredentialCourseDuration || '3 Month',
+        courseLevel: merged.courseLevel || '',
+        level: merged.courseLevel ? merged.courseLevel.split('(')[0].trim() : '',
+        fullLevel: merged.courseLevel || '',
+        category: merged.streamName || '',
+        streamName: merged.streamName || '',
+        price: merged.microcredentialCoursePrice !== undefined ? merged.microcredentialCoursePrice : 0,
+        rating: merged.microcredentialCourseRating || 0,
+        duration: merged.microcredentialCourseDuration || '',
         thumbnail: formattedThumb,
         certificateImage: formattedCert,
         language: merged.language || 'ENGLISH',
-        updatedOn: merged.updatedOn || 'August 2026',
-        lastUpdated: merged.updatedOn || 'August 2026',
+        updatedOn: merged.updatedOn || '',
+        lastUpdated: merged.updatedOn || '',
         professorName: merged.professorName || '',
-        certificateName: merged.certificateName || courseTitle || 'CERTIFICATE OF COMPLETION',
-        about: merged.aboutMicrocredentialCourse || merged.courseAbout || merged.about || `This course introduces comprehensive ${courseTitle} methods and practical tools to develop skills and achieve institutional goals in digital education.`,
-        description: merged.microcredentialCourseDescription || merged.courseDescription || merged.description || `${courseTitle} focuses on developing core competencies and industry-verified expertise through practical exercises.`,
-        learningOutcomes: learnList,
+        certificateName: merged.certificateName || '',
+        about: merged.aboutMicrocredentialCourse || merged.courseAbout || merged.about || '',
+        description: merged.microcredentialCourseDescription || merged.courseDescription || merged.description || '',
+        learningOutcomes: directLearn.length > 0 ? directLearn : [],
         materialIncludeList: merged.materialIncludeOutputList || []
       });
       setCourseNotFound(false);
     };
 
-    // Load dynamic topics and reviews using microcredentialCourseId in payload
+    // Load dynamic topics, reviews, learn items, and materials using microcredentialCourseId in payload
     const loadExtraDetails = (courseIdNum) => {
       if (!courseIdNum || courseIdNum <= 0) return;
 
-      // 1. Fetch course topic details
+      // 1. Fetch course topic details (Tab 2)
       getMicroCourseTopicDetail(courseIdNum, 3)
         .then((tRes) => {
           if (!isMounted) return;
@@ -128,7 +151,7 @@ export default function MicrocredentialDetail({
         })
         .catch(() => {});
 
-      // 2. Fetch course reviews
+      // 2. Fetch course reviews (Tab 3)
       getReviewByMicroCourseId(courseIdNum, 3)
         .then((rRes) => {
           if (!isMounted) return;
@@ -143,6 +166,29 @@ export default function MicrocredentialDetail({
             });
             setLikedReviews(initialLikes);
             setHasLiked(initialHasLiked);
+          }
+        })
+        .catch(() => {});
+
+      // 3. Fetch learn data items (Tab 1 What Will You Learn)
+      getMicroCourseLearnData(courseIdNum)
+        .then((lRes) => {
+          if (!isMounted) return;
+          if (lRes && lRes.success && Array.isArray(lRes.microCourseLearnDataList) && lRes.microCourseLearnDataList.length > 0) {
+            const list = lRes.microCourseLearnDataList.map(item => item.microCourseLearn || item.learnDescription || item.description).filter(Boolean);
+            if (list.length > 0) {
+              setLearnList(list);
+            }
+          }
+        })
+        .catch(() => {});
+
+      // 4. Fetch materials include data (Sidebar)
+      getMicroCourseMaterialIncludeData(courseIdNum)
+        .then((mRes) => {
+          if (!isMounted) return;
+          if (mRes && mRes.success && Array.isArray(mRes.microCourseMaterialIncludeDataList) && mRes.microCourseMaterialIncludeDataList.length > 0) {
+            setMaterialList(mRes.microCourseMaterialIncludeDataList);
           }
         })
         .catch(() => {});
@@ -262,6 +308,14 @@ export default function MicrocredentialDetail({
   }, [initialCourse]);
 
   const course = courseData || initialCourse || {};
+  const hasCertificate = Boolean(
+    course.certificateImage &&
+    typeof course.certificateImage === 'string' &&
+    course.certificateImage.trim() !== '' &&
+    course.certificateImage !== 'null' &&
+    course.certificateImage !== 'undefined' &&
+    !certImgFailed
+  );
 
   // If loading
   if (loadingDetail) {
@@ -313,7 +367,7 @@ export default function MicrocredentialDetail({
     );
   }
 
-  const handleToggleLike = (reviewId) => {
+  const handleToggleLike = async (reviewId) => {
     const isCurrentlyLiked = Boolean(hasLiked[reviewId]);
     setHasLiked(prev => ({
       ...prev,
@@ -323,52 +377,55 @@ export default function MicrocredentialDetail({
       ...prev,
       [reviewId]: Math.max(0, (prev[reviewId] || 0) + (isCurrentlyLiked ? -1 : 1))
     }));
+
+    try {
+      const numCourseId = Number(courseData?.microcredentialCourseId || initialCourse?.microcredentialCourseId) || 0;
+      const numReviewId = Number(reviewId) || 0;
+      if (numReviewId > 0 && numCourseId > 0) {
+        await microcredentialStudentReviewLikeInsert(numReviewId, 3, numCourseId);
+      }
+    } catch (e) {
+      console.warn('Like action error:', e);
+    }
   };
 
-  const detailedTopics = [
-    {
-      id: 1,
-      title: 'Acute vs Chronic Stress: Brain Chemistry & Cortisol Impact',
-      duration: '45 min',
-      type: 'Theory',
-      icon: Brain
-    },
-    {
-      id: 2,
-      title: 'Diaphragmatic & Somatic Breathing for Immediate Vagal Activation',
-      duration: '50 min',
-      type: 'Practical',
-      icon: Activity
-    },
-    {
-      id: 3,
-      title: 'Cognitive Reframing: Neuroplasticity & Thought Restructuring',
-      duration: '40 min',
-      type: 'Case Study',
-      icon: Zap
-    },
-    {
-      id: 4,
-      title: 'Progressive Muscle Relaxation (PMR) & Somatic Tension Release',
-      duration: '55 min',
-      type: 'Practical',
-      icon: PlayCircle
-    },
-    {
-      id: 5,
-      title: 'Mindfulness Integration for High-Performance Workspaces',
-      duration: '45 min',
-      type: 'Masterclass',
-      icon: BookOpen
-    },
-    {
-      id: 6,
-      title: 'Executive Daily Reset: 5-Minute Micro-Meditation Protocols',
-      duration: '35 min',
-      type: 'Workshop',
-      icon: Sparkles
+  const handleSubmitNewReview = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!newReviewText.trim()) return;
+
+    setIsSubmittingReview(true);
+    setReviewSubmitMessage('');
+
+    const numCourseId = Number(courseData?.microcredentialCourseId || initialCourse?.microcredentialCourseId) || 0;
+    try {
+      const res = await ignitoMicroStudentReviewInsert(3, numCourseId, newReviewStar, newReviewText.trim());
+      if (res && res.success) {
+        const newlyCreated = {
+          microcredentialCourseReviewId: Date.now(),
+          studentId: 3,
+          microcredentialCourseId: numCourseId,
+          reviewInStar: newReviewStar,
+          reviewDescription: newReviewText.trim(),
+          studentName: 'You (Student)',
+          studentProfileImage: '',
+          createdOnText: 'Just now',
+          isReviewLikedByStudent: false,
+          reviewLikeCount: 0
+        };
+        setReviewsList(prev => [newlyCreated, ...prev]);
+        setNewReviewText('');
+        setShowReviewForm(false);
+        setReviewSubmitMessage('Thank you! Your review has been submitted successfully.');
+      } else {
+        setReviewSubmitMessage(res?.message || 'Could not submit review. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error submitting review:', err);
+      setReviewSubmitMessage('An error occurred while submitting your review.');
+    } finally {
+      setIsSubmittingReview(false);
     }
-  ];
+  };
 
   return (
     <div className="mc-detail-page-wrapper">
@@ -404,8 +461,16 @@ export default function MicrocredentialDetail({
             {/* Quick Metadata Stats */}
             <div className="mc-hero-stats-row">
               <div className="mc-rating-badge">
-                <Star size={14} className="star-icon-filled" />
-                <span className="rating-score">{course.rating || course.microcredentialCourseRating || '5'}</span>
+                <Star
+                  size={14}
+                  className={reviewsList.length > 0 ? "star-icon-filled" : "star-icon-empty"}
+                  style={{ color: reviewsList.length > 0 ? '#f59e0b' : '#94a3b8', fill: reviewsList.length > 0 ? '#f59e0b' : 'none' }}
+                />
+                <span className="rating-score">
+                  {reviewsList.length > 0 
+                    ? (reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)
+                    : 0}
+                </span>
               </div>
             </div>
           </div>
@@ -440,7 +505,7 @@ export default function MicrocredentialDetail({
                 <div className="island-tab-text-group">
                   <span className="island-tab-title">Microcredentials Content</span>
                 </div>
-                <span className="island-tab-badge count-pill">{topicsList.length > 0 ? topicsList.length : 12}</span>
+                <span className="island-tab-badge count-pill">{topicsList.length}</span>
               </button>
 
               {/* Tab 3: Reviews */}
@@ -455,7 +520,11 @@ export default function MicrocredentialDetail({
                 <div className="island-tab-text-group">
                   <span className="island-tab-title">Student Review</span>
                 </div>
-                <span className="island-tab-badge rating-pill">4.5 ★</span>
+                <span className="island-tab-badge rating-pill">
+                  {reviewsList.length > 0 
+                    ? `${(reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)} ★`
+                    : '0 ★'}
+                </span>
               </button>
 
               {/* Tab 4: Certificate */}
@@ -470,7 +539,9 @@ export default function MicrocredentialDetail({
                 <div className="island-tab-text-group">
                   <span className="island-tab-title">Certificate</span>
                 </div>
-                <span className="island-tab-badge official-pill">OFFICIAL</span>
+                <span className={`island-tab-badge ${hasCertificate ? 'official-pill' : 'count-pill'}`} style={{ fontSize: '0.72rem', padding: '2px 8px' }}>
+                  {hasCertificate ? 'OFFICIAL' : 'N/A'}
+                </span>
               </button>
 
             </div>
@@ -499,7 +570,7 @@ export default function MicrocredentialDetail({
                     <h2 className="mc-section-title">About Microcredential</h2>
                   </div>
                   <p className="mc-section-paragraph">
-                    {course.about || "This course introduces simple relaxation methods and meditation practices to improve focus, reduce stress, and maintain emotional balance. Students learn breathing techniques, mindfulness practices, and ways to develop a calm and positive approach toward daily challenges."}
+                    {course.about || "No about information available for this course."}
                   </p>
                 </div>
 
@@ -512,35 +583,35 @@ export default function MicrocredentialDetail({
                     <h2 className="mc-section-title">Description</h2>
                   </div>
                   <p className="mc-section-paragraph">
-                    {course.description || "Relaxation Techniques and Meditation focuses on developing mental calmness, emotional balance, and stress management skills through various relaxation practices. This course introduces students to breathing exercises, mindfulness, meditation methods, and techniques for reducing physical and mental tension to handle daily challenges effectively."}
+                    {course.description || "No description available for this course."}
                   </p>
                 </div>
 
                 {/* Section 3: What Will You Learn? Box */}
-                <div className="mc-learn-box-card">
-                  <h3 className="mc-learn-box-heading">What Will You Learn?</h3>
-                  <div className="mc-learn-grid-2col">
-                    {(course.learningOutcomes || [
-                      'Build positive thinking habits and improve overall well-being.',
-                      'Understand meditation practices for improving focus and mental clarity.',
-                      'Learn breathing exercises to promote calmness and relaxation.',
-                      'Understand meditation practices for improving focus and mental clarity.',
-                      'Develop mindfulness skills to improve emotional balance and self-awareness.',
-                      'Learn effective relaxation techniques to manage daily stress and pressure.'
-                    ]).map((outcome, idx) => (
-                      <div key={idx} className="mc-learn-item-row">
-                        <div className="mc-learn-blue-check">
-                          <Check size={12} strokeWidth={3.5} />
+                {learnList.length > 0 ? (
+                  <div className="mc-learn-box-card">
+                    <h3 className="mc-learn-box-heading">What Will You Learn?</h3>
+                    <div className="mc-learn-grid-2col">
+                      {learnList.map((outcome, idx) => (
+                        <div key={idx} className="mc-learn-item-row">
+                          <div className="mc-learn-blue-check">
+                            <Check size={12} strokeWidth={3.5} />
+                          </div>
+                          <span className="mc-learn-item-text">{outcome}</span>
                         </div>
-                        <span className="mc-learn-item-text">{outcome}</span>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="mc-learn-box-card" style={{ padding: '24px', textAlign: 'center', background: '#f8fafc', borderRadius: '14px', border: '1px dashed #cbd5e1' }}>
+                    <h3 className="mc-learn-box-heading" style={{ marginBottom: '6px' }}>What Will You Learn?</h3>
+                    <p style={{ fontSize: '0.88rem', color: '#64748B', margin: 0 }}>No specific learning outcomes found for this course.</p>
+                  </div>
+                )}
               </>
             )}
 
-            {/* TAB 2: MICROCREDENTIALS CONTENT (LUXURY EXECUTIVE DESIGN) */}
+            {/* TAB 2: MICROCREDENTIALS CONTENT */}
             {activeTab === 'content' && (
               <div className="mc-content-luxury-pane">
 
@@ -558,22 +629,57 @@ export default function MicrocredentialDetail({
                 </div>
 
                 {/* Detailed Module Topics List */}
-                <div className="mc-luxury-modules-list">
-                  {(topicsList.length > 0 ? topicsList : detailedTopics).map((item, idx) => (
-                    <div
-                      key={item.id || idx}
-                      className="mc-module-luxury-card"
-                    >
-                      <div className="module-card-left">
-                        <div className="module-index-box">{(idx + 1) < 10 ? `0${idx + 1}` : idx + 1}</div>
+                {topicsList.length > 0 ? (
+                  <div className="mc-luxury-modules-list">
+                    {topicsList.map((item, idx) => (
+                      <div
+                        key={item.id || idx}
+                        className="mc-module-luxury-card"
+                      >
+                        <div className="module-card-left">
+                          <div className="module-index-box">{(idx + 1) < 10 ? `0${idx + 1}` : idx + 1}</div>
 
-                        <div className="module-details-text">
-                          <h3 className="module-title-headline">{item.title}</h3>
+                          <div className="module-details-text">
+                            <h3 className="module-title-headline">{item.title}</h3>
+                          </div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: '50px 24px',
+                    textAlign: 'center',
+                    background: '#f8fafc',
+                    borderRadius: '16px',
+                    border: '1.5px dashed #cbd5e1',
+                    margin: '20px 0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <div style={{
+                      width: '60px',
+                      height: '60px',
+                      borderRadius: '50%',
+                      background: 'rgba(0, 56, 94, 0.08)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#00385E',
+                      marginBottom: '14px'
+                    }}>
+                      <BookOpen size={28} />
                     </div>
-                  ))}
-                </div>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#00385E', margin: '0 0 6px 0' }}>
+                      No Course Content Found
+                    </h3>
+                    <p style={{ fontSize: '0.88rem', color: '#64748B', maxWidth: '400px', margin: 0 }}>
+                      No topic modules or video lessons have been added to this microcredential course yet.
+                    </p>
+                  </div>
+                )}
 
               </div>
             )}
@@ -581,47 +687,139 @@ export default function MicrocredentialDetail({
             {/* TAB 3: STUDENT REVIEW */}
             {activeTab === 'reviews' && (
               <div className="mc-reviews-creative-card">
-                <div className="mc-section-header">
-                  <div className="mc-header-icon-box purple-tint">
-                    <Star size={20} />
+                <div className="mc-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className="mc-header-icon-box purple-tint">
+                      <Star size={20} />
+                    </div>
+                    <div>
+                      <h2 className="mc-section-title">Student Review</h2>
+                      <span className="mc-sub-text">Verified student feedback and rating breakdown</span>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="mc-section-title">Student Review</h2>
-                    <span className="mc-sub-text">Verified student feedback and rating breakdown</span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowReviewForm(prev => !prev)}
+                    style={{
+                      background: '#00385E',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '8px 18px',
+                      borderRadius: '8px',
+                      fontWeight: 600,
+                      fontSize: '0.86rem',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <Star size={14} />
+                    <span>{showReviewForm ? 'Close Form' : 'Write a Review'}</span>
+                  </button>
                 </div>
+
+                {/* Interactive Write Review Form */}
+                {showReviewForm && (
+                  <form onSubmit={handleSubmitNewReview} style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '14px', padding: '20px', margin: '20px 0' }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#00385E', fontWeight: 700 }}>Share Your Experience</h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#475569' }}>Your Rating:</span>
+                      {[1, 2, 3, 4, 5].map((starVal) => (
+                        <button
+                          key={starVal}
+                          type="button"
+                          onClick={() => setNewReviewStar(starVal)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
+                        >
+                          <Star size={20} fill={starVal <= newReviewStar ? '#f59e0b' : 'none'} color={starVal <= newReviewStar ? '#f59e0b' : '#94a3b8'} />
+                        </button>
+                      ))}
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#00385E', marginLeft: '6px' }}>{newReviewStar} / 5 Stars</span>
+                    </div>
+                    <textarea
+                      rows={3}
+                      value={newReviewText}
+                      onChange={(e) => setNewReviewText(e.target.value)}
+                      placeholder="Write your honest review about this course, faculty, or topics..."
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.9rem', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                      required
+                    />
+                    <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowReviewForm(false)}
+                        style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#64748b', fontWeight: 600, cursor: 'pointer', fontSize: '0.86rem' }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmittingReview || !newReviewText.trim()}
+                        style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: '#00385E', color: '#ffffff', fontWeight: 700, cursor: 'pointer', fontSize: '0.86rem', opacity: (isSubmittingReview || !newReviewText.trim()) ? 0.6 : 1 }}
+                      >
+                        {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {reviewSubmitMessage && (
+                  <div style={{ padding: '10px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', borderRadius: '8px', fontSize: '0.88rem', margin: '14px 0' }}>
+                    {reviewSubmitMessage}
+                  </div>
+                )}
 
                 {/* Rating Summary & Star Breakdown Grid */}
                 <div className="mc-reviews-breakdown-grid">
 
                   {/* Big Score Box */}
                   <div className="mc-big-score-box">
-                    <div className="score-number-display">{course.rating || course.microcredentialCourseRating || '5.0'}</div>
+                    <div className="score-number-display">
+                      {reviewsList.length > 0 
+                        ? (reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)
+                        : 0}
+                    </div>
                     <div className="score-stars-row">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} size={18} className="star-icon-filled" />
+                        <Star
+                          key={i}
+                          size={18}
+                          className={reviewsList.length > 0 ? "star-icon-filled" : "star-icon-empty"}
+                          style={{ color: reviewsList.length > 0 ? '#f59e0b' : '#cbd5e1', fill: reviewsList.length > 0 ? '#f59e0b' : 'none' }}
+                        />
                       ))}
                     </div>
-                    <span className="score-total-count">Total {reviewsList.length > 0 ? `${reviewsList.length} Verified` : '452 Verified'} Ratings</span>
+                    <span className="score-total-count">Total {reviewsList.length} Verified {reviewsList.length === 1 ? 'Rating' : 'Ratings'}</span>
                   </div>
 
                   {/* 5-Star Distribution Bars */}
                   <div className="mc-rating-bars-stack">
-                    {[
-                      { stars: 5, pct: 96, count: reviewsList.length > 0 ? `${reviewsList.filter(r => r.reviewInStar === 5).length || reviewsList.length} Ratings` : '434 Ratings' },
-                      { stars: 4, pct: 4, count: reviewsList.length > 0 ? `${reviewsList.filter(r => r.reviewInStar === 4).length} Ratings` : '18 Ratings' },
-                      { stars: 3, pct: 0, count: '0 Ratings' },
-                      { stars: 2, pct: 0, count: '0 Ratings' },
-                      { stars: 1, pct: 0, count: '0 Ratings' }
-                    ].map((bar, bIdx) => (
-                      <div key={bIdx} className="mc-rating-bar-row">
-                        <span className="bar-star-label">☆ {bar.stars}</span>
-                        <div className="bar-track-line">
-                          <div className="bar-fill-line" style={{ width: `${bar.pct}%` }} />
+                    {(() => {
+                      const totalC = reviewsList.length || 1;
+                      const hasReviews = reviewsList.length > 0;
+                      const c5 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 5).length;
+                      const c4 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 4).length;
+                      const c3 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 3).length;
+                      const c2 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 2).length;
+                      const c1 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 1).length;
+
+                      return [
+                        { stars: 5, pct: hasReviews ? Math.round((c5 / totalC) * 100) : 0, count: `${c5} Ratings` },
+                        { stars: 4, pct: hasReviews ? Math.round((c4 / totalC) * 100) : 0, count: `${c4} Ratings` },
+                        { stars: 3, pct: hasReviews ? Math.round((c3 / totalC) * 100) : 0, count: `${c3} Ratings` },
+                        { stars: 2, pct: hasReviews ? Math.round((c2 / totalC) * 100) : 0, count: `${c2} Ratings` },
+                        { stars: 1, pct: hasReviews ? Math.round((c1 / totalC) * 100) : 0, count: `${c1} Ratings` }
+                      ].map((bar, bIdx) => (
+                        <div key={bIdx} className="mc-rating-bar-row">
+                          <span className="bar-star-label">☆ {bar.stars}</span>
+                          <div className="bar-track-line">
+                            <div className="bar-fill-line" style={{ width: `${bar.pct}%` }} />
+                          </div>
+                          <span className="bar-count-label">{bar.count}</span>
                         </div>
-                        <span className="bar-count-label">{bar.count}</span>
-                      </div>
-                    ))}
+                      ));
+                    })()}
                   </div>
 
                 </div>
@@ -653,7 +851,7 @@ export default function MicrocredentialDetail({
                         </div>
 
                         <p className="student-review-body-text">
-                          {rev.reviewDescription || "Great course with comprehensive practical modules!"}
+                          {rev.reviewDescription || "No review text provided."}
                         </p>
 
                         <div className="student-review-action-row">
@@ -670,41 +868,53 @@ export default function MicrocredentialDetail({
                     );
                   })
                 ) : (
-                  <div className="mc-student-review-item">
-                    <div className="student-review-author-row">
-                      <div className="student-avatar-wrap">
-                        <img
-                          src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
-                          alt="Anjali Sharma"
-                        />
-                      </div>
-                      <div className="student-author-info">
-                        <h4>Anjali Sharma</h4>
-                        <div className="student-stars-and-date">
-                          <div className="student-mini-stars">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} size={13} className="star-icon-filled" />
-                            ))}
-                          </div>
-                          <span className="review-timestamp">• 3 months ago</span>
-                        </div>
-                      </div>
+                  <div style={{
+                    padding: '40px 20px',
+                    textAlign: 'center',
+                    background: '#f8fafc',
+                    borderRadius: '14px',
+                    border: '1.5px dashed #cbd5e1',
+                    margin: '18px 0 0 0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <div style={{
+                      width: '56px',
+                      height: '56px',
+                      borderRadius: '50%',
+                      background: 'rgba(0, 56, 94, 0.08)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#00385E',
+                      marginBottom: '12px'
+                    }}>
+                      <Star size={26} />
                     </div>
-
-                    <p className="student-review-body-text">
-                      "I am currently pursuing the course on this platform, and my learning experience has been excellent so far. The course content is well-structured, engaging, and easy to follow, with interactive lessons and assessments that enhance my understanding. I am learning practical techniques to manage daily stress, improve focus, and maintain emotional well-being in both academic and professional life."
+                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#00385E', margin: '0 0 6px 0' }}>
+                      No Reviews Yet
+                    </h4>
+                    <p style={{ fontSize: '0.88rem', color: '#64748B', maxWidth: '380px', margin: '0 0 14px 0' }}>
+                      No student reviews have been submitted for this course yet. Be the first to share your experience!
                     </p>
-
-                    <div className="student-review-action-row">
-                      <button
-                        type="button"
-                        className={`btn-like-review ${hasLiked['default'] ? 'liked' : ''}`}
-                        onClick={() => handleToggleLike('default')}
-                      >
-                        <ThumbsUp size={14} />
-                        <span>Like ({likedReviews['default'] || 2})</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowReviewForm(true)}
+                      style={{
+                        background: '#00385E',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '8px 18px',
+                        borderRadius: '8px',
+                        fontWeight: 600,
+                        fontSize: '0.84rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Write the First Review
+                    </button>
                   </div>
                 )}
               </div>
@@ -723,43 +933,83 @@ export default function MicrocredentialDetail({
                       <span className="mc-sub-text">Official accredited credential verifiable on blockchain</span>
                     </div>
                   </div>
-                  <div className="cert-badge-pill">
-                    <Sparkles size={14} />
-                    <span>Accredited Credential</span>
-                  </div>
+                  {hasCertificate && (
+                    <div className="cert-badge-pill">
+                      <Sparkles size={14} />
+                      <span>Accredited Credential</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Realistic Certificate Image Preview */}
-                <div className="mc-certificate-image-canvas">
-                  <img
-                    src={course.certificateImage || userCertificateImg}
-                    alt={`${course.title} Certificate of Completion`}
-                    className="mc-certificate-preview-photo"
-                  />
-                </div>
+                {hasCertificate ? (
+                  <>
+                    {/* Realistic Certificate Image Preview */}
+                    <div className="mc-certificate-image-canvas">
+                      <img
+                        src={course.certificateImage}
+                        alt={`${course.title || course.microcredentialCourseName || 'Course'} Certificate of Completion`}
+                        className="mc-certificate-preview-photo"
+                        onError={() => setCertImgFailed(true)}
+                      />
+                    </div>
 
-                {/* Bottom Verification & Share Strip */}
-                <div className="mc-cert-footer-verify-strip">
-                  <div className="verify-strip-left">
-                    <CheckCircle2 size={16} className="check-green-svg" />
-                    <span>Click to verify this accredited certificate authenticity on blockchain</span>
+                    {/* Bottom Verification & Share Strip */}
+                    <div className="mc-cert-footer-verify-strip">
+                      <div className="verify-strip-left">
+                        <CheckCircle2 size={16} className="check-green-svg" />
+                        <span>Click to verify this accredited certificate authenticity on blockchain</span>
+                      </div>
+                      <div className="verify-strip-actions">
+                        <button
+                          type="button"
+                          className="btn-cert-share"
+                          onClick={() => {
+                            if (navigator.clipboard) {
+                              navigator.clipboard.writeText(window.location.href);
+                            }
+                            alert('Certificate verification link copied!');
+                          }}
+                        >
+                          <Share2 size={13} />
+                          <span>Share Certificate</span>
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{
+                    padding: '56px 24px',
+                    textAlign: 'center',
+                    background: '#f8fafc',
+                    borderRadius: '16px',
+                    border: '1.5px dashed #cbd5e1',
+                    margin: '18px 0 10px 0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <div style={{
+                      width: '64px',
+                      height: '64px',
+                      borderRadius: '50%',
+                      background: 'rgba(0, 56, 94, 0.08)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#00385E',
+                      marginBottom: '16px'
+                    }}>
+                      <Award size={32} />
+                    </div>
+                    <h3 style={{ fontSize: '1.18rem', fontWeight: 700, color: '#00385E', margin: '0 0 8px 0' }}>
+                      No Certificate Available
+                    </h3>
+                    <p style={{ fontSize: '0.9rem', color: '#64748B', maxWidth: '440px', lineHeight: 1.6, margin: 0 }}>
+                      No certificate is available for this microcredential course at this time. All course materials, video lectures, and learning resources remain fully accessible.
+                    </p>
                   </div>
-                  <div className="verify-strip-actions">
-                    <button
-                      type="button"
-                      className="btn-cert-share"
-                      onClick={() => {
-                        if (navigator.clipboard) {
-                          navigator.clipboard.writeText(window.location.href);
-                        }
-                        alert('Certificate verification link copied!');
-                      }}
-                    >
-                      <Share2 size={13} />
-                      <span>Share Certificate</span>
-                    </button>
-                  </div>
-                </div>
+                )}
               </div>
             )}
 
@@ -887,7 +1137,7 @@ export default function MicrocredentialDetail({
                   <span>Exam & Certificate</span>
                 </div>
                 <div className="include-val-cell">
-                  Included
+                  {hasCertificate ? 'Included' : 'Not Included'}
                 </div>
               </div>
 
@@ -898,7 +1148,7 @@ export default function MicrocredentialDetail({
                   <span>Number of Certificate</span>
                 </div>
                 <div className="include-val-cell">
-                  1
+                  {hasCertificate ? '1' : '0'}
                 </div>
               </div>
 
@@ -909,7 +1159,7 @@ export default function MicrocredentialDetail({
                   <span>Certificate Name</span>
                 </div>
                 <div className="include-val-cell cert-title-val">
-                  {courseData.certificateName || courseData.title || courseData.microcredentialCourseName}
+                  {hasCertificate ? (courseData.certificateName || courseData.title || courseData.microcredentialCourseName) : 'Not Available'}
                 </div>
               </div>
 
@@ -945,6 +1195,23 @@ export default function MicrocredentialDetail({
                   {courseData.certificateType || 'Certificate of completion'}
                 </div>
               </div>
+
+              {/* Dynamic Materials from API */}
+              {materialList.map((mat, mIdx) => {
+                const matText = mat.materialInclude || mat.title || (typeof mat === 'string' ? mat : '');
+                if (!matText) return null;
+                return (
+                  <div key={mIdx} className="mc-include-row">
+                    <div className="include-key-cell">
+                      <CheckCircle2 size={15} className="inc-icon" />
+                      <span>{matText}</span>
+                    </div>
+                    <div className="include-val-cell">
+                      Included
+                    </div>
+                  </div>
+                );
+              })}
 
             </div>
           </div>

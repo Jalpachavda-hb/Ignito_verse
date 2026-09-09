@@ -14,16 +14,24 @@ export function buildIgnitoMicroStudentReviewInsertInput(
     reviewInStar = 0,
     reviewDescription = ''
 ) {
+    const numStudentId = Number(studentId) || 0;
+    const numCourseId = Number(microcredentialCourseId) || 0;
+    const numStar = Number(reviewInStar) || 5;
+
     return {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            studentId: studentId,
-            microcredentialCourseId: microcredentialCourseId,
-            reviewInStar: reviewInStar,
-            reviewDescription: reviewDescription
+            StudentId: numStudentId,
+            studentId: numStudentId,
+            MicrocredentialCourseId: numCourseId,
+            microcredentialCourseId: numCourseId,
+            ReviewInStar: numStar,
+            reviewInStar: numStar,
+            ReviewDescription: reviewDescription || '',
+            reviewDescription: reviewDescription || ''
         })
     };
 }

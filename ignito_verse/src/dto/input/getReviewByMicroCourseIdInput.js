@@ -10,14 +10,18 @@ export function buildGetReviewByMicroCourseIdInput(
     microcredentialCourseId = 0,
     studentId = 0
 ) {
+    const numCourseId = Number(microcredentialCourseId) || 0;
+    const numStudentId = Number(studentId) || 0;
     return {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            microcredentialCourseId: microcredentialCourseId,
-            studentId: studentId
+            MicrocredentialCourseId: numCourseId,
+            microcredentialCourseId: numCourseId,
+            StudentId: numStudentId,
+            studentId: numStudentId
         })
     };
 }

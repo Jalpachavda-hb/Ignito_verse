@@ -12,15 +12,24 @@ export function buildMicrocredentialStudentReviewLikeInsertInput(
     studentId = 0,
     microcredentialCourseId = 0
 ) {
+    const numReviewId = Number(microcredentialReviewId) || 0;
+    const numStudentId = Number(studentId) || 0;
+    const numCourseId = Number(microcredentialCourseId) || 0;
+
     return {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            microcredentialReviewId: microcredentialReviewId,
-            studentId: studentId,
-            microcredentialCourseId: microcredentialCourseId
+            MicrocredentialReviewId: numReviewId,
+            microcredentialReviewId: numReviewId,
+            MicrocredentialCourseReviewId: numReviewId,
+            microcredentialCourseReviewId: numReviewId,
+            StudentId: numStudentId,
+            studentId: numStudentId,
+            MicrocredentialCourseId: numCourseId,
+            microcredentialCourseId: numCourseId
         })
     };
 }

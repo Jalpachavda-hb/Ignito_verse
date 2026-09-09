@@ -35,8 +35,60 @@ import { buildGetManyMicroCourseDiscussionQuestionReplyInput } from '../dto/inpu
 import { parseGetManyMicroCourseDiscussionQuestionReplyOutput, parseGetManyMicroCourseDiscussionQuestionReplyErrorOutput } from '../dto/output/getManyMicroCourseDiscussionQuestionReplyOutput';
 import { buildGetStudentEnrolledMicrocredentialCourseInput } from '../dto/input/getStudentEnrolledMicrocredentialCourseInput';
 import { parseGetStudentEnrolledMicrocredentialCourseOutput, parseGetStudentEnrolledMicrocredentialCourseErrorOutput } from '../dto/output/getStudentEnrolledMicrocredentialCourseOutput';
-import { buildAskMicrocredentialTopicAIInput } from '../dto/input/askMicrocredentialTopicAIInput';
-import { parseAskMicrocredentialTopicAIOutput, parseAskMicrocredentialTopicAIErrorOutput } from '../dto/output/askMicrocredentialTopicAIOutput';
+import { buildGetMicroCourseMaterialIncludeDataInput } from '../dto/input/getMicroCourseMaterialIncludeDataInput';
+import { parseGetMicroCourseMaterialIncludeDataOutput, parseGetMicroCourseMaterialIncludeDataErrorOutput } from '../dto/output/getMicroCourseMaterialIncludeDataOutput';
+import { buildGetMicroCourseLearnDataInput } from '../dto/input/getMicroCourseLearnDataInput';
+import { parseGetMicroCourseLearnDataOutput, parseGetMicroCourseLearnDataErrorOutput } from '../dto/output/getMicroCourseLearnDataOutput';
+
+/**
+ * Fetches micro course material include data list for a course.
+ * API: POST /api/IgnitoMicroCredencialAPI/GetMicroCourseMaterialIncludeData
+ */
+export async function getMicroCourseMaterialIncludeData(microcredentialCourseId = 0) {
+    try {
+        const inputDto = buildGetMicroCourseMaterialIncludeDataInput(microcredentialCourseId);
+        const response = await apiClient('api/IgnitoMicroCredencialAPI/GetMicroCourseMaterialIncludeData', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseGetMicroCourseMaterialIncludeDataErrorOutput(response.data, response.status);
+        }
+
+        const outputDto = parseGetMicroCourseMaterialIncludeDataOutput(response.data, response.status);
+        return outputDto;
+    } catch (error) {
+        console.error('Error in getMicroCourseMaterialIncludeData:', error);
+        return parseGetMicroCourseMaterialIncludeDataErrorOutput({ message: error.message }, 500);
+    }
+}
+
+/**
+ * Fetches micro course learn data list for a course.
+ * API: POST /api/IgnitoMicroCredencialAPI/GetMicroCourseLearnData
+ */
+export async function getMicroCourseLearnData(microcredentialCourseId = 0) {
+    try {
+        const inputDto = buildGetMicroCourseLearnDataInput(microcredentialCourseId);
+        const response = await apiClient('api/IgnitoMicroCredencialAPI/GetMicroCourseLearnData', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseGetMicroCourseLearnDataErrorOutput(response.data, response.status);
+        }
+
+        const outputDto = parseGetMicroCourseLearnDataOutput(response.data, response.status);
+        return outputDto;
+    } catch (error) {
+        console.error('Error in getMicroCourseLearnData:', error);
+        return parseGetMicroCourseLearnDataErrorOutput({ message: error.message }, 500);
+    }
+}
 
 
 
@@ -158,12 +210,15 @@ export async function microCredencialWatchvideoAddUpdate(
 
 /*
  Fetches microcredential course detail by course ID.
- API: POST /api/IgnitoMicroCredencialAPI/GetMicrocredentialCourseDetail
+ API: POST /api/IgnitoMicroCredencialAPI/GetMicrocredentialCourseDetail?MicrocredentialCourseId={id}
 */
 export async function getMicrocredentialCourseDetail(microcredentialCourseId) {
     try {
-        const inputDto = buildGetMicrocredentialCourseDetailInput(microcredentialCourseId);
-        const response = await apiClient('api/IgnitoMicroCredencialAPI/GetMicrocredentialCourseDetail', {
+        const numId = Number(microcredentialCourseId);
+        const resolvedId = (!isNaN(numId) && numId > 0) ? numId : microcredentialCourseId;
+        const inputDto = buildGetMicrocredentialCourseDetailInput(resolvedId);
+        const endpoint = `api/IgnitoMicroCredencialAPI/GetMicrocredentialCourseDetail?MicrocredentialCourseId=${encodeURIComponent(resolvedId)}`;
+        const response = await apiClient(endpoint, {
             method: 'POST',
             headers: inputDto.headers,
             body: inputDto.body
