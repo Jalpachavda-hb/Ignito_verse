@@ -14,14 +14,116 @@ import { microcredentialsData } from './data/microcredentials';
 import { getSavedUserSession, logoutUser } from './services/authService';
 import './Global.css';
 
+/**
+ * Parses current URL pathname or legacy hash into route and parameters
+ */
+function parseCurrentRoute() {
+  // Check pathname first (e.g. /microcredentials, /microcredentials/1, /watch/1, /profile/certificates)
+  let path = window.location.pathname.replace(/^\/+/, '');
+  
+  // If user entered via legacy hash (e.g. #microcredentials, /#microcredentials, or #), sanitize and migrate to clean path
+  if (window.location.hash) {
+    const legacyHash = window.location.hash.replace(/^#\/?/, '');
+    if (legacyHash) {
+      path = legacyHash;
+      window.history.replaceState({}, '', `/${legacyHash}`);
+    } else {
+      window.history.replaceState({}, '', window.location.pathname || '/');
+    }
+  }
+
+  const routeStr = path || 'home';
+  const parts = routeStr.split('/');
+  const rawPage = parts[0] || 'home';
+  const rawParam = parts.slice(1).join('/') || '';
+  let param = rawParam;
+  try {
+    param = decodeURIComponent(rawParam);
+  } catch (e) {
+    param = rawParam;
+  }
+
+  if (rawPage === 'microcredentials' && param) {
+    return { page: 'detail', param };
+  }
+  if (rawPage === 'detail') {
+    return { page: 'detail', param };
+  }
+  if (rawPage === 'watch') {
+    return { page: 'watch', param };
+  }
+  if (rawPage === 'profile') {
+    return { page: 'profile', param: param || 'dashboard' };
+  }
+  if (rawPage === 'microcredentials') {
+    return { page: 'microcredentials', param: '' };
+  }
+  if (rawPage === 'login') {
+    return { page: 'login', param: '' };
+  }
+  return { page: 'home', param: '' };
+}
+
+/**
+ * Resolves course data from ID (numeric or encrypted string) or sessionStorage
+ */
+function resolveSelectedCourse(courseId) {
+  if (!courseId) {
+    try {
+      const stored = sessionStorage.getItem('ignito_selected_course');
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return null;
+  }
+
+  const cleanId = String(courseId).trim();
+  const numId = Number(cleanId);
+
+  // 1. Try matching from static catalog data
+  if (!isNaN(numId) && numId > 0) {
+    const found = microcredentialsData.find(c => Number(c.microcredentialCourseId) === numId || Number(c.id) === numId);
+    if (found) return found;
+  }
+
+  const foundByEnc = microcredentialsData.find(c => 
+    String(c.encryptedMicrocredentialCourseId || '').trim() === cleanId || 
+    String(c.id || '').trim() === cleanId
+  );
+  if (foundByEnc) return foundByEnc;
+
+  // 2. Try restoring cached dynamic course from sessionStorage
+  try {
+    const stored = sessionStorage.getItem('ignito_selected_course');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (
+        String(parsed.id || '').trim() === cleanId || 
+        String(parsed.microcredentialCourseId || '').trim() === cleanId || 
+        String(parsed.encryptedMicrocredentialCourseId || '').trim() === cleanId
+      ) {
+        return parsed;
+      }
+    }
+  } catch (e) {}
+
+  // 3. Return descriptor object with exact courseId for dynamic validation
+  return {
+    id: cleanId,
+    microcredentialCourseId: (!isNaN(numId) && numId > 0) ? numId : 0,
+    encryptedMicrocredentialCourseId: cleanId,
+    isPendingValidation: true
+  };
+}
+
 export default function App() {
-  // Authentication state: loaded from persistent session storage
+  // Authentication state
   const [user, setUser] = useState(() => getSavedUserSession());
 
-  // Navigation state: 'home' | 'microcredentials' | 'detail' | 'profile' | 'login'
-  const [activePage, setActivePage] = useState('home');
-  const [profileTab, setProfileTab] = useState('dashboard');
-  const [selectedCourse, setSelectedCourse] = useState(microcredentialsData[0]);
+  // Initialize navigation state immediately from the current URL on first load / refresh (clean paths without #)
+  const initialRoute = parseCurrentRoute();
+  const [activePage, setActivePage] = useState(initialRoute.page);
+  const [profileTab, setProfileTab] = useState(initialRoute.page === 'profile' ? (initialRoute.param || 'dashboard') : 'dashboard');
+  const [selectedCourse, setSelectedCourse] = useState(() => resolveSelectedCourse(initialRoute.param));
   const [catalogCategory, setCatalogCategory] = useState('All');
 
   // Modals state
@@ -34,48 +136,59 @@ export default function App() {
     videoUrl: ''
   });
 
-  // Handle URL Hash navigation
+  // Synchronize route and handle browser Back/Forward & URL changes across page refreshes
   useEffect(() => {
-    const handleHash = () => {
-      const fullHash = window.location.hash.replace('#', '');
-      const [page, sub] = fullHash.split('/');
+    const syncRouteFromUrl = () => {
+      const { page, param } = parseCurrentRoute();
+      setActivePage(page);
 
-      if (['home', 'microcredentials', 'login'].includes(page)) {
-        setActivePage(page);
-      } else if (page === 'profile') {
-        if (user) {
-          setActivePage('profile');
-          if (sub) setProfileTab(sub);
-        } else {
-          setActivePage('login');
+      if (page === 'profile') {
+        setProfileTab(param || 'dashboard');
+      } else if (page === 'detail' || page === 'watch') {
+        if (param) {
+          const resolved = resolveSelectedCourse(param);
+          setSelectedCourse(resolved);
         }
       }
     };
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
-  }, [user]);
 
-  const handleNavigate = (pageId, subTab = 'dashboard') => {
-    if (pageId === 'profile') {
-      if (!user) {
-        setActivePage('login');
-        window.location.hash = 'login';
-        return;
-      }
-      setActivePage('profile');
-      setProfileTab(subTab);
-      window.location.hash = `profile/${subTab}`;
-    } else {
-      setActivePage(pageId);
-      window.location.hash = pageId;
+    // Run on mount
+    syncRouteFromUrl();
+
+    window.addEventListener('popstate', syncRouteFromUrl);
+    window.addEventListener('hashchange', syncRouteFromUrl);
+    return () => {
+      window.removeEventListener('popstate', syncRouteFromUrl);
+      window.removeEventListener('hashchange', syncRouteFromUrl);
+    };
+  }, []);
+
+  const handleNavigate = (pageId, subParam = '') => {
+    let targetPath = `/${pageId}`;
+
+    if (pageId === 'home') {
+      targetPath = '/';
+    } else if (pageId === 'profile') {
+      const tab = subParam || 'dashboard';
+      setProfileTab(tab);
+      targetPath = `/profile/${tab}`;
+    } else if (pageId === 'detail') {
+      const courseId = subParam?.microcredentialCourseId || subParam?.encryptedMicrocredentialCourseId || subParam?.id || (typeof subParam === 'string' ? subParam : '') || selectedCourse?.microcredentialCourseId || selectedCourse?.encryptedMicrocredentialCourseId || selectedCourse?.id || '';
+      targetPath = courseId ? `/microcredentials/${courseId}` : '/microcredentials';
+    } else if (pageId === 'watch') {
+      const courseId = subParam?.microcredentialCourseId || subParam?.encryptedMicrocredentialCourseId || subParam?.id || (typeof subParam === 'string' ? subParam : '') || selectedCourse?.microcredentialCourseId || selectedCourse?.encryptedMicrocredentialCourseId || selectedCourse?.id || '';
+      targetPath = courseId ? `/watch/${courseId}` : '/microcredentials';
     }
+
+    window.history.pushState({}, '', targetPath);
+    setActivePage(pageId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
     setActivePage('home');
-    window.location.hash = 'home';
+    window.history.pushState({}, '', '/');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -83,21 +196,41 @@ export default function App() {
     logoutUser();
     setUser(null);
     setActivePage('home');
-    window.location.hash = 'home';
+    window.history.pushState({}, '', '/');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleViewCourseDetails = (course) => {
-    setSelectedCourse(course);
+    const courseObj = course || selectedCourse;
+    setSelectedCourse(courseObj);
+    try {
+      sessionStorage.setItem('ignito_selected_course', JSON.stringify(courseObj));
+    } catch (e) {}
+
+    const courseId = courseObj?.microcredentialCourseId || courseObj?.encryptedMicrocredentialCourseId || courseObj?.id || '';
+    window.history.pushState({}, '', courseId ? `/microcredentials/${courseId}` : '/microcredentials');
     setActivePage('detail');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleWatchCourse = (course) => {
+    const courseObj = course || selectedCourse;
+    setSelectedCourse(courseObj);
+    try {
+      sessionStorage.setItem('ignito_selected_course', JSON.stringify(courseObj));
+    } catch (e) {}
+
+    const courseId = courseObj?.microcredentialCourseId || courseObj?.encryptedMicrocredentialCourseId || courseObj?.id || '';
+    window.history.pushState({}, '', courseId ? `/watch/${courseId}` : '/microcredentials');
+    setActivePage('watch');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSelectCategoryFromHome = (cat) => {
     setCatalogCategory(cat);
-    setActivePage('microcredentials');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    handleNavigate('microcredentials');
   };
+
 
   const handleOpenVideoPreview = (videoPayload) => {
     if (videoPayload.thumbnail && !videoPayload.lectureTitle) {
@@ -125,10 +258,10 @@ export default function App() {
 
   return (
     <div className="ignito-app">
-      {/* 1. Top Navbar (Hidden on dedicated Login page for maximum focus) */}
+      {/* 1. Top Navbar */}
       {activePage !== 'login' && (
         <Navbar 
-          activePage={activePage === 'detail' ? 'microcredentials' : activePage}
+          activePage={activePage === 'detail' || activePage === 'watch' ? 'microcredentials' : activePage}
           user={user}
           onNavigate={handleNavigate}
           onLogin={() => handleNavigate('login')}
@@ -163,27 +296,24 @@ export default function App() {
             onBack={() => handleNavigate('microcredentials')}
             onBookDemo={() => setIsDemoModalOpen(true)}
             onPreviewVideo={handleOpenVideoPreview}
-            onWatchCourse={(courseObj) => {
-              if (courseObj) setSelectedCourse(courseObj);
-              handleNavigate('watch');
-            }}
+            onWatchCourse={handleWatchCourse}
           />
         )}
 
         {activePage === 'watch' && (
           <MicrocredentialWatchPage 
             course={selectedCourse}
-            onBack={() => handleNavigate('detail')}
+            onBack={() => handleViewCourseDetails(selectedCourse)}
             onNavigate={handleNavigate}
           />
         )}
 
-        {activePage === 'profile' && user && (
+        {activePage === 'profile' && (
           <ProfilePage 
             user={user}
             initialTab={profileTab}
             onExploreCatalog={() => handleNavigate('microcredentials')}
-            onViewCourse={handleViewCourseDetails}
+            onViewCourse={handleWatchCourse}
           />
         )}
 
@@ -195,7 +325,7 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer (Hidden on dedicated Login page) */}
+      {/* Footer */}
       {activePage !== 'login' && (
         <Footer 
           onNavigate={handleNavigate}
@@ -220,3 +350,4 @@ export default function App() {
     </div>
   );
 }
+

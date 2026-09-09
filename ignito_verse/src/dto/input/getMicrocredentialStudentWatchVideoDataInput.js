@@ -16,8 +16,8 @@ export function buildGetMicrocredentialStudentWatchVideoDataInput(
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            studentId: studentId,
-            microcredentialCourseId: microcredentialCourseId
+            StudentId: studentId,
+            MicrocredentialCourseId: microcredentialCourseId
         })
     };
 }

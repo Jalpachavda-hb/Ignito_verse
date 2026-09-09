@@ -4,7 +4,7 @@
  */
 
 // Dynamically use API / Image base URL from environment config instead of hardcoded domain
-const API_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://verse.ignitolearn.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://verse.ignitolearn.com';
 
 /**
  * Normalizes image relative paths using configured base URL.
@@ -23,7 +23,7 @@ export function formatImageUrl(path) {
   const customBase = import.meta.env.VITE_IMAGE_BASE_URL;
   const baseUrl = (customBase && (customBase.startsWith('http://') || customBase.startsWith('https://')))
     ? customBase
-    : 'https://verse.ignitolearn.com';
+    : 'https://verse.ignitolearn.com/';
 
   try {
     const urlObj = new URL(baseUrl);

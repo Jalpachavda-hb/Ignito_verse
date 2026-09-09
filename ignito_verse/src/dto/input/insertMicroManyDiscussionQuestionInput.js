@@ -20,10 +20,10 @@ export function buildInsertMicroManyDiscussionQuestionInput(
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            studentId: studentId,
-            professorId: professorId,
-            microCorseId: microCorseId,
-            question: question
+            StudentId: Number(studentId) || 0,
+            ProfessorId: Number(professorId) || 0,
+            MicroCorseId: Number(microCorseId) || 0,
+            Question: question || ''
         })
     };
 }

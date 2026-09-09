@@ -24,10 +24,18 @@ import {
   Brain,
   ChevronRight,
   Zap,
-  Activity
+  Activity,
+  AlertCircle,
+  ArrowLeft,
+  RefreshCw
 } from 'lucide-react';
 import userCertificateImg from '../../assets/e47782ae-798b-479b-99e6-428b70bf4a7a.png';
-import { getMicrocredentialCourseBindDataList } from '../../services/microcredentialService';
+import {
+  getMicrocredentialCourseBindDataList,
+  getMicrocredentialCourseDetail,
+  getMicroCourseTopicDetail,
+  getReviewByMicroCourseId
+} from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
 
 export default function MicrocredentialDetail({
@@ -38,69 +46,282 @@ export default function MicrocredentialDetail({
   onWatchCourse = () => { }
 }) {
   const [courseData, setCourseData] = useState(initialCourse || {});
+  const [loadingDetail, setLoadingDetail] = useState(true);
+  const [courseNotFound, setCourseNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
-  const [likedReviews, setLikedReviews] = useState({ review1: 2 });
-  const [hasLiked, setHasLiked] = useState({ review1: false });
+  const [topicsList, setTopicsList] = useState([]);
+  const [reviewsList, setReviewsList] = useState([]);
+  const [likedReviews, setLikedReviews] = useState({});
+  const [hasLiked, setHasLiked] = useState({});
 
-  // Fetch full dynamic details from API using microcredentialCourseId
+  // Fetch full dynamic details from API securely using microcredentialCourseId or encryptedMicrocredentialCourseId
   useEffect(() => {
+    let isMounted = true;
+    setLoadingDetail(true);
+    setCourseNotFound(false);
+
     const rawCourseId = initialCourse?.microcredentialCourseId || initialCourse?.courseId || initialCourse?.id;
     const numericCourseId = Number(rawCourseId) || (typeof rawCourseId === 'number' ? rawCourseId : 0);
+    const encryptedId = initialCourse?.encryptedMicrocredentialCourseId || initialCourse?.encryptedId || (typeof initialCourse?.id === 'string' ? initialCourse.id : '');
 
-    if (numericCourseId > 0) {
-      getMicrocredentialCourseBindDataList(1, 10, 'UpdatedOn', 'DESC', 0, '', 0, false, '', numericCourseId)
-        .then((res) => {
-          if (res && res.success && Array.isArray(res.microcredentialCourseBindDatas) && res.microcredentialCourseBindDatas.length > 0) {
-            const apiItem = res.microcredentialCourseBindDatas[0];
-            const rawImg = apiItem.microcredentialCourseIntroImage || apiItem.introImage || apiItem.image || apiItem.thumbnail || '';
-            const formattedThumb = rawImg ? formatImageUrl(rawImg) : (initialCourse?.thumbnail || '');
+    const applyCourseData = (detailObj = {}, bindObj = {}) => {
+      const merged = { ...bindObj, ...detailObj };
+      const rawImg = merged.microcredentialCourseIntroImage || merged.introImage || merged.image || merged.thumbnail || '';
+      const formattedThumb = rawImg ? formatImageUrl(rawImg) : (initialCourse?.thumbnail || '');
+      const rawCertImg = merged.certificateImage || '';
+      const formattedCert = rawCertImg ? formatImageUrl(rawCertImg) : userCertificateImg;
 
-            setCourseData((prev) => ({
-              ...(prev || {}),
-              ...apiItem,
-              id: apiItem.encryptedMicrocredentialCourseId || apiItem.microcredentialCourseId,
-              microcredentialCourseId: apiItem.microcredentialCourseId,
-              encryptedMicrocredentialCourseId: apiItem.encryptedMicrocredentialCourseId,
-              title: apiItem.microcredentialCourseName || prev?.title || 'Microcredential Course',
-              courseLevel: apiItem.courseLevel || prev?.courseLevel || 'Intermediate (Level 2)',
-              level: apiItem.courseLevel ? apiItem.courseLevel.split('(')[0].trim() : (prev?.level || 'Intermediate'),
-              fullLevel: apiItem.courseLevel || prev?.fullLevel || 'Intermediate (Level 2)',
-              category: apiItem.streamName || prev?.category || 'Management',
-              streamName: apiItem.streamName || prev?.streamName || 'Management',
-              price: apiItem.microcredentialCoursePrice !== undefined ? apiItem.microcredentialCoursePrice : prev?.price,
-              rating: apiItem.microcredentialCourseRating || prev?.rating || 5,
-              duration: apiItem.microcredentialCourseDuration || prev?.duration || '3 Month',
-              thumbnail: formattedThumb,
-              language: apiItem.language || prev?.language || 'ENGLISH',
-              updatedOn: apiItem.updatedOn || prev?.updatedOn || 'August 2026',
-              lastUpdated: apiItem.updatedOn || prev?.lastUpdated || 'August 2026',
-              professorName: apiItem.professorName || prev?.professorName || '',
-              certificateName: apiItem.microcredentialCourseName || prev?.certificateName || 'STRESS MANAGEMENT',
-              about: apiItem.courseAbout || apiItem.about || prev?.about || `This course introduces comprehensive ${apiItem.microcredentialCourseName || 'learning'} methods and practical tools to develop skills and achieve institutional goals in digital education.`,
-              description: apiItem.courseDescription || apiItem.description || prev?.description || `${apiItem.microcredentialCourseName || 'This program'} focuses on developing core competencies and industry-verified expertise through practical exercises.`
+      const learnList = Array.isArray(merged.microCourseLearnOutputList) && merged.microCourseLearnOutputList.length > 0
+        ? merged.microCourseLearnOutputList.map(item => item.microCourseLearnDescription || item.learnDescription || item.description || item).filter(Boolean)
+        : null;
+
+      const courseTitle = merged.microcredentialCourseName || merged.title || 'Microcredential Course';
+
+      setCourseData({
+        ...merged,
+        id: merged.microcredentialCourseId || merged.encryptedMicrocredentialCourseId || numericCourseId,
+        microcredentialCourseId: merged.microcredentialCourseId || numericCourseId,
+        encryptedMicrocredentialCourseId: merged.encryptedMicrocredentialCourseId || encryptedId,
+        title: courseTitle,
+        microcredentialCourseName: courseTitle,
+        courseLevel: merged.courseLevel || 'Intermediate (Level 2)',
+        level: merged.courseLevel ? merged.courseLevel.split('(')[0].trim() : 'Intermediate',
+        fullLevel: merged.courseLevel || 'Intermediate (Level 2)',
+        category: merged.streamName || 'Management',
+        streamName: merged.streamName || 'Management',
+        price: merged.microcredentialCoursePrice !== undefined ? merged.microcredentialCoursePrice : 5000,
+        rating: merged.microcredentialCourseRating || 5,
+        duration: merged.microcredentialCourseDuration || '3 Month',
+        thumbnail: formattedThumb,
+        certificateImage: formattedCert,
+        language: merged.language || 'ENGLISH',
+        updatedOn: merged.updatedOn || 'August 2026',
+        lastUpdated: merged.updatedOn || 'August 2026',
+        professorName: merged.professorName || '',
+        certificateName: merged.certificateName || courseTitle || 'CERTIFICATE OF COMPLETION',
+        about: merged.aboutMicrocredentialCourse || merged.courseAbout || merged.about || `This course introduces comprehensive ${courseTitle} methods and practical tools to develop skills and achieve institutional goals in digital education.`,
+        description: merged.microcredentialCourseDescription || merged.courseDescription || merged.description || `${courseTitle} focuses on developing core competencies and industry-verified expertise through practical exercises.`,
+        learningOutcomes: learnList,
+        materialIncludeList: merged.materialIncludeOutputList || []
+      });
+      setCourseNotFound(false);
+    };
+
+    // Load dynamic topics and reviews using microcredentialCourseId in payload
+    const loadExtraDetails = (courseIdNum) => {
+      if (!courseIdNum || courseIdNum <= 0) return;
+
+      // 1. Fetch course topic details
+      getMicroCourseTopicDetail(courseIdNum, 3)
+        .then((tRes) => {
+          if (!isMounted) return;
+          if (tRes && tRes.success && Array.isArray(tRes.getMicroCourseTopicDetailList) && tRes.getMicroCourseTopicDetailList.length > 0) {
+            const mapped = tRes.getMicroCourseTopicDetailList.map((item, idx) => ({
+              id: item.microCourseTopicId || (idx + 1),
+              title: item.topicName || item.videoTitle || `Topic ${idx + 1}`,
+              duration: item.videoDuration ? `${Math.round(item.videoDuration / 60)} min` : '45 min',
+              type: 'Practical',
+              rawData: item
             }));
+            setTopicsList(mapped);
+          }
+        })
+        .catch(() => {});
+
+      // 2. Fetch course reviews
+      getReviewByMicroCourseId(courseIdNum, 3)
+        .then((rRes) => {
+          if (!isMounted) return;
+          if (rRes && rRes.success && Array.isArray(rRes.getReviewByMicroCourseList) && rRes.getReviewByMicroCourseList.length > 0) {
+            setReviewsList(rRes.getReviewByMicroCourseList);
+            const initialLikes = {};
+            const initialHasLiked = {};
+            rRes.getReviewByMicroCourseList.forEach((rev) => {
+              const rId = rev.microcredentialCourseReviewId || rev.id;
+              initialLikes[rId] = rev.reviewLikeCount || 0;
+              initialHasLiked[rId] = Boolean(rev.isReviewLikedByStudent);
+            });
+            setLikedReviews(initialLikes);
+            setHasLiked(initialHasLiked);
+          }
+        })
+        .catch(() => {});
+    };
+
+    // 1. If numeric course ID is provided (> 0)
+    if (numericCourseId > 0) {
+      Promise.allSettled([
+        getMicrocredentialCourseDetail(numericCourseId),
+        getMicrocredentialCourseBindDataList(1, 10, 'UpdatedOn', 'DESC', 0, '', 0, false, '', numericCourseId)
+      ])
+        .then(([detailRes, bindRes]) => {
+          if (!isMounted) return;
+          const detailData = (detailRes.status === 'fulfilled' && detailRes.value && detailRes.value.success) ? detailRes.value : null;
+          const bindList = (bindRes.status === 'fulfilled' && bindRes.value && bindRes.value.success && Array.isArray(bindRes.value.microcredentialCourseBindDatas))
+            ? bindRes.value.microcredentialCourseBindDatas
+            : [];
+          const bindData = bindList.find(b => Number(b.microcredentialCourseId) === numericCourseId) || bindList[0] || null;
+
+          if (detailData || bindData) {
+            applyCourseData(detailData || {}, bindData || {});
+            loadExtraDetails(numericCourseId);
+          } else if (initialCourse && initialCourse.title && !initialCourse.isPendingValidation) {
+            setCourseData(initialCourse);
+            setCourseNotFound(false);
+          } else {
+            setCourseNotFound(true);
           }
         })
         .catch((err) => {
           console.error('Error loading dynamic course detail:', err);
+          if (initialCourse && initialCourse.title && !initialCourse.isPendingValidation) {
+            setCourseData(initialCourse);
+          } else {
+            setCourseNotFound(true);
+          }
+        })
+        .finally(() => {
+          if (isMounted) setLoadingDetail(false);
         });
-    } else if (initialCourse) {
-      setCourseData(initialCourse);
+    } else if (encryptedId && String(encryptedId).trim()) {
+      const rawEnc = String(encryptedId).trim();
+      let decodedEnc = rawEnc;
+      try {
+        decodedEnc = decodeURIComponent(rawEnc).trim();
+      } catch (e) {}
+
+      // 2. Query courses list to look up the encrypted course ID securely
+      getMicrocredentialCourseBindDataList(1, 100, 'UpdatedOn', 'DESC', 0, '', 0, false, '')
+        .then((res) => {
+          if (!isMounted) return;
+          if (res && res.success && Array.isArray(res.microcredentialCourseBindDatas)) {
+            const matchedItem = res.microcredentialCourseBindDatas.find(item => {
+              const itemEnc = String(item.encryptedMicrocredentialCourseId || '').trim();
+              const itemId = String(item.microcredentialCourseId || '').trim();
+              return (
+                (itemEnc && (itemEnc === rawEnc || itemEnc === decodedEnc || encodeURIComponent(itemEnc) === rawEnc)) ||
+                (itemId && (itemId === rawEnc || itemId === decodedEnc))
+              );
+            });
+
+            if (matchedItem) {
+              const resolvedNumId = Number(matchedItem.microcredentialCourseId) || 0;
+              if (resolvedNumId > 0) {
+                getMicrocredentialCourseDetail(resolvedNumId)
+                  .then((detailRes) => {
+                    if (!isMounted) return;
+                    const detailData = (detailRes && detailRes.success) ? detailRes : {};
+                    applyCourseData(detailData, matchedItem);
+                    loadExtraDetails(resolvedNumId);
+                  })
+                  .catch(() => {
+                    if (!isMounted) return;
+                    applyCourseData({}, matchedItem);
+                    loadExtraDetails(resolvedNumId);
+                  });
+              } else {
+                applyCourseData({}, matchedItem);
+              }
+            } else if (initialCourse && initialCourse.title && !initialCourse.isPendingValidation) {
+              setCourseData(initialCourse);
+              setCourseNotFound(false);
+            } else {
+              setCourseNotFound(true);
+            }
+          } else if (initialCourse && initialCourse.title && !initialCourse.isPendingValidation) {
+            setCourseData(initialCourse);
+            setCourseNotFound(false);
+          } else {
+            setCourseNotFound(true);
+          }
+        })
+        .catch((err) => {
+          console.error('Error finding course by encrypted ID:', err);
+          if (initialCourse && initialCourse.title && !initialCourse.isPendingValidation) {
+            setCourseData(initialCourse);
+          } else {
+            setCourseNotFound(true);
+          }
+        })
+        .finally(() => {
+          if (isMounted) setLoadingDetail(false);
+        });
+    } else {
+      if (initialCourse && initialCourse.title && !initialCourse.isPendingValidation) {
+        setCourseData(initialCourse);
+        setCourseNotFound(false);
+      } else {
+        setCourseNotFound(true);
+      }
+      setLoadingDetail(false);
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [initialCourse]);
 
   const course = courseData || initialCourse || {};
 
-  if (!course || (!course.title && !course.microcredentialCourseName)) return null;
+  // If loading
+  if (loadingDetail) {
+    return (
+      <div className="mc-detail-page-wrapper" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '14px', color: '#00385E' }}>
+        <RefreshCw size={28} className="spinner" style={{ animation: 'spin 1s linear infinite', color: '#00385E' }} />
+        <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#64748b' }}>Loading microcredential details...</p>
+      </div>
+    );
+  }
+
+  // If course not found (invalid or tampered URL)
+  if (courseNotFound || (!course.title && !course.microcredentialCourseName)) {
+    return (
+      <div className="mc-detail-page-wrapper" style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px' }}>
+        <div style={{ background: '#ffffff', border: '1.5px solid #e2e8f0', borderRadius: '20px', padding: '48px 36px', maxWidth: '520px', width: '100%', textAlign: 'center', boxShadow: '0 10px 30px rgba(0, 56, 94, 0.06)' }}>
+          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fef2f2', border: '2px solid #fee2e2', color: '#dc2626', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '18px' }}>
+            <AlertCircle size={32} />
+          </div>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#00385E', margin: '0 0 10px 0' }}>
+            Microcredential Course Not Found
+          </h2>
+          <p style={{ fontSize: '0.92rem', color: '#64748b', lineHeight: 1.6, margin: '0 0 24px 0' }}>
+            The course identifier in the URL is invalid or has expired. Please select a valid course from our official catalog.
+          </p>
+          <button 
+            type="button" 
+            onClick={onBack}
+            style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '8px', 
+              background: '#00385E', 
+              color: '#ffffff', 
+              fontWeight: 700, 
+              fontSize: '0.92rem', 
+              padding: '12px 28px', 
+              borderRadius: '10px', 
+              border: 'none', 
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(0, 56, 94, 0.25)'
+            }}
+          >
+            <ArrowLeft size={16} />
+            <span>Browse All Microcredentials</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleToggleLike = (reviewId) => {
+    const isCurrentlyLiked = Boolean(hasLiked[reviewId]);
     setHasLiked(prev => ({
       ...prev,
-      [reviewId]: !prev[reviewId]
+      [reviewId]: !isCurrentlyLiked
     }));
     setLikedReviews(prev => ({
       ...prev,
-      [reviewId]: prev[reviewId] + (hasLiked[reviewId] ? -1 : 1)
+      [reviewId]: Math.max(0, (prev[reviewId] || 0) + (isCurrentlyLiked ? -1 : 1))
     }));
   };
 
@@ -186,11 +407,6 @@ export default function MicrocredentialDetail({
                 <Star size={14} className="star-icon-filled" />
                 <span className="rating-score">{course.rating || course.microcredentialCourseRating || '5'}</span>
               </div>
-              <div className="mc-stat-divider" />
-              <div className="mc-stat-item">
-                <Calendar size={15} className="mc-stat-icon" />
-                <span>Last updated {course.updatedOn || course.lastUpdated || 'August 2026'}</span>
-              </div>
             </div>
           </div>
 
@@ -224,7 +440,7 @@ export default function MicrocredentialDetail({
                 <div className="island-tab-text-group">
                   <span className="island-tab-title">Microcredentials Content</span>
                 </div>
-                <span className="island-tab-badge count-pill">12</span>
+                <span className="island-tab-badge count-pill">{topicsList.length > 0 ? topicsList.length : 12}</span>
               </button>
 
               {/* Tab 3: Reviews */}
@@ -343,13 +559,13 @@ export default function MicrocredentialDetail({
 
                 {/* Detailed Module Topics List */}
                 <div className="mc-luxury-modules-list">
-                  {detailedTopics.map((item) => (
+                  {(topicsList.length > 0 ? topicsList : detailedTopics).map((item, idx) => (
                     <div
-                      key={item.id}
+                      key={item.id || idx}
                       className="mc-module-luxury-card"
                     >
                       <div className="module-card-left">
-                        <div className="module-index-box">0{item.id}</div>
+                        <div className="module-index-box">{(idx + 1) < 10 ? `0${idx + 1}` : idx + 1}</div>
 
                         <div className="module-details-text">
                           <h3 className="module-title-headline">{item.title}</h3>
@@ -380,20 +596,20 @@ export default function MicrocredentialDetail({
 
                   {/* Big Score Box */}
                   <div className="mc-big-score-box">
-                    <div className="score-number-display">5.0</div>
+                    <div className="score-number-display">{course.rating || course.microcredentialCourseRating || '5.0'}</div>
                     <div className="score-stars-row">
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} size={18} className="star-icon-filled" />
                       ))}
                     </div>
-                    <span className="score-total-count">Total 452 Verified Ratings</span>
+                    <span className="score-total-count">Total {reviewsList.length > 0 ? `${reviewsList.length} Verified` : '452 Verified'} Ratings</span>
                   </div>
 
                   {/* 5-Star Distribution Bars */}
                   <div className="mc-rating-bars-stack">
                     {[
-                      { stars: 5, pct: 96, count: '434 Ratings' },
-                      { stars: 4, pct: 4, count: '18 Ratings' },
+                      { stars: 5, pct: 96, count: reviewsList.length > 0 ? `${reviewsList.filter(r => r.reviewInStar === 5).length || reviewsList.length} Ratings` : '434 Ratings' },
+                      { stars: 4, pct: 4, count: reviewsList.length > 0 ? `${reviewsList.filter(r => r.reviewInStar === 4).length} Ratings` : '18 Ratings' },
                       { stars: 3, pct: 0, count: '0 Ratings' },
                       { stars: 2, pct: 0, count: '0 Ratings' },
                       { stars: 1, pct: 0, count: '0 Ratings' }
@@ -410,43 +626,87 @@ export default function MicrocredentialDetail({
 
                 </div>
 
-                {/* Verified Student Testimonial */}
-                <div className="mc-student-review-item">
-                  <div className="student-review-author-row">
-                    <div className="student-avatar-wrap">
-                      <img
-                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
-                        alt="Anjali Sharma"
-                      />
-                    </div>
-                    <div className="student-author-info">
-                      <h4>Anjali Sharma</h4>
-                      <div className="student-stars-and-date">
-                        <div className="student-mini-stars">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} size={13} className="star-icon-filled" />
-                          ))}
+                {/* Verified Student Testimonial List */}
+                {reviewsList.length > 0 ? (
+                  reviewsList.map((rev, rIdx) => {
+                    const revId = rev.microcredentialCourseReviewId || rev.id || rIdx;
+                    return (
+                      <div key={revId} className="mc-student-review-item" style={{ marginTop: '16px' }}>
+                        <div className="student-review-author-row">
+                          <div className="student-avatar-wrap">
+                            <img
+                              src={rev.studentProfileImage ? formatImageUrl(rev.studentProfileImage) : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'}
+                              alt={rev.studentName || 'Student'}
+                            />
+                          </div>
+                          <div className="student-author-info">
+                            <h4>{rev.studentName || 'Verified Student'}</h4>
+                            <div className="student-stars-and-date">
+                              <div className="student-mini-stars">
+                                {[...Array(Number(rev.reviewInStar) || 5)].map((_, i) => (
+                                  <Star key={i} size={13} className="star-icon-filled" />
+                                ))}
+                              </div>
+                              <span className="review-timestamp">• {rev.createdOnText || 'Recent'}</span>
+                            </div>
+                          </div>
                         </div>
-                        <span className="review-timestamp">• 3 months ago</span>
+
+                        <p className="student-review-body-text">
+                          {rev.reviewDescription || "Great course with comprehensive practical modules!"}
+                        </p>
+
+                        <div className="student-review-action-row">
+                          <button
+                            type="button"
+                            className={`btn-like-review ${hasLiked[revId] ? 'liked' : ''}`}
+                            onClick={() => handleToggleLike(revId)}
+                          >
+                            <ThumbsUp size={14} />
+                            <span>Like ({likedReviews[revId] || 0})</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="mc-student-review-item">
+                    <div className="student-review-author-row">
+                      <div className="student-avatar-wrap">
+                        <img
+                          src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
+                          alt="Anjali Sharma"
+                        />
+                      </div>
+                      <div className="student-author-info">
+                        <h4>Anjali Sharma</h4>
+                        <div className="student-stars-and-date">
+                          <div className="student-mini-stars">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} size={13} className="star-icon-filled" />
+                            ))}
+                          </div>
+                          <span className="review-timestamp">• 3 months ago</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <p className="student-review-body-text">
-                    "I am currently pursuing the course on this platform, and my learning experience has been excellent so far. The course content is well-structured, engaging, and easy to follow, with interactive lessons and assessments that enhance my understanding. I am learning practical techniques to manage daily stress, improve focus, and maintain emotional well-being in both academic and professional life."
-                  </p>
+                    <p className="student-review-body-text">
+                      "I am currently pursuing the course on this platform, and my learning experience has been excellent so far. The course content is well-structured, engaging, and easy to follow, with interactive lessons and assessments that enhance my understanding. I am learning practical techniques to manage daily stress, improve focus, and maintain emotional well-being in both academic and professional life."
+                    </p>
 
-                  <div className="student-review-action-row">
-                    <button
-                      type="button"
-                      className={`btn-like-review ${hasLiked.review1 ? 'liked' : ''}`}
-                      onClick={() => handleToggleLike('review1')}
-                    >
-                      <ThumbsUp size={14} />
-                      <span>Like ({likedReviews.review1})</span>
-                    </button>
+                    <div className="student-review-action-row">
+                      <button
+                        type="button"
+                        className={`btn-like-review ${hasLiked['default'] ? 'liked' : ''}`}
+                        onClick={() => handleToggleLike('default')}
+                      >
+                        <ThumbsUp size={14} />
+                        <span>Like ({likedReviews['default'] || 2})</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 

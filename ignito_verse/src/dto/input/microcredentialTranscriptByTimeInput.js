@@ -28,14 +28,14 @@ export function buildMicrocredentialTranscriptByTimeInput(
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            studentId: studentId,
-            studentDegreeAdmissionId: studentDegreeAdmissionId,
-            videoId: videoId,
-            question: question,
-            microcredentialCourseId: microcredentialCourseId,
-            handRaiseTime: handRaiseTime,
-            econtent: econtent,
-            isEcontent: isEcontent
+            StudentId: Number(studentId) || 0,
+            StudentDegreeAdmissionId: Number(studentDegreeAdmissionId) || 0,
+            VideoId: videoId || '',
+            Question: question || '',
+            MicrocredentialCourseId: Number(microcredentialCourseId) || 0,
+            HandRaiseTime: Number(handRaiseTime) || 0,
+            Econtent: econtent || '',
+            IsEcontent: Boolean(isEcontent)
         })
     };
 }

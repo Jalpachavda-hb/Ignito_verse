@@ -6,13 +6,16 @@
  * @returns {object} Formatted request headers and JSON stringified body payload
  */
 export function buildGetMicrocredentialCourseDetailInput(microcredentialCourseId) {
+    const numId = Number(microcredentialCourseId);
+    const resolvedId = (!isNaN(numId) && numId > 0) ? numId : microcredentialCourseId;
     return {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            microcredentialCourseId: microcredentialCourseId
+            MicrocredentialCourseId: resolvedId,
+            microcredentialCourseId: resolvedId
         })
     };
 }

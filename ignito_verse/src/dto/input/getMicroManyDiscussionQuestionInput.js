@@ -16,8 +16,8 @@ export function buildGetMicroManyDiscussionQuestionInput(
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            microCorseId: microCorseId,
-            studentId: studentId
+            MicroCorseId: Number(microCorseId) || 0,
+            StudentId: Number(studentId) || 0
         })
     };
 }

@@ -24,12 +24,12 @@ export function buildGetStudentMicrocredentialRaiseHandAnswerListInput(
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            studentId: studentId,
-            studentDegreeAdmissionId: studentDegreeAdmissionId,
-            microcredentialCourseId: microcredentialCourseId,
-            videoId: videoId,
-            pageNumber: pageNumber,
-            pageSize: pageSize
+            StudentId: Number(studentId) || 0,
+            StudentDegreeAdmissionId: Number(studentDegreeAdmissionId) || 0,
+            MicrocredentialCourseId: Number(microcredentialCourseId) || 0,
+            VideoId: videoId || '',
+            PageNumber: Number(pageNumber) || 1,
+            PageSize: Number(pageSize) || 10
         })
     };
 }

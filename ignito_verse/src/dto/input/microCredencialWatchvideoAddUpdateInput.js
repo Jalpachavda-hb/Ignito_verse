@@ -20,10 +20,17 @@ export function buildMicroCredencialWatchvideoAddUpdateInput(
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            studentId: studentId,
-            microcredentialCourseId: microcredentialCourseId,
-            overallPercentage: overallPercentage,
-            studentwatchvideodetails: studentwatchvideodetails
+            StudentId: studentId,
+            MicrocredentialCourseId: microcredentialCourseId,
+            OverallPercentage: Math.round(Number(overallPercentage) || 0),
+            Studentwatchvideodetails: Array.isArray(studentwatchvideodetails)
+                ? studentwatchvideodetails.map(item => ({
+                    VideoId: String(item.videoId || item.VideoId || ''),
+                    WatchedSeconds: Math.round(Number(item.watchedSeconds ?? item.WatchedSeconds ?? 0)),
+                    TotalDuration: Math.round(Number(item.totalDuration ?? item.TotalDuration ?? 0)),
+                    PercentageWatched: Math.round(Number(item.percentageWatched ?? item.PercentageWatched ?? 0))
+                }))
+                : []
         })
     };
 }

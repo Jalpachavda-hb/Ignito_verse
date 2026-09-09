@@ -22,11 +22,11 @@ export function buildInsertMicroManyDiscussionReplyInput(
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            microCourseDiscussionQuestionId: microCourseDiscussionQuestionId,
-            studentId: studentId,
-            professorId: professorId,
-            microCorseId: microCorseId,
-            reply: reply
+            MicroCorseId: Number(microCorseId) || 0,
+            MicroCourseDiscussionQuestionId: Number(microCourseDiscussionQuestionId) || 0,
+            StudentId: Number(studentId) || 0,
+            ProfessorId: Number(professorId) || 0,
+            Reply: reply || ''
         })
     };
 }

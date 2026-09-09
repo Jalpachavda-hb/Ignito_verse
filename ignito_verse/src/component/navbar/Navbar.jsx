@@ -66,7 +66,7 @@ export default function Navbar({
         {/* Brand Logo */}
         <div className="navbar-brand-section">
           <a 
-            href="#home" 
+            href="/" 
             className="navbar-logo-link" 
             onClick={(e) => handleLinkClick('home', e)}
             aria-label="Ignitoverse Home"
@@ -88,7 +88,7 @@ export default function Navbar({
             {navItems.map((item) => (
               <li key={item.id} className="menu-item-wrapper">
                 <a
-                  href={`#${item.id}`}
+                  href={item.id === 'home' ? '/' : `/${item.id}`}
                   className={`menu-item-link ${activePage === item.id ? 'active' : ''}`}
                   onClick={(e) => handleLinkClick(item.id, e)}
                 >
@@ -130,7 +130,7 @@ export default function Navbar({
                     <div className="dropdown-divider" />
 
                     <a 
-                      href="#profile/dashboard" 
+                      href="/profile/dashboard" 
                       className="dropdown-item"
                       onClick={(e) => handleProfileSubNav('dashboard', e)}
                     >
@@ -139,7 +139,7 @@ export default function Navbar({
                     </a>
 
                     <a 
-                      href="#profile/certificates" 
+                      href="/profile/certificates" 
                       className="dropdown-item"
                       onClick={(e) => handleProfileSubNav('certificates', e)}
                     >
@@ -196,7 +196,7 @@ export default function Navbar({
             {navItems.map((item) => (
               <li key={item.id} className="mobile-nav-li">
                 <a
-                  href={`#${item.id}`}
+                  href={item.id === 'home' ? '/' : `/${item.id}`}
                   className={`mobile-drawer-link ${activePage === item.id ? 'active' : ''}`}
                   onClick={(e) => handleLinkClick(item.id, e)}
                 >

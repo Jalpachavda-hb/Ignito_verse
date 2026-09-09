@@ -18,9 +18,9 @@ export function buildMicroCourseDiscussionQuestionLikeInput(
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            microCourseDiscussionQuestionId: microCourseDiscussionQuestionId,
-            studentId: studentId,
-            microCourseId: microCourseId
+            MicroCourseDiscussionQuestionId: Number(microCourseDiscussionQuestionId) || 0,
+            StudentId: Number(studentId) || 0,
+            MicroCourseId: Number(microCourseId) || 0
         })
     };
 }

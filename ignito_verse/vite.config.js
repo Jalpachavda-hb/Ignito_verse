@@ -7,22 +7,22 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://verse.ignitolearn.com',
+        target: 'https://verse.ignitolearn.com/',
         changeOrigin: true,
         secure: false, // Allows self-signed SSL certificates in local development
       },
       '/HomePageImages': {
-        target: 'https://verse.ignitolearn.com',
+        target: 'https://verse.ignitolearn.com/',
         changeOrigin: true,
         secure: false,
       },
       '/TestimonialImage': {
-        target: 'https://verse.ignitolearn.com',
+        target: 'https://verse.ignitolearn.com/',
         changeOrigin: true,
         secure: false,
       },
       '/HomeTrustedLogoImage': {
-        target: 'https://verse.ignitolearn.com',
+        target: 'https://verse.ignitolearn.com/',
         changeOrigin: true,
         secure: false,
       },
