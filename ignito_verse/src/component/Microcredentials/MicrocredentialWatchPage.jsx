@@ -43,6 +43,7 @@ import {
   getMicroCourseTopicDetail, 
   microCredencialWatchvideoAddUpdate, 
   getMicrocredentialStudentWatchVideoData,
+  getLoggedInStudentId,
   microcredentialTranscriptByTime, 
   getStudentMicrocredentialRaiseHandAnswerList,
   getMicroManyDiscussionQuestion,
@@ -556,14 +557,7 @@ export default function MicrocredentialWatchPage({
   // Fetch student watch progress & quiz status (POST /api/MicroCredencialStudentWatchVideoAPI/GetMicrocredentialStudentWatchVideoData)
   const fetchStudentWatchData = async () => {
     try {
-      let studentId = 0;
-      try {
-        const storedUser = localStorage.getItem('ignito_user') || localStorage.getItem('user');
-        if (storedUser) {
-          const parsed = JSON.parse(storedUser);
-          studentId = Number(parsed?.studentId || parsed?.id || parsed?.userId || 0);
-        }
-      } catch (e) {}
+      const studentId = getLoggedInStudentId();
 
       const rawId = currentCourse.microcredentialCourseId || currentCourse.courseId || currentCourse.id || 1;
       const courseId = Number(rawId) || 1;
@@ -659,15 +653,7 @@ export default function MicrocredentialWatchPage({
       const curCourse = courseRef.current || currentCourse;
       const rawId = curCourse.microcredentialCourseId || curCourse.courseId || curCourse.id || 1;
       const courseId = Number(rawId) || 1;
-
-      let studentId = 0;
-      try {
-        const storedUser = localStorage.getItem('ignito_user') || localStorage.getItem('user');
-        if (storedUser) {
-          const parsed = JSON.parse(storedUser);
-          studentId = Number(parsed?.studentId || parsed?.id || parsed?.userId || 0);
-        }
-      } catch (e) {}
+      const studentId = getLoggedInStudentId();
 
       const curLecture = activeLectureRef.current || activeLecture;
       const vId = curLecture?.ytId || 

@@ -186,8 +186,13 @@ export async function microCredencialWatchvideoAddUpdate(
     studentwatchvideodetails = []
 ) {
     try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
+
         const inputDto = buildMicroCredencialWatchvideoAddUpdateInput(
-            studentId,
+            finalStudentId,
             microcredentialCourseId,
             overallPercentage,
             studentwatchvideodetails
@@ -345,16 +350,54 @@ export async function microcredentialStudentReviewLikeInsert(
 }
 
 /**
+ * Helper to retrieve logged-in student ID from localStorage / sessionStorage.
+ * Checks StudentId key and user objects saved at login.
+ * @returns {number}
+ */
+export function getLoggedInStudentId() {
+    try {
+        const rawId = localStorage.getItem('StudentId') || 
+                      sessionStorage.getItem('StudentId') || 
+                      localStorage.getItem('studentId') || 
+                      sessionStorage.getItem('studentId');
+        if (rawId && !isNaN(Number(rawId)) && Number(rawId) > 0) {
+            return Number(rawId);
+        }
+
+        const rawUser = localStorage.getItem('ignito_auth_user') || 
+                        localStorage.getItem('ignito_user') || 
+                        localStorage.getItem('user') || 
+                        sessionStorage.getItem('ignito_auth_user') || 
+                        sessionStorage.getItem('user');
+        if (rawUser) {
+            const parsed = typeof rawUser === 'string' ? JSON.parse(rawUser) : rawUser;
+            const sId = parsed?.studentId || parsed?.StudentId || parsed?.id || parsed?.userId;
+            if (sId && !isNaN(Number(sId)) && Number(sId) > 0) {
+                return Number(sId);
+            }
+        }
+    } catch (err) {
+        console.error('Error getting studentId from session:', err);
+    }
+    return 0;
+}
+
+/**
  * Fetches student watch video progress and quiz eligibility data for a course.
- * API: POST /api/IgnitoMicroCredencialAPI/GetMicrocredentialStudentWatchVideoData
+ * API: POST /api/MicroCredencialStudentWatchVideoAPI/GetMicrocredentialStudentWatchVideoData
  * 
- * @param {number} [studentId=0] - Student identifier (0 defaults to session StudentId on backend)
+ * @param {number} [studentId=0] - Student identifier (if 0 or omitted, automatically reads from session/localStorage)
  * @param {number} [microcredentialCourseId=0] - Microcredential course identifier
  * @returns {Promise<object>} Parsed output containing overall percentage, student watch video details, and quiz metadata
  */
 export async function getMicrocredentialStudentWatchVideoData(studentId = 0, microcredentialCourseId = 0) {
     try {
-        const inputDto = buildGetMicrocredentialStudentWatchVideoDataInput(studentId, microcredentialCourseId);
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
+
+        const inputDto = buildGetMicrocredentialStudentWatchVideoDataInput(finalStudentId, microcredentialCourseId);
         const response = await apiClient('api/MicroCredencialStudentWatchVideoAPI/GetMicrocredentialStudentWatchVideoData', {
             method: 'POST',
             headers: inputDto.headers,
