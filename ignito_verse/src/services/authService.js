@@ -101,6 +101,9 @@ export async function validateStudentLoginOTP(
     if (outputDto.mobileNumber) {
       localStorage.setItem('MobileNumber', outputDto.mobileNumber);
     }
+    if (outputDto.profileImage) {
+      localStorage.setItem('ProfileImage', outputDto.profileImage);
+    }
   }
 
   return outputDto;
@@ -127,6 +130,7 @@ export function logoutUser() {
   localStorage.removeItem('StudentName');
   localStorage.removeItem('Email');
   localStorage.removeItem('MobileNumber');
+  localStorage.removeItem('ProfileImage');
 }
 
 /**

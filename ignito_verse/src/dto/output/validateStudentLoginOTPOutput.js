@@ -1,3 +1,5 @@
+import { formatImageUrl } from './homepageOutputs';
+
 /**
  * OUTPUT PARAMETER FILE: Validate Student Login OTP Output DTO Parser
  * Parses API response payload from ValidateStudentLoginOTP endpoint.
@@ -15,6 +17,7 @@
  * - CreatedOn: string
  * - UpdatedOn: string
  * - AccessToken: string
+ * - ProfileImage: string
  * 
  * @param {object} rawJson - Raw JSON response object from backend API
  * @param {number} [status=200] - HTTP status code
@@ -24,9 +27,9 @@ export function parseValidateStudentLoginOTPOutput(rawJson = {}, status = 200) {
   const isOk = status >= 200 && status < 300;
 
   const isSuccess = Boolean(
-    rawJson?.isSuccess ?? 
-    rawJson?.IsSuccess ?? 
-    rawJson?.success ?? 
+    rawJson?.isSuccess ??
+    rawJson?.IsSuccess ??
+    rawJson?.success ??
     (isOk && !rawJson?.error)
   );
 
@@ -42,6 +45,9 @@ export function parseValidateStudentLoginOTPOutput(rawJson = {}, status = 200) {
   const createdOn = rawJson?.createdOn || rawJson?.CreatedOn || '';
   const updatedOn = rawJson?.updatedOn || rawJson?.UpdatedOn || '';
   const accessToken = rawJson?.accessToken || rawJson?.AccessToken || rawJson?.token || rawJson?.Token || '';
+
+  const rawProfileImage = rawJson?.profileImage || rawJson?.ProfileImage || '';
+  const profileImage = formatImageUrl(rawProfileImage);
 
   const displayName = studentName || (email ? email.split('@')[0] : (mobileNumber || 'Student User'));
 
@@ -60,6 +66,7 @@ export function parseValidateStudentLoginOTPOutput(rawJson = {}, status = 200) {
     createdOn,
     updatedOn,
     accessToken,
+    profileImage,
     token: accessToken,
     user: isSuccess ? {
       id: studentId,
@@ -70,7 +77,7 @@ export function parseValidateStudentLoginOTPOutput(rawJson = {}, status = 200) {
       email: email,
       mobileNumber: mobileNumber,
       role: 'Student Learner',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'
+      avatar: profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'
     } : null,
     error: isSuccess ? null : (message || errorDescription || 'OTP Validation Failed')
   };
