@@ -3,34 +3,45 @@
  * Parses raw HTTP response payloads from POST /api/HomePageAPI/HomePage into clean data objects.
  */
 
-// Dynamically use API / Image base URL from environment config instead of hardcoded domain
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://verse.ignitolearn.com';
-
 /**
- * Normalizes image relative paths using configured base URL.
- * @param {string} path - Relative image path (e.g. '/HomePageImages/HomeBannerImage/...')
+ * Normalizes image paths or returns response image URLs directly.
+ * Preserves direct full URLs (S3 pre-signed URLs, HTTPS, HTTP, data/blob URLs) directly from the API response.
+ *
+ * @param {string} path - Image URL or path from API response
  * @returns {string} Formatted image URL
  */
 export function formatImageUrl(path) {
   if (!path) return '';
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
-    return path;
+  if (typeof path !== 'string') return '';
+
+  const trimmed = path.trim();
+  if (!trimmed) return '';
+
+  // Direct URLs (e.g. S3 pre-signed URLs, absolute URLs, data/blob URLs)
+  if (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('data:') ||
+    trimmed.startsWith('blob:')
+  ) {
+    return trimmed;
   }
 
-  // Strip leading slash or accidental /api/ prefix from image relative path
-  const cleanPath = path.replace(/^\//, '').replace(/^api\//, '');
+  // Strip leading slash or accidental /api/ prefix if relative
+  const cleanPath = trimmed.replace(/^\//, '').replace(/^api\//, '');
 
   const customBase = import.meta.env.VITE_IMAGE_BASE_URL;
-  const baseUrl = (customBase && (customBase.startsWith('http://') || customBase.startsWith('https://')))
-    ? customBase
-    : 'https://verse.ignitolearn.com/';
-
-  try {
-    const urlObj = new URL(baseUrl);
-    return `${urlObj.origin}/${cleanPath}`;
-  } catch {
-    return `${baseUrl.replace(/\/$/, '')}/${cleanPath}`;
+  if (customBase && (customBase.startsWith('http://') || customBase.startsWith('https://'))) {
+    try {
+      const urlObj = new URL(customBase);
+      return `${urlObj.origin}/${cleanPath}`;
+    } catch {
+      return `${customBase.replace(/\/$/, '')}/${cleanPath}`;
+    }
   }
+
+  // Return path directly without appending legacy target URL
+  return trimmed;
 }
 
 /**
