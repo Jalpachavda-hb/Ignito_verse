@@ -2,7 +2,8 @@
  * Centralized API Client for making HTTP requests to .NET Web API.
  */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const LIVE_API_BASE_URL = 'https://1ejrtfddba.execute-api.ap-south-1.amazonaws.com/default/api';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '/api' : LIVE_API_BASE_URL);
 
 /**
  * Retrieves the dynamic JWT auth token stored in localStorage after student login.
@@ -83,7 +84,8 @@ export async function apiClient(endpoint, options = {}) {
 
   try {
     const res = await fetch(url, {
-      credentials: options.credentials || 'include',
+      // Removed credentials: 'include' because API Gateway uses wildcard CORS (Access-Control-Allow-Origin: *)
+      ...(options.credentials ? { credentials: options.credentials } : {}),
       ...options,
       headers,
     });
