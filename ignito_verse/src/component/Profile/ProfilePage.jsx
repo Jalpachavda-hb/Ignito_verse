@@ -86,7 +86,7 @@ export default function ProfilePage({
             <div className="profile-user-identity-block">
               <div className="profile-avatar-creative-wrapper">
                 <img 
-                  src={user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'} 
+                  src={'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'} 
                   alt={user.name} 
                   className="profile-avatar-creative" 
                 />
