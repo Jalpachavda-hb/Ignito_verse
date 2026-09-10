@@ -8,9 +8,9 @@ import img2 from '../../assets/home/verse-img-02.webp';
 import img3 from '../../assets/home/verse-img-03.webp';
 
 const defaultImages = [
-  { id: 'img-1', src: img1, alt: 'Students Studying in Library' },
-  { id: 'img-2', src: img2, alt: 'Student with Laptop and Books' },
-  { id: 'img-3', src: img3, alt: 'Graduation Cap Toss' }
+  { id: 'img-1', src: img1, alt: 'Employees in Enterprise Training' },
+  { id: 'img-2', src: img2, alt: 'Professional with Laptop' },
+  { id: 'img-3', src: img3, alt: 'Career Growth and Certification' }
 ];
 
 export default function HeroSectionTwo({

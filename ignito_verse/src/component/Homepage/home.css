@@ -115,17 +115,21 @@
 .btn-demo {
   background: #00385E;
   color: #ffffff;
-  box-shadow: 0 4px 18px rgba(21, 93, 252, 0.35);
+  border: 1.5px solid #00385E;
+  box-shadow: 0 4px 14px rgba(0, 56, 94, 0.2);
 }
 
 .btn-demo:hover {
-  background: #0d4cd6;
+  background: transparent;
+  color: #00385E;
+  border-color: #00385E;
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(21, 93, 252, 0.45);
+  box-shadow: 0 6px 18px rgba(0, 56, 94, 0.15);
 }
 
 .btn-demo:hover .btn-arrow {
   transform: translateX(4px);
+  color: #00385E;
 }
 
 .btn-solutions {

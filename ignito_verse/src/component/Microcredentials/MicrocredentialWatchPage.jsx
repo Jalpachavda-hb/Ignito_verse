@@ -50,10 +50,12 @@ import {
   insertMicroManyDiscussionQuestion,
   microCourseDiscussionQuestionLike,
   insertManyMicroCourseDiscussionReply,
-  getManyMicroCourseDiscussionQuestionReply
+  getManyMicroCourseDiscussionQuestionReply,
+  microcredentialQuizStudentAttemptDetail
 } from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
 import { findTopicPdfContent } from '../../data/microcredentialTopicPdfData';
+import QuizAttemptDetailsModal from '../modals/QuizAttemptDetailsModal';
 
 // Helpers for Video duration & YouTube formatting
 function formatDuration(sec) {
@@ -120,13 +122,19 @@ export default function MicrocredentialWatchPage({
   const [aiHistoryLoading, setAiHistoryLoading] = useState(false);
 
   const [isTextContentOpen, setIsTextContentOpen] = useState(true);
-  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [isQuizAccordionOpen, setIsQuizAccordionOpen] = useState(true);
 
   // Student Watch Video Progress states (POST /api/MicroCredencialStudentWatchVideoAPI/GetMicrocredentialStudentWatchVideoData)
   const [overallWatchPct, setOverallWatchPct] = useState(0);
   const [videoProgressMap, setVideoProgressMap] = useState({});
   const [isQuizEligible, setIsQuizEligible] = useState(false);
   const [quizStatusMessage, setQuizStatusMessage] = useState('');
+
+  // Quiz Attempt Details Modal state (POST /api/StudentMicrocredentialQuizAPI/MicrocredentialQuizStudentAttemptDetail)
+  const [showQuizModal, setShowQuizModal] = useState(false);
+  const [quizAttemptLoading, setQuizAttemptLoading] = useState(false);
+  const [quizAttemptError, setQuizAttemptError] = useState('');
+  const [quizAttemptData, setQuizAttemptData] = useState(null);
 
   // Custom Player & Anti-Skip States
   const [currentTime, setCurrentTime] = useState(0);
@@ -141,6 +149,7 @@ export default function MicrocredentialWatchPage({
   const ytContainerRef = useRef(null);
   const intervalRef = useRef(null);
   const maxWatchedRef = useRef(0);
+  const userInitiatedPlayRef = useRef(false);
 
   // Load YouTube IFrame API Script globally once
   useEffect(() => {
@@ -159,14 +168,7 @@ export default function MicrocredentialWatchPage({
     const courseId = Number(rawId) || 2;
     const encryptedId = course?.encryptedMicrocredentialCourseId || course?.encryptedId || course?.rawData?.encryptedMicrocredentialCourseId || '';
     
-    let studentId = 0;
-    try {
-      const storedUser = localStorage.getItem('ignito_user') || localStorage.getItem('user');
-      if (storedUser) {
-        const parsed = JSON.parse(storedUser);
-        studentId = Number(parsed?.studentId || parsed?.id || parsed?.userId || 0);
-      }
-    } catch (e) {}
+    const studentId = getLoggedInStudentId();
 
     getMicroCourseTopicDetail(courseId, studentId, encryptedId)
       .then((res) => {
@@ -594,15 +596,62 @@ export default function MicrocredentialWatchPage({
             setMaxWatchedTime(savedSec);
             maxWatchedRef.current = savedSec;
             if (ytPlayerRef.current && typeof ytPlayerRef.current.seekTo === 'function') {
-              try { ytPlayerRef.current.seekTo(savedSec, true); } catch (e) {}
+              try { 
+                ytPlayerRef.current.seekTo(savedSec, false); 
+                if (!userInitiatedPlayRef.current) {
+                  ytPlayerRef.current.pauseVideo();
+                }
+              } catch (e) {}
             } else if (videoRef.current) {
-              try { videoRef.current.currentTime = savedSec; } catch (e) {}
+              try { 
+                videoRef.current.currentTime = savedSec; 
+                if (!userInitiatedPlayRef.current) {
+                  videoRef.current.pause();
+                }
+              } catch (e) {}
             }
           }
         }
       }
     } catch (err) {
       console.error('Error fetching student watch video data:', err);
+    }
+  };
+
+  // Fetch Quiz Attempt History & Summary Details (POST /api/StudentMicrocredentialQuizAPI/MicrocredentialQuizStudentAttemptDetail)
+  const handleOpenQuizModal = async () => {
+    if (!isQuizEligible) {
+      alert(quizStatusMessage || 'Please watch at least 90% of the video to unlock the quiz.');
+      return;
+    }
+
+    const rawId = currentCourse.microcredentialCourseId || currentCourse.courseId || currentCourse.id || 1;
+    const courseId = Number(rawId) || 1;
+    const studentId = getLoggedInStudentId();
+
+    setShowQuizModal(true);
+    setQuizAttemptLoading(true);
+    setQuizAttemptError('');
+
+    try {
+      const res = await microcredentialQuizStudentAttemptDetail(courseId, studentId);
+      if (res && res.success) {
+        setQuizAttemptData(res);
+      } else {
+        setQuizAttemptError(res?.message || 'Failed to fetch quiz attempt history');
+      }
+    } catch (err) {
+      console.error('Error fetching quiz attempt detail:', err);
+      setQuizAttemptError('Failed to fetch quiz attempt history. Please try again.');
+    } finally {
+      setQuizAttemptLoading(false);
+    }
+  };
+
+  const handleStartQuiz = (detail) => {
+    setShowQuizModal(false);
+    if (onNavigate) {
+      onNavigate('quiz', currentCourse);
     }
   };
 
@@ -775,6 +824,7 @@ export default function MicrocredentialWatchPage({
     const savedProgress = videoProgressMap[curVid] || videoProgressMapRef.current[curVid];
     const initialResumeSec = Number(savedProgress?.watchedSeconds || 0);
 
+    userInitiatedPlayRef.current = false;
     setCurrentTime(initialResumeSec);
     setMaxWatchedTime(initialResumeSec);
     maxWatchedRef.current = initialResumeSec;
@@ -823,15 +873,29 @@ export default function MicrocredentialWatchPage({
                 if (dur && dur > 0) setVideoDuration(dur);
                 else if (activeLecture.videoDuration) setVideoDuration(activeLecture.videoDuration);
 
+                // Position scrubber at saved watch seconds without auto-playing
                 if (initialResumeSec > 0) {
                   try {
-                    event.target.seekTo(initialResumeSec, true);
+                    event.target.seekTo(initialResumeSec, false);
+                    event.target.pauseVideo();
+                  } catch (e) {}
+                } else {
+                  try {
+                    event.target.pauseVideo();
                   } catch (e) {}
                 }
               },
               onStateChange: (event) => {
                 if (isCancelled) return;
                 if (event.data === window.YT.PlayerState.PLAYING) {
+                  // If user did not explicitly initiate playback, force pause
+                  if (!userInitiatedPlayRef.current) {
+                    try {
+                      event.target.pauseVideo();
+                    } catch (e) {}
+                    setIsPlaying(false);
+                    return;
+                  }
                   setIsPlaying(true);
                   startProgressTracking();
                 } else if (event.data === window.YT.PlayerState.ENDED) {
@@ -946,6 +1010,7 @@ export default function MicrocredentialWatchPage({
         if (typeof ytPlayerRef.current.pauseVideo === 'function') ytPlayerRef.current.pauseVideo();
         setIsPlaying(false);
       } else {
+        userInitiatedPlayRef.current = true;
         if (typeof ytPlayerRef.current.playVideo === 'function') ytPlayerRef.current.playVideo();
         setIsPlaying(true);
       }
@@ -954,6 +1019,7 @@ export default function MicrocredentialWatchPage({
         videoRef.current.pause();
         setIsPlaying(false);
       } else {
+        userInitiatedPlayRef.current = true;
         videoRef.current.play();
         setIsPlaying(true);
       }
@@ -1065,6 +1131,7 @@ export default function MicrocredentialWatchPage({
   const handlePrevLesson = () => {
     if (activeLectureIdx > 0) {
       saveCurrentWatchProgress(currentTime, videoDuration);
+      userInitiatedPlayRef.current = false;
       setActiveLectureIdx(activeLectureIdx - 1);
       setIsPlaying(false);
     }
@@ -1073,6 +1140,7 @@ export default function MicrocredentialWatchPage({
   const handleNextLesson = () => {
     if (activeLectureIdx < currentPlaylist.length - 1) {
       saveCurrentWatchProgress(currentTime, videoDuration);
+      userInitiatedPlayRef.current = false;
       setActiveLectureIdx(activeLectureIdx + 1);
       setIsPlaying(false);
     }
@@ -1195,8 +1263,10 @@ export default function MicrocredentialWatchPage({
                         ref={videoRef}
                         src={activeLecture?.videoUrl || 'https://www.w3schools.com/html/mov_bbb.mp4'} 
                         className="theater-html5-video"
+                        autoPlay={false}
                         poster={currentCourse.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1200&auto=format&fit=crop&q=80'}
                         onLoadedMetadata={(e) => {
+                          e.target.pause();
                           const curVid = activeLecture.ytId || getYouTubeVideoId(activeLecture.videoUrl) || activeLecture.videoId || String(activeLecture.id || '');
                           const savedProgress = videoProgressMap[curVid] || videoProgressMapRef.current[curVid];
                           const initialResumeSec = Number(savedProgress?.watchedSeconds || 0);
@@ -1205,9 +1275,19 @@ export default function MicrocredentialWatchPage({
                             setCurrentTime(initialResumeSec);
                             setMaxWatchedTime(initialResumeSec);
                             maxWatchedRef.current = initialResumeSec;
+                            if (!userInitiatedPlayRef.current) {
+                              e.target.pause();
+                            }
                           }
                         }}
-                        onPlay={() => setIsPlaying(true)}
+                        onPlay={() => {
+                          if (!userInitiatedPlayRef.current) {
+                            if (videoRef.current) videoRef.current.pause();
+                            setIsPlaying(false);
+                          } else {
+                            setIsPlaying(true);
+                          }
+                        }}
                         onPause={() => {
                           setIsPlaying(false);
                           if (videoRef.current) {
@@ -1578,13 +1658,13 @@ export default function MicrocredentialWatchPage({
                       <div className="author-avatar-circle" style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid #c7d2fe', flexShrink: 0 }}>
                         <img 
                           src={q.studentProfileImage ? formatImageUrl(q.studentProfileImage) : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'} 
-                          alt={q.studentName || 'Student'} 
+                          alt={q.studentName || 'Employee'} 
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                       </div>
                       <div className="author-name-stamp">
                         <h4 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#1e293b', margin: '0 0 2px 0' }}>
-                          {q.studentName || 'Student'}
+                          {q.studentName || 'Employee'}
                         </h4>
                         <span className="post-timestamp" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#94a3b8' }}>
                           <Clock size={12} />
@@ -1905,8 +1985,9 @@ export default function MicrocredentialWatchPage({
                     onClick={() => {
                       if (currentTime > 0) saveCurrentWatchProgress(currentTime, videoDuration);
                       setSelectedPdf(null);
+                      userInitiatedPlayRef.current = false;
                       setActiveLectureIdx(idx);
-                      setIsPlaying(true);
+                      setIsPlaying(false);
                     }}
                   >
                     <div className="playlist-item-left">
@@ -2086,7 +2167,7 @@ export default function MicrocredentialWatchPage({
           <div className="mc-watch-expandable-card">
             <div 
               className="expandable-header"
-              onClick={() => setIsQuizOpen(!isQuizOpen)}
+              onClick={() => setIsQuizAccordionOpen(!isQuizAccordionOpen)}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', cursor: 'pointer', background: '#ffffff' }}
             >
               <div className="expandable-left" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00385E', fontWeight: 800 }}>
@@ -2097,20 +2178,45 @@ export default function MicrocredentialWatchPage({
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#00385E', background: '#f0f7fc', padding: '2px 8px', borderRadius: '999px', border: '1px solid #c9dfef' }}>
                   10 MCQs
                 </span>
-                <ChevronDown size={16} className={`chevron-exp ${isQuizOpen ? 'open' : ''}`} style={{ color: '#00385E' }} />
+                <ChevronDown size={16} className={`chevron-exp ${isQuizAccordionOpen ? 'open' : ''}`} style={{ color: '#00385E' }} />
               </div>
             </div>
 
-            {isQuizOpen && (
+            {isQuizAccordionOpen && (
               <div className="expandable-content-body" style={{ padding: '14px 18px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
                 <p style={{ fontSize: '0.84rem', color: '#475569', margin: '0 0 12px 0', lineHeight: 1.5 }}>
-                  Benchmark your understanding of <strong>{currentCourse.title}</strong> across all units. Complete to qualify for final certification.
+                  Benchmark your understanding of <strong>{currentCourse.title?.toUpperCase() || 'STRESS MANAGEMENT'}</strong> across all units. Complete to qualify for final certification.
                 </p>
-                {quizStatusMessage && (
-                  <div style={{ fontSize: '0.8rem', color: isQuizEligible ? '#059669' : '#00385E', background: isQuizEligible ? '#ecfdf5' : '#f0f7fc', border: `1px solid ${isQuizEligible ? '#a7f3d0' : '#c9dfef'}`, borderRadius: '6px', padding: '6px 10px', marginBottom: '10px', fontWeight: 600 }}>
-                    {quizStatusMessage}
-                  </div>
-                )}
+                
+                {/* Eligibility Notice Banner */}
+                <div 
+                  style={{
+                    fontSize: '0.82rem',
+                    color: isQuizEligible ? '#0369a1' : '#00385E',
+                    background: isQuizEligible ? '#e0f2fe' : '#f0f7fc',
+                    border: `1.5px solid ${isQuizEligible ? '#bae6fd' : '#c9dfef'}`,
+                    borderRadius: '8px',
+                    padding: '9px 12px',
+                    marginBottom: '12px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    lineHeight: 1.4
+                  }}
+                >
+                  {isQuizEligible ? (
+                    <CheckCircle2 size={15} style={{ color: '#0284c7', flexShrink: 0 }} />
+                  ) : (
+                    <Lock size={15} style={{ color: '#00385E', flexShrink: 0 }} />
+                  )}
+                  <span>
+                    {quizStatusMessage || (isQuizEligible 
+                      ? 'You are eligible to attempt this quiz.' 
+                      : 'Please watch at least 90% of the video to unlock the quiz.')}
+                  </span>
+                </div>
+
                 <button 
                   type="button" 
                   style={{
@@ -2119,17 +2225,18 @@ export default function MicrocredentialWatchPage({
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    background: '#00385E',
+                    background: 'linear-gradient(135deg, #00385E 0%, #005a96 100%)',
                     color: '#ffffff',
                     fontWeight: 800,
-                    fontSize: '0.86rem',
-                    padding: '10px 16px',
+                    fontSize: '0.88rem',
+                    padding: '11px 16px',
                     borderRadius: '8px',
                     border: 'none',
                     cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(0,56,94,0.2)'
+                    boxShadow: '0 4px 14px rgba(0,56,94,0.22)',
+                    transition: 'all 0.2s ease'
                   }}
-                  onClick={() => alert(`Starting Quiz Assessment for ${currentCourse.title}`)}
+                  onClick={handleOpenQuizModal}
                 >
                   <HelpCircle size={15} />
                   <span>Start Assessment Quiz</span>
@@ -2211,6 +2318,17 @@ export default function MicrocredentialWatchPage({
           </div>
         </div>
       )}
+
+      {/* Quiz Attempt Details & History Modal */}
+      <QuizAttemptDetailsModal
+        isOpen={showQuizModal}
+        onClose={() => setShowQuizModal(false)}
+        onStartQuiz={handleStartQuiz}
+        loading={quizAttemptLoading}
+        error={quizAttemptError}
+        courseTitle={currentCourse.title}
+        attemptData={quizAttemptData}
+      />
 
     </div>
   );

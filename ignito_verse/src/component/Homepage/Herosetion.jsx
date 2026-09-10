@@ -38,9 +38,8 @@ export default function Herosetion({
   titlePart1 = 'Empower People.',
   titlePart2 = 'Elevate Performance.',
   description = "Ignito Verse helps organizations build a culture of continuous learning with training that's relevant, measurable, and future-ready.",
-  primaryBtnText = 'Book a Demo',
-  secondaryBtnText = 'Explore Solutions',
-  onBookDemo,
+  primaryBtnText = 'Explore Microcredentials',
+  onExploreCatalog,
   onExploreSolutions,
   onPrimaryClick,
   onSecondaryClick,
@@ -99,8 +98,7 @@ export default function Herosetion({
   const rawBannerPath = activeHeroData?.sectionData?.homeBannerImage || activeHeroData?.bindData?.homeBannerImageTwo;
   const dynamicHeroImg = rawBannerPath ? formatImageUrl(rawBannerPath) : heroForegroundImg;
 
-  const handleDemo = onBookDemo || onPrimaryClick || (() => console.log('Book a Demo Clicked'));
-  const handleSolutions = onExploreSolutions || onSecondaryClick || (() => console.log('Explore Solutions Clicked'));
+  const handleAction = onExploreCatalog || onExploreSolutions || onPrimaryClick || onSecondaryClick || (() => {});
 
   return (
     <section
@@ -133,18 +131,10 @@ export default function Herosetion({
             <button
               type="button"
               className="b2b-btn btn-demo"
-              onClick={handleDemo}
+              onClick={handleAction}
             >
               <span>{primaryBtnText}</span>
               <ArrowRight size={17} className="btn-arrow" />
-            </button>
-
-            <button
-              type="button"
-              className="b2b-btn btn-solutions"
-              onClick={handleSolutions}
-            >
-              <span>{secondaryBtnText}</span>
             </button>
           </div>
         </div>

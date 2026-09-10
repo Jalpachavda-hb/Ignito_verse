@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { trustedEnterprises } from '../../data/enterpriseData';
 
-export default function EnterprisePage({ onBookDemo = () => {} }) {
+export default function EnterprisePage({ onExploreCatalog = () => {} }) {
   return (
     <div className="enterprise-page-wrapper">
       {/* Enterprise Hero */}
@@ -37,12 +37,9 @@ export default function EnterprisePage({ onBookDemo = () => {} }) {
           </p>
 
           <div className="ent-hero-cta-row">
-            <button type="button" className="ent-btn-primary" onClick={onBookDemo}>
-              <span>Schedule an Enterprise Discovery Session</span>
+            <button type="button" className="ent-btn-primary" onClick={onExploreCatalog}>
+              <span>Explore Microcredentials Catalog</span>
               <ArrowRight size={16} />
-            </button>
-            <button type="button" className="ent-btn-secondary" onClick={onBookDemo}>
-              <span>Download Enterprise Capability Deck (PDF)</span>
             </button>
           </div>
 
@@ -129,9 +126,9 @@ export default function EnterprisePage({ onBookDemo = () => {} }) {
         <div className="detail-container">
           <div className="ent-cta-box">
             <h2>Ready to Elevate Your Engineering & Leadership Bench?</h2>
-            <p>Join 500+ global enterprises. Speak with an enterprise talent specialist for a customized cohort quote.</p>
-            <button type="button" className="ent-btn-large" onClick={onBookDemo}>
-              <span>Book an Enterprise Platform Demo</span>
+            <p>Join 500+ global enterprises building future-ready teams with verified microcredentials.</p>
+            <button type="button" className="ent-btn-large" onClick={onExploreCatalog}>
+              <span>Explore Microcredentials Catalog</span>
               <ArrowRight size={18} />
             </button>
           </div>

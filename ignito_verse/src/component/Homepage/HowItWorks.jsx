@@ -34,7 +34,7 @@ const stepsData = [
   }
 ];
 
-export default function HowItWorks({ onBookDemo = () => {} }) {
+export default function HowItWorks() {
   return (
     <section className="how-it-works-section" id="how-it-works">
       {/* Corner Constellation Watermarks */}

@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from './apiClient';
+import { getLoggedInStudentId } from './microcredentialService';
 import { buildGetStudentEnrolledMicrocredentialCourseInput } from '../dto/input/getStudentEnrolledMicrocredentialCourseInput';
 import { parseGetStudentEnrolledMicrocredentialCourseOutput, parseGetStudentEnrolledMicrocredentialCourseErrorOutput } from '../dto/output/getStudentEnrolledMicrocredentialCourseOutput';
 import { buildStudentMicrocredentialsQuizAttemptListInput } from '../dto/input/studentMicrocredentialsQuizAttemptListInput';
@@ -21,7 +22,11 @@ import { parseGetStudentMicrocredentialQuizResultGetByQuizIdOutput, parseGetStud
  */
 export async function getStudentEnrolledMicrocredentialCourse(studentId = 0, enrolledMode = 1) {
     try {
-        const inputDto = buildGetStudentEnrolledMicrocredentialCourseInput(studentId, enrolledMode);
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
+        const inputDto = buildGetStudentEnrolledMicrocredentialCourseInput(finalStudentId, enrolledMode);
         const response = await apiClient('api/StudentMyProfileAPI/GetStudentEnrolledMicrocredentialCourse', {
             method: 'POST',
             headers: inputDto.headers,
@@ -63,6 +68,10 @@ export async function studentMicrocredentialsQuizAttemptList(
     studentId = 0
 ) {
     try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
         const inputDto = buildStudentMicrocredentialsQuizAttemptListInput(
             pageNo,
             pageSize,
@@ -70,7 +79,7 @@ export async function studentMicrocredentialsQuizAttemptList(
             orderByDirection,
             totalRecords,
             searchInput,
-            studentId
+            finalStudentId
         );
         const response = await apiClient('api/StudentMyProfileAPI/StudentMicrocredentialsQuizAttemptList', {
             method: 'POST',
@@ -105,7 +114,11 @@ export async function getStudentMicrocredentialQuizResultGetByQuizId(
     attemptId = 0
 ) {
     try {
-        const inputDto = buildGetStudentMicrocredentialQuizResultGetByQuizIdInput(quizId, studentId, attemptId);
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
+        const inputDto = buildGetStudentMicrocredentialQuizResultGetByQuizIdInput(quizId, finalStudentId, attemptId);
         const response = await apiClient('api/StudentMyProfileAPI/GetStudentMicrocredentialQuizResultGetByQuizId', {
             method: 'POST',
             headers: inputDto.headers,

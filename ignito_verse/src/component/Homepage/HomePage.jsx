@@ -12,7 +12,6 @@ import Testimonials from './Testimonials';
 // import CtaBanner from './CtaBanner';
 
 export default function HomePage({
-  onBookDemo = () => {},
   onExploreCatalog = () => {},
   onViewDetails = () => {},
   onSelectCategory = () => {},
@@ -23,7 +22,6 @@ export default function HomePage({
     <div className="home-page-flow">
       {/* 1. Hero Section (Single section with 4 internal elements & stats strip) */}
       <Herosetion 
-        onBookDemo={onBookDemo}
         onExploreCatalog={onExploreCatalog}
       />
 
@@ -43,9 +41,7 @@ export default function HomePage({
       />
 
       {/* 5. How It Works (4 Steps: Enroll → Learn → MCQ Exam → Certified) */}
-      <HowItWorks 
-        onBookDemo={onBookDemo}
-      />
+      <HowItWorks />
 
       {/* 6. Categories Grid (Technical vs Non-Technical Domains) */}
       {/* <CategoriesGrid 

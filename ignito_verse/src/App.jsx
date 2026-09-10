@@ -6,12 +6,14 @@ import HomePage from './component/Homepage/HomePage';
 import MicrocredentialsCatalog from './component/Microcredentials/MicrocredentialsCatalog';
 import MicrocredentialDetail from './component/Microcredentials/MicrocredentialDetail';
 import MicrocredentialWatchPage from './component/Microcredentials/MicrocredentialWatchPage';
+import QuizPage from './component/Quiz/QuizPage';
 import ProfilePage from './component/Profile/ProfilePage';
 import LoginPage from './component/Auth/LoginPage';
-import BookDemoModal from './component/modals/BookDemoModal';
 import VideoModal from './component/modals/VideoModal';
+import AuthRequiredModal from './component/modals/AuthRequiredModal';
 import { microcredentialsData } from './data/microcredentials';
 import { getSavedUserSession, logoutUser } from './services/authService';
+import { getLoggedInStudentId } from './services/microcredentialService';
 import './Global.css';
 
 /**
@@ -51,6 +53,9 @@ function parseCurrentRoute() {
   }
   if (rawPage === 'watch') {
     return { page: 'watch', param };
+  }
+  if (rawPage === 'quiz') {
+    return { page: 'quiz', param };
   }
   if (rawPage === 'profile') {
     return { page: 'profile', param: param || 'dashboard' };
@@ -127,7 +132,9 @@ export default function App() {
   const [catalogCategory, setCatalogCategory] = useState('All');
 
   // Modals state
-  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authCourseTitle, setAuthCourseTitle] = useState('');
+  const [pendingWatchCourse, setPendingWatchCourse] = useState(null);
   const [videoModal, setVideoModal] = useState({
     isOpen: false,
     lectureTitle: '',
@@ -144,10 +151,19 @@ export default function App() {
 
       if (page === 'profile') {
         setProfileTab(param || 'dashboard');
-      } else if (page === 'detail' || page === 'watch') {
+      } else if (page === 'detail' || page === 'watch' || page === 'quiz') {
         if (param) {
           const resolved = resolveSelectedCourse(param);
           setSelectedCourse(resolved);
+        }
+        if (page === 'watch') {
+          const currentUser = user || getSavedUserSession();
+          const currentStudentId = getLoggedInStudentId();
+          if (!currentUser && (!currentStudentId || currentStudentId <= 0)) {
+            setActivePage('detail');
+            setAuthCourseTitle(selectedCourse?.title || selectedCourse?.microcredentialCourseName || '');
+            setIsAuthModalOpen(true);
+          }
         }
       }
     };
@@ -161,7 +177,7 @@ export default function App() {
       window.removeEventListener('popstate', syncRouteFromUrl);
       window.removeEventListener('hashchange', syncRouteFromUrl);
     };
-  }, []);
+  }, [user]);
 
   const handleNavigate = (pageId, subParam = '') => {
     let targetPath = `/${pageId}`;
@@ -178,6 +194,9 @@ export default function App() {
     } else if (pageId === 'watch') {
       const courseId = subParam?.microcredentialCourseId || subParam?.encryptedMicrocredentialCourseId || subParam?.id || (typeof subParam === 'string' ? subParam : '') || selectedCourse?.microcredentialCourseId || selectedCourse?.encryptedMicrocredentialCourseId || selectedCourse?.id || '';
       targetPath = courseId ? `/watch/${courseId}` : '/microcredentials';
+    } else if (pageId === 'quiz') {
+      const courseId = subParam?.microcredentialCourseId || subParam?.encryptedMicrocredentialCourseId || subParam?.id || (typeof subParam === 'string' ? subParam : '') || selectedCourse?.microcredentialCourseId || selectedCourse?.encryptedMicrocredentialCourseId || selectedCourse?.id || '';
+      targetPath = courseId ? `/quiz/${courseId}` : '/quiz';
     }
 
     window.history.pushState({}, '', targetPath);
@@ -185,11 +204,25 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleProceedToLogin = () => {
+    setIsAuthModalOpen(false);
+    handleNavigate('login');
+  };
+
   const handleLoginSuccess = (userData) => {
     setUser(userData);
-    setActivePage('home');
-    window.history.pushState({}, '', '/');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (pendingWatchCourse) {
+      const courseObj = pendingWatchCourse;
+      setPendingWatchCourse(null);
+      const courseId = courseObj?.microcredentialCourseId || courseObj?.encryptedMicrocredentialCourseId || courseObj?.id || '';
+      window.history.pushState({}, '', courseId ? `/watch/${courseId}` : '/microcredentials');
+      setActivePage('watch');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setActivePage('home');
+      window.history.pushState({}, '', '/');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleLogout = () => {
@@ -219,6 +252,16 @@ export default function App() {
     try {
       sessionStorage.setItem('ignito_selected_course', JSON.stringify(courseObj));
     } catch (e) {}
+
+    // Check if user/student is logged in
+    const currentUser = user || getSavedUserSession();
+    const currentStudentId = getLoggedInStudentId();
+    if (!currentUser && (!currentStudentId || currentStudentId <= 0)) {
+      setAuthCourseTitle(courseObj?.title || courseObj?.microcredentialCourseName || '');
+      setPendingWatchCourse(courseObj);
+      setIsAuthModalOpen(true);
+      return;
+    }
 
     const courseId = courseObj?.microcredentialCourseId || courseObj?.encryptedMicrocredentialCourseId || courseObj?.id || '';
     window.history.pushState({}, '', courseId ? `/watch/${courseId}` : '/microcredentials');
@@ -261,7 +304,7 @@ export default function App() {
       {/* 1. Top Navbar */}
       {activePage !== 'login' && (
         <Navbar 
-          activePage={activePage === 'detail' || activePage === 'watch' ? 'microcredentials' : activePage}
+          activePage={activePage === 'detail' || activePage === 'watch' || activePage === 'quiz' ? 'microcredentials' : activePage}
           user={user}
           onNavigate={handleNavigate}
           onLogin={() => handleNavigate('login')}
@@ -273,7 +316,6 @@ export default function App() {
       <main className="main-content-flow">
         {activePage === 'home' && (
           <HomePage 
-            onBookDemo={() => setIsDemoModalOpen(true)}
             onExploreCatalog={() => handleNavigate('microcredentials')}
             onViewDetails={handleViewCourseDetails}
             onSelectCategory={handleSelectCategoryFromHome}
@@ -294,9 +336,9 @@ export default function App() {
           <MicrocredentialDetail 
             course={selectedCourse}
             onBack={() => handleNavigate('microcredentials')}
-            onBookDemo={() => setIsDemoModalOpen(true)}
             onPreviewVideo={handleOpenVideoPreview}
             onWatchCourse={handleWatchCourse}
+            onNavigate={handleNavigate}
           />
         )}
 
@@ -304,6 +346,14 @@ export default function App() {
           <MicrocredentialWatchPage 
             course={selectedCourse}
             onBack={() => handleViewCourseDetails(selectedCourse)}
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {activePage === 'quiz' && (
+          <QuizPage 
+            course={selectedCourse}
+            onBack={() => handleNavigate(selectedCourse ? 'watch' : 'microcredentials', selectedCourse)}
             onNavigate={handleNavigate}
           />
         )}
@@ -329,16 +379,10 @@ export default function App() {
       {activePage !== 'login' && (
         <Footer 
           onNavigate={handleNavigate}
-          onBookDemo={() => setIsDemoModalOpen(true)}
         />
       )}
 
       {/* Interactive Modals */}
-      <BookDemoModal 
-        isOpen={isDemoModalOpen}
-        onClose={() => setIsDemoModalOpen(false)}
-      />
-
       <VideoModal 
         isOpen={videoModal.isOpen}
         onClose={handleCloseVideo}
@@ -346,6 +390,13 @@ export default function App() {
         courseTitle={videoModal.courseTitle}
         duration={videoModal.duration}
         videoUrl={videoModal.videoUrl}
+      />
+
+      <AuthRequiredModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLogin={handleProceedToLogin}
+        courseTitle={authCourseTitle}
       />
     </div>
   );

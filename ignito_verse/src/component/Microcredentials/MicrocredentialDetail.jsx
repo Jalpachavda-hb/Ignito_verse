@@ -30,24 +30,27 @@ import {
   RefreshCw
 } from 'lucide-react';
 import userCertificateImg from '../../assets/e47782ae-798b-479b-99e6-428b70bf4a7a.png';
+import AuthRequiredModal from '../modals/AuthRequiredModal';
 import {
   getMicrocredentialCourseBindDataList,
   getMicrocredentialCourseDetail,
   getMicroCourseTopicDetail,
   getReviewByMicroCourseId,
+  getStudentReviewByMicroCorseId,
   getMicroCourseLearnData,
   getMicroCourseMaterialIncludeData,
   ignitoMicroStudentReviewInsert,
-  microcredentialStudentReviewLikeInsert
+  microcredentialStudentReviewLikeInsert,
+  getLoggedInStudentId
 } from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
 
 export default function MicrocredentialDetail({
   course: initialCourse,
   onBack = () => { },
-  onBookDemo = () => { },
   onPreviewVideo = () => { },
-  onWatchCourse = () => { }
+  onWatchCourse = () => { },
+  onNavigate = () => { }
 }) {
   const [courseData, setCourseData] = useState(initialCourse || {});
   const [loadingDetail, setLoadingDetail] = useState(true);
@@ -61,12 +64,17 @@ export default function MicrocredentialDetail({
   const [hasLiked, setHasLiked] = useState({});
   const [certImgFailed, setCertImgFailed] = useState(false);
 
+  // Authentication Required Modal state
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authActionText, setAuthActionText] = useState('write and submit an employee review');
+
   // Review submission state
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [newReviewStar, setNewReviewStar] = useState(5);
   const [newReviewText, setNewReviewText] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewSubmitMessage, setReviewSubmitMessage] = useState('');
+  const [hasSubmittedReview, setHasSubmittedReview] = useState(false);
 
   // Fetch full dynamic details from API securely using microcredentialCourseId or encryptedMicrocredentialCourseId
   useEffect(() => {
@@ -134,8 +142,10 @@ export default function MicrocredentialDetail({
     const loadExtraDetails = (courseIdNum) => {
       if (!courseIdNum || courseIdNum <= 0) return;
 
+      const currentStudentId = getLoggedInStudentId();
+
       // 1. Fetch course topic details (Tab 2)
-      getMicroCourseTopicDetail(courseIdNum, 3)
+      getMicroCourseTopicDetail(courseIdNum, currentStudentId)
         .then((tRes) => {
           if (!isMounted) return;
           if (tRes && tRes.success && Array.isArray(tRes.getMicroCourseTopicDetailList) && tRes.getMicroCourseTopicDetailList.length > 0) {
@@ -147,25 +157,56 @@ export default function MicrocredentialDetail({
               rawData: item
             }));
             setTopicsList(mapped);
+          } else {
+            setTopicsList([]);
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          if (isMounted) setTopicsList([]);
+        });
 
-      // 2. Fetch course reviews (Tab 3)
-      getReviewByMicroCourseId(courseIdNum, 3)
+      // 2. Fetch course reviews (Tab 3) & check if student already reviewed
+      const currentStudentName = (localStorage.getItem('StudentName') || '').trim().toLowerCase();
+      const localReviewed = localStorage.getItem(`has_reviewed_course_${courseIdNum}`) === 'true';
+
+      if (localReviewed) {
+        setHasSubmittedReview(true);
+      }
+
+      if (currentStudentId > 0) {
+        getStudentReviewByMicroCorseId(currentStudentId, courseIdNum)
+          .then((srRes) => {
+            if (!isMounted) return;
+            if (srRes && srRes.success && (srRes.reviewInStar > 0 || (srRes.reviewDescription && srRes.reviewDescription.trim()))) {
+              setHasSubmittedReview(true);
+            }
+          })
+          .catch(() => {});
+      }
+
+      getReviewByMicroCourseId(courseIdNum, currentStudentId)
         .then((rRes) => {
           if (!isMounted) return;
           if (rRes && rRes.success && Array.isArray(rRes.getReviewByMicroCourseList) && rRes.getReviewByMicroCourseList.length > 0) {
             setReviewsList(rRes.getReviewByMicroCourseList);
             const initialLikes = {};
             const initialHasLiked = {};
+            let alreadyReviewed = false;
             rRes.getReviewByMicroCourseList.forEach((rev) => {
               const rId = rev.microcredentialCourseReviewId || rev.id;
               initialLikes[rId] = rev.reviewLikeCount || 0;
               initialHasLiked[rId] = Boolean(rev.isReviewLikedByStudent);
+              const revStudentId = Number(rev.studentId ?? rev.StudentId ?? 0);
+              const revStudentName = (rev.studentName || rev.StudentName || '').trim().toLowerCase();
+              if ((currentStudentId > 0 && revStudentId === currentStudentId) || (currentStudentName && revStudentName === currentStudentName)) {
+                alreadyReviewed = true;
+              }
             });
             setLikedReviews(initialLikes);
             setHasLiked(initialHasLiked);
+            if (alreadyReviewed || localReviewed) {
+              setHasSubmittedReview(true);
+            }
           }
         })
         .catch(() => {});
@@ -317,6 +358,97 @@ export default function MicrocredentialDetail({
     !certImgFailed
   );
 
+  // Helper to render dynamic text, bullet points (e.g. '•', '\n-', etc.), or rich HTML safely
+  const renderFormattedContent = (rawContent, fallbackText = '') => {
+    if (!rawContent || !String(rawContent).trim()) {
+      return <p className="mc-section-paragraph">{fallbackText}</p>;
+    }
+
+    let text = String(rawContent).trim();
+
+    // Normalize potential HTML breaks/paragraphs to check for bullet formats
+    const cleanForBullets = text
+      .replace(/<\/?p>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/&bull;/gi, '•')
+      .replace(/&#8226;/gi, '•');
+
+    // Check if content contains bullet characters
+    if (cleanForBullets.includes('•') || cleanForBullets.includes('\n- ') || cleanForBullets.includes('\n* ')) {
+      let intro = '';
+      let bullets = [];
+
+      if (cleanForBullets.includes('•')) {
+        const parts = cleanForBullets.split('•').map(s => s.trim()).filter(Boolean);
+        if (parts.length > 1) {
+          const firstPart = parts[0];
+          // If the first part does not start with bullet and is an introductory statement
+          if (firstPart.endsWith(':') || (!cleanForBullets.startsWith('•') && firstPart.length > 0)) {
+            intro = firstPart;
+            bullets = parts.slice(1);
+          } else {
+            bullets = parts;
+          }
+        } else if (parts.length === 1) {
+          bullets = parts;
+        }
+      } else {
+        const lines = cleanForBullets.split('\n').map(l => l.trim()).filter(Boolean);
+        lines.forEach((line) => {
+          if (line.startsWith('- ') || line.startsWith('* ') || line.startsWith('• ')) {
+            bullets.push(line.replace(/^[-*•]\s*/, '').trim());
+          } else if (bullets.length === 0) {
+            intro = intro ? `${intro} ${line}` : line;
+          } else {
+            bullets.push(line);
+          }
+        });
+      }
+
+      if (bullets.length > 0) {
+        return (
+          <div className="mc-formatted-content-wrap">
+            {intro && <p className="mc-section-paragraph mc-bullet-intro">{intro}</p>}
+            <ul className="mc-bullet-points-list">
+              {bullets.map((bullet, idx) => (
+                <li key={idx} className="mc-bullet-point-item">
+                  <span className="mc-bullet-icon-ring">
+                    <span className="mc-bullet-icon-core" />
+                  </span>
+                  <span className="mc-bullet-point-text">{bullet}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      }
+    }
+
+    // Check if content contains HTML tags (e.g. <p>, <strong>, <em>, <ul>, <li>, etc.)
+    if (/<[a-z][\s\S]*>/i.test(text)) {
+      return (
+        <div 
+          className="mc-rich-html-content"
+          dangerouslySetInnerHTML={{ __html: text }}
+        />
+      );
+    }
+
+    // Plain text: split by double newlines if multi-paragraph
+    const paragraphs = text.split(/\n\s*\n|\r\n\s*\r\n/).map(p => p.trim()).filter(Boolean);
+    if (paragraphs.length > 1) {
+      return (
+        <div className="mc-description-text-stack">
+          {paragraphs.map((para, idx) => (
+            <p key={idx} className="mc-section-paragraph">{para}</p>
+          ))}
+        </div>
+      );
+    }
+
+    return <p className="mc-section-paragraph">{text}</p>;
+  };
+
   // If loading
   if (loadingDetail) {
     return (
@@ -368,6 +500,13 @@ export default function MicrocredentialDetail({
   }
 
   const handleToggleLike = async (reviewId) => {
+    const currentStudentId = getLoggedInStudentId();
+    if (!currentStudentId || currentStudentId <= 0) {
+      setAuthActionText('like or interact with reviews');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     const isCurrentlyLiked = Boolean(hasLiked[reviewId]);
     setHasLiked(prev => ({
       ...prev,
@@ -382,32 +521,51 @@ export default function MicrocredentialDetail({
       const numCourseId = Number(courseData?.microcredentialCourseId || initialCourse?.microcredentialCourseId) || 0;
       const numReviewId = Number(reviewId) || 0;
       if (numReviewId > 0 && numCourseId > 0) {
-        await microcredentialStudentReviewLikeInsert(numReviewId, 3, numCourseId);
+        await microcredentialStudentReviewLikeInsert(numReviewId, currentStudentId, numCourseId);
       }
     } catch (e) {
       console.warn('Like action error:', e);
     }
   };
 
+  const handleWriteReviewClick = () => {
+    const currentStudentId = getLoggedInStudentId();
+    if (!currentStudentId || currentStudentId <= 0) {
+      setAuthActionText('write and submit an employee review');
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setShowReviewForm(prev => !prev);
+  };
+
   const handleSubmitNewReview = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!newReviewText.trim()) return;
+
+    const currentStudentId = getLoggedInStudentId();
+    if (!currentStudentId || currentStudentId <= 0) {
+      setAuthActionText('write and submit an employee review');
+      setIsAuthModalOpen(true);
+      return;
+    }
 
     setIsSubmittingReview(true);
     setReviewSubmitMessage('');
 
     const numCourseId = Number(courseData?.microcredentialCourseId || initialCourse?.microcredentialCourseId) || 0;
     try {
-      const res = await ignitoMicroStudentReviewInsert(3, numCourseId, newReviewStar, newReviewText.trim());
+      const res = await ignitoMicroStudentReviewInsert(currentStudentId, numCourseId, newReviewStar, newReviewText.trim());
       if (res && res.success) {
+        const studentName = localStorage.getItem('StudentName') || 'You (Employee)';
+        const studentImage = localStorage.getItem('ProfileImage') || '';
         const newlyCreated = {
           microcredentialCourseReviewId: Date.now(),
-          studentId: 3,
+          studentId: currentStudentId,
           microcredentialCourseId: numCourseId,
           reviewInStar: newReviewStar,
           reviewDescription: newReviewText.trim(),
-          studentName: 'You (Student)',
-          studentProfileImage: '',
+          studentName: studentName,
+          studentProfileImage: studentImage,
           createdOnText: 'Just now',
           isReviewLikedByStudent: false,
           reviewLikeCount: 0
@@ -415,6 +573,10 @@ export default function MicrocredentialDetail({
         setReviewsList(prev => [newlyCreated, ...prev]);
         setNewReviewText('');
         setShowReviewForm(false);
+        setHasSubmittedReview(true);
+        if (numCourseId > 0) {
+          localStorage.setItem(`has_reviewed_course_${numCourseId}`, 'true');
+        }
         setReviewSubmitMessage('Thank you! Your review has been submitted successfully.');
       } else {
         setReviewSubmitMessage(res?.message || 'Could not submit review. Please try again.');
@@ -518,7 +680,7 @@ export default function MicrocredentialDetail({
                   <Star size={19} />
                 </div>
                 <div className="island-tab-text-group">
-                  <span className="island-tab-title">Student Review</span>
+                  <span className="island-tab-title">Employee Reviews</span>
                 </div>
                 <span className="island-tab-badge rating-pill">
                   {reviewsList.length > 0 
@@ -569,9 +731,7 @@ export default function MicrocredentialDetail({
                     </div>
                     <h2 className="mc-section-title">About Microcredential</h2>
                   </div>
-                  <p className="mc-section-paragraph">
-                    {course.about || "No about information available for this course."}
-                  </p>
+                  {renderFormattedContent(course.about, "No about information available for this course.")}
                 </div>
 
                 {/* Section 2: Description */}
@@ -582,9 +742,7 @@ export default function MicrocredentialDetail({
                     </div>
                     <h2 className="mc-section-title">Description</h2>
                   </div>
-                  <p className="mc-section-paragraph">
-                    {course.description || "No description available for this course."}
-                  </p>
+                  {renderFormattedContent(course.description, "No description available for this course.")}
                 </div>
 
                 {/* Section 3: What Will You Learn? Box */}
@@ -693,30 +851,48 @@ export default function MicrocredentialDetail({
                       <Star size={20} />
                     </div>
                     <div>
-                      <h2 className="mc-section-title">Student Review</h2>
-                      <span className="mc-sub-text">Verified student feedback and rating breakdown</span>
+                      <h2 className="mc-section-title">Employee Reviews</h2>
+                      <span className="mc-sub-text">Verified employee feedback and rating breakdown</span>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowReviewForm(prev => !prev)}
-                    style={{
-                      background: '#00385E',
-                      color: '#ffffff',
-                      border: 'none',
-                      padding: '8px 18px',
-                      borderRadius: '8px',
-                      fontWeight: 600,
-                      fontSize: '0.86rem',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    <Star size={14} />
-                    <span>{showReviewForm ? 'Close Form' : 'Write a Review'}</span>
-                  </button>
+                  {hasSubmittedReview ? (
+                    <span style={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      padding: '6px 14px', 
+                      background: '#f0fdf4', 
+                      color: '#166534', 
+                      border: '1px solid #bbf7d0', 
+                      borderRadius: '20px', 
+                      fontSize: '0.82rem', 
+                      fontWeight: 700 
+                    }}>
+                      <Check size={14} strokeWidth={3} />
+                      <span>Review Submitted</span>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleWriteReviewClick}
+                      style={{
+                        background: '#00385E',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '8px 18px',
+                        borderRadius: '8px',
+                        fontWeight: 600,
+                        fontSize: '0.86rem',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Star size={14} />
+                      <span>{showReviewForm ? 'Close Form' : 'Write a Review'}</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Interactive Write Review Form */}
@@ -834,11 +1010,11 @@ export default function MicrocredentialDetail({
                           <div className="student-avatar-wrap">
                             <img
                               src={rev.studentProfileImage ? formatImageUrl(rev.studentProfileImage) : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'}
-                              alt={rev.studentName || 'Student'}
+                              alt={rev.studentName || 'Employee'}
                             />
                           </div>
                           <div className="student-author-info">
-                            <h4>{rev.studentName || 'Verified Student'}</h4>
+                            <h4>{rev.studentName || 'Verified Employee'}</h4>
                             <div className="student-stars-and-date">
                               <div className="student-mini-stars">
                                 {[...Array(Number(rev.reviewInStar) || 5)].map((_, i) => (
@@ -897,24 +1073,26 @@ export default function MicrocredentialDetail({
                       No Reviews Yet
                     </h4>
                     <p style={{ fontSize: '0.88rem', color: '#64748B', maxWidth: '380px', margin: '0 0 14px 0' }}>
-                      No student reviews have been submitted for this course yet. Be the first to share your experience!
+                      No employee reviews have been submitted for this course yet. Be the first to share your experience!
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => setShowReviewForm(true)}
-                      style={{
-                        background: '#00385E',
-                        color: '#ffffff',
-                        border: 'none',
-                        padding: '8px 18px',
-                        borderRadius: '8px',
-                        fontWeight: 600,
-                        fontSize: '0.84rem',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Write the First Review
-                    </button>
+                    {!hasSubmittedReview && (
+                      <button
+                        type="button"
+                        onClick={() => setShowReviewForm(true)}
+                        style={{
+                          background: '#00385E',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '8px 18px',
+                          borderRadius: '8px',
+                          fontWeight: 600,
+                          fontSize: '0.84rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Write the First Review
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -1219,6 +1397,18 @@ export default function MicrocredentialDetail({
         </div>
 
       </div>
+
+      {/* Authentication Required Modal */}
+      <AuthRequiredModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLogin={() => {
+          setIsAuthModalOpen(false);
+          onNavigate('login');
+        }}
+        courseTitle={courseData.title || courseData.microcredentialCourseName || ''}
+        actionText={authActionText}
+      />
     </div>
   );
 }

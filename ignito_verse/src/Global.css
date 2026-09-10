@@ -6459,79 +6459,101 @@ a {
   color: #4f46e5;
 }
 
-/* 3-Column In-Progress Courses Grid */
+/* Responsive Enrolled Courses Grid */
 .profile-inprogress-grid-3col {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 380px));
+  gap: 24px;
 }
 
 .profile-inprogress-card {
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 14px;
+  border-radius: 18px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 14px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
-  transition: all 0.25s ease;
+  box-shadow: 0 4px 16px rgba(0, 56, 94, 0.04);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .profile-inprogress-card:hover {
-  transform: translateY(-2px);
-  border-color: #cbd5e1;
-  box-shadow: 0 6px 18px rgba(0, 56, 94, 0.06);
-}
-
-.profile-inprogress-top {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  transform: translateY(-4px);
+  border-color: #0284C7;
+  box-shadow: 0 12px 30px rgba(0, 56, 94, 0.12);
 }
 
 .profile-inprogress-thumb-box {
   position: relative;
-  width: 105px;
-  height: 74px;
-  border-radius: 10px;
+  width: 100%;
+  height: 180px;
+  background: #0f172a;
   overflow: hidden;
-  flex-shrink: 0;
 }
 
 .profile-inprogress-thumb-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.profile-inprogress-card:hover .profile-inprogress-thumb-img {
+  transform: scale(1.04);
+}
+
+.profile-inprogress-category-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(0, 56, 94, 0.9);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .profile-inprogress-percent-tag {
   position: absolute;
-  top: 5px;
-  left: 5px;
-  background: #6366f1;
+  top: 12px;
+  right: 12px;
+  background: #0284C7;
   color: #ffffff;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
 }
 
 .profile-inprogress-info {
+  padding: 16px 18px 18px;
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-width: 0;
+  gap: 12px;
+}
+
+.profile-inprogress-level-badge {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #0284C7;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .profile-inprogress-title {
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
-  font-size: 0.94rem;
+  font-size: 1.08rem;
   font-weight: 800;
-  color: #0f172a;
-  margin: 0 0 6px 0;
-  line-height: 1.3;
+  color: #00385E;
+  margin: 0;
+  line-height: 1.35;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -6542,20 +6564,29 @@ a {
 .profile-inprogress-meta-line {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 0.74rem;
+  gap: 16px;
+  font-size: 0.8rem;
   color: #64748b;
   font-weight: 600;
-  margin-bottom: 8px;
 }
 
-.meta-icon-indigo {
-  color: #818cf8;
+.profile-inprogress-progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profile-inprogress-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
 }
 
 .profile-inprogress-progress-bar-track {
   width: 100%;
-  height: 5px;
+  height: 6px;
   background: #e2e8f0;
   border-radius: 999px;
   overflow: hidden;
@@ -6563,8 +6594,20 @@ a {
 
 .profile-inprogress-progress-bar-fill {
   height: 100%;
-  background: #6366f1;
+  background: linear-gradient(90deg, #00385E 0%, #0284C7 100%);
   border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.profile-inprogress-dates-block {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.74rem;
 }
 
 .btn-card-continue-learning {
@@ -6573,22 +6616,24 @@ a {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #f5f3ff;
-  color: #6366f1;
-  border: 1px solid #e0e7ff;
+  background: linear-gradient(135deg, #00385E 0%, #002642 100%);
+  color: #ffffff;
+  border: none;
   border-radius: 10px;
-  padding: 9px;
+  padding: 11px 16px;
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
-  font-weight: 700;
-  font-size: 0.86rem;
+  font-weight: 800;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.22s ease;
+  box-shadow: 0 3px 10px rgba(0, 56, 94, 0.2);
+  margin-top: auto;
 }
 
 .btn-card-continue-learning:hover {
-  background: #ede9fe;
-  border-color: #c7d2fe;
-  color: #4f46e5;
+  background: linear-gradient(135deg, #0284C7 0%, #00385E 100%);
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.35);
+  transform: translateY(-1px);
 }
 
 
@@ -7140,6 +7185,91 @@ a {
 
 .mc-description-text-stack p {
   margin: 0;
+}
+
+/* Formatted Rich & Dynamic Bullet Content */
+.mc-formatted-content-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mc-bullet-intro {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.68;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.mc-bullet-points-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mc-bullet-point-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.94rem;
+  line-height: 1.6;
+  color: #334155;
+}
+
+.mc-bullet-icon-ring {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border-radius: 50%;
+  background: rgba(0, 56, 94, 0.08);
+  border: 1.5px solid #00385E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.mc-bullet-icon-core {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00385E;
+}
+
+.mc-bullet-point-text {
+  flex: 1;
+  color: #334155;
+}
+
+.mc-rich-html-content {
+  font-size: 0.94rem;
+  line-height: 1.68;
+  color: #334155;
+}
+
+.mc-rich-html-content p {
+  margin: 0 0 12px 0;
+  line-height: 1.68;
+}
+
+.mc-rich-html-content p:last-child {
+  margin-bottom: 0;
+}
+
+.mc-rich-html-content ul,
+.mc-rich-html-content ol {
+  margin: 10px 0 14px 20px;
+  padding: 0;
+}
+
+.mc-rich-html-content li {
+  margin-bottom: 6px;
+  line-height: 1.6;
 }
 
 /* What Will You Learn Box */
@@ -10041,6 +10171,49 @@ a {
 
 .btn-reset-empty:hover {
   background: #002844;
+}
+
+/* Catalog Loading State */
+.catalog-loading-state {
+  text-align: center;
+  padding: 80px 20px;
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 56, 94, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  max-width: 600px;
+  margin: 40px auto;
+}
+
+.catalog-loading-state .catalog-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3.5px solid #e2e8f0;
+  border-top-color: #00385E;
+  border-radius: 50%;
+  animation: mcSpinnerRotate 0.8s linear infinite;
+}
+
+.catalog-loading-state p {
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748b;
+  margin: 0;
+}
+
+@keyframes mcSpinnerRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ========================================================

@@ -130,21 +130,12 @@ export default function Navbar({
                     <div className="dropdown-divider" />
 
                     <a 
-                      href="/profile/dashboard" 
+                      href="/profile" 
                       className="dropdown-item"
                       onClick={(e) => handleProfileSubNav('dashboard', e)}
                     >
-                      <LayoutDashboard size={16} className="dropdown-icon" />
-                      <span>My Dashboard</span>
-                    </a>
-
-                    <a 
-                      href="/profile/certificates" 
-                      className="dropdown-item"
-                      onClick={(e) => handleProfileSubNav('certificates', e)}
-                    >
-                      <Award size={16} className="dropdown-icon" />
-                      <span>My Certificates</span>
+                      <User size={16} className="dropdown-icon" />
+                      <span>Profile</span>
                     </a>
 
                     <div className="dropdown-divider" />
@@ -215,7 +206,7 @@ export default function Navbar({
                   onClick={(e) => handleProfileSubNav('dashboard', e)}
                 >
                   <User size={16} />
-                  <span>My Profile & Dashboard</span>
+                  <span>Profile</span>
                 </button>
                 <button
                   type="button"

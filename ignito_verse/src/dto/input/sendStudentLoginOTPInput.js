@@ -1,5 +1,5 @@
 /**
- * INPUT PARAMETER FILE: Send Student Login OTP Input DTO Builder
+ * INPUT PARAMETER FILE: Send  OTP Input DTO Builder
  * Builds input parameter payload for SendStudentLoginOTP POST request.
  * 
  * Backend Model: SendStudentLoginOTPInputParameter

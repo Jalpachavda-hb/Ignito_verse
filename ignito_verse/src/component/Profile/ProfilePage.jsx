@@ -1,13 +1,11 @@
 // ignitoverse: Executive Learner Profile & Portal (Creative Design with profilebg.png)
 import React, { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, Award, ShieldCheck, BookOpen, Clock, 
-  Check, Download, ArrowRight, PlayCircle, Building2, 
-  Briefcase, Sparkles, User as UserIcon, Calendar, TrendingUp,
-  Star, Layers
+  ShieldCheck, BookOpen, Clock, 
+  Check, ArrowRight, PlayCircle, Building2, 
+  Briefcase, Sparkles, Calendar, Star
 } from 'lucide-react';
 import profileBgImg from '../../assets/profilebg.png';
-import badgesImg from '../../assets/badges.png';
 import { getStudentEnrolledMicrocredentialCourse } from '../../services/profileService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
 
@@ -20,26 +18,9 @@ export default function ProfilePage({
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
     empId: 'EMP-1001'
   },
-  initialTab = 'dashboard',
   onExploreCatalog = () => {},
   onViewCourse = () => {}
 }) {
-  const [activeTab, setActiveTab] = useState(
-    ['dashboard', 'certificates'].includes(initialTab) ? initialTab : 'dashboard'
-  );
-
-  // Synchronize when initialTab changes via router / URL hash
-  useEffect(() => {
-    if (initialTab && ['dashboard', 'certificates'].includes(initialTab)) {
-      setActiveTab(initialTab);
-    }
-  }, [initialTab]);
-
-  const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
-    window.history.pushState({}, '', `/profile/${tabId}`);
-  };
-
   const [apiEnrolledCourses, setApiEnrolledCourses] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
 
@@ -88,29 +69,6 @@ export default function ProfilePage({
   }, [user]);
 
   const displayedEnrolledCourses = apiEnrolledCourses;
-
-
-  // Completed earned certificates matching user screenshot
-  const earnedCertificates = [
-    {
-      id: 'cert-1',
-      certId: 'IGN-2026-94821',
-      title: 'Certified Java Enterprise Microservice Specialist (CJEMS)',
-      issueDate: 'August 14, 2026',
-      score: '92%',
-      authority: 'Ignitoverse Global Skill Standards',
-      status: 'VERIFIED & ACTIVE'
-    },
-    {
-      id: 'cert-2',
-      certId: 'IGN-2026-78103',
-      title: 'Certified Cloud & DevOps Fundamentals (CCDF)',
-      issueDate: 'July 28, 2026',
-      score: '88%',
-      authority: 'Ignitoverse Cloud Skill Standards',
-      status: 'VERIFIED & ACTIVE'
-    }
-  ];
 
   return (
     <div className="profile-page-wrapper">
@@ -162,137 +120,11 @@ export default function ProfilePage({
         </div>
 
         {/* ========================================================
-            FOCUSED SEGMENTED NAVIGATION (My Dashboard & My Certificates)
+            COURSES IN PROGRESS (Enrolled Courses)
             ======================================================== */}
-        <div className="profile-segmented-nav-wrapper">
-          <div className="profile-segmented-nav">
-            <button 
-              type="button" 
-              className={`profile-segment-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
-              onClick={() => handleTabChange('dashboard')}
-            >
-              <LayoutDashboard size={18} className="profile-segment-icon" />
-              <span>My Dashboard</span>
-              <span className="segment-count-badge">{displayedEnrolledCourses.length}</span>
-            </button>
-
-            <button 
-              type="button" 
-              className={`profile-segment-btn ${activeTab === 'certificates' ? 'active' : ''}`}
-              onClick={() => handleTabChange('certificates')}
-            >
-              <Award size={18} className="profile-segment-icon" />
-              <span>My Certificates</span>
-              <span className="segment-count-badge">{earnedCertificates.length}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* ========================================================
-            SECTION 1: MY CERTIFICATES (Top Section in Dashboard & Tab)
-            ======================================================== */}
-        {(activeTab === 'dashboard' || activeTab === 'certificates') && (
-          <div className="profile-section-block">
-            <div className="profile-block-header-row">
-              <div className="profile-block-title-group">
-                <div className="profile-block-icon-badge purple">
-                  <Award size={22} />
-                </div>
-                <div className="profile-block-text-col">
-                  <h2 className="profile-block-heading">My Certificates</h2>
-                  <p className="profile-block-sub">Your achievements and verified credentials</p>
-                </div>
-              </div>
-              
-              {activeTab === 'dashboard' && (
-                <button 
-                  type="button" 
-                  className="btn-block-action-link"
-                  onClick={() => setActiveTab('certificates')}
-                >
-                  <span>View All Certificates</span>
-                  <ArrowRight size={14} />
-                </button>
-              )}
-            </div>
-
-            <div className="profile-cert-grid-2col">
-              {earnedCertificates.map((cert) => (
-                <div key={cert.id} className="profile-cert-card-box">
-                  {/* Badges Watermark Image on top right */}
-                  <img 
-                    src={badgesImg} 
-                    alt="Badge Watermark" 
-                    className="profile-cert-badge-watermark-img" 
-                    aria-hidden="true"
-                  />
-
-                  {/* Top Header Row with Icon on Left + Details beside */}
-                  <div className="profile-cert-top-row">
-                    <div className="profile-cert-badge-square">
-                      <Award size={26} />
-                    </div>
-
-                    <div className="profile-cert-heading-col">
-                      <span className="profile-cert-active-tag">
-                        <Check size={12} strokeWidth={3} /> {cert.status}
-                      </span>
-                      <h3 className="profile-cert-title">{cert.title}</h3>
-                      <div className="profile-cert-id-tag">ID: {cert.certId}</div>
-                    </div>
-                  </div>
-
-                  {/* 3-Column Metadata Box with Vertical Divider Lines */}
-                  <div className="profile-cert-meta-container">
-                    <div className="cert-meta-col">
-                      <div className="cert-meta-col-icon purple">
-                        <UserIcon size={14} />
-                      </div>
-                      <div className="cert-meta-col-text">
-                        <span className="cert-meta-label">Issued To</span>
-                        <strong className="cert-meta-val">{user.name || 'Enterprise User'}</strong>
-                      </div>
-                    </div>
-
-                    <div className="cert-meta-col">
-                      <div className="cert-meta-col-icon purple">
-                        <Calendar size={14} />
-                      </div>
-                      <div className="cert-meta-col-text">
-                        <span className="cert-meta-label">Date of Issue</span>
-                        <strong className="cert-meta-val">{cert.issueDate}</strong>
-                      </div>
-                    </div>
-
-                    <div className="cert-meta-col">
-                      <div className="cert-meta-col-icon green">
-                        <TrendingUp size={14} />
-                      </div>
-                      <div className="cert-meta-col-text">
-                        <span className="cert-meta-label">Exam Score</span>
-                        <strong className="cert-meta-val score-green-val">{cert.score}</strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Full-width Download PDF button */}
-                  <button type="button" className="btn-card-download-pdf">
-                    <Download size={15} />
-                    <span>Download PDF</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================
-            SECTION 2: COURSES IN PROGRESS (Dashboard View)
-            ======================================================== */}
-        {activeTab === 'dashboard' && (
-          <div className="profile-section-block">
-            <div className="profile-block-header-row">
-              <div className="profile-block-title-group">
+        <div className="profile-section-block">
+          <div className="profile-block-header-row">
+            <div className="profile-block-title-group">
                 <div className="profile-block-icon-badge blue">
                   <BookOpen size={20} />
                 </div>
@@ -371,104 +203,106 @@ export default function ProfilePage({
                   const progressPct = c.progress || (idx === 0 ? 90 : 65);
                   const duration = c.microcredentialCourseDuration || c.timeSpent || '3 Month';
                   const rating = c.microcredentialCourseRating || '5.00';
-                  const level = c.courseLevel || c.streamName || 'Intermediate';
+                  const level = c.courseLevel || 'Intermediate';
+                  const stream = c.streamName || 'Management';
 
                   return (
                     <div key={courseId} className="profile-inprogress-card">
-                      {/* Card Top: Thumbnail + Details */}
-                      <div className="profile-inprogress-top">
-                        <div className="profile-inprogress-thumb-box">
-                          <img src={thumb} alt={title} className="profile-inprogress-thumb-img" />
-                          <span className="profile-inprogress-percent-tag">{progressPct}%</span>
+                      {/* Top: Full-Width Thumbnail with Badges */}
+                      <div className="profile-inprogress-thumb-box">
+                        <img 
+                          src={thumb} 
+                          alt={title} 
+                          className="profile-inprogress-thumb-img" 
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80';
+                          }}
+                        />
+                        {stream && (
+                          <span className="profile-inprogress-category-badge">{stream}</span>
+                        )}
+                        <span className="profile-inprogress-percent-tag">{progressPct}%</span>
+                      </div>
+
+                      {/* Card Content Body */}
+                      <div className="profile-inprogress-info">
+                        <div className="profile-inprogress-level-badge">{level}</div>
+                        <h3 className="profile-inprogress-title" title={title}>{title}</h3>
+                        
+                        <div className="profile-inprogress-meta-line">
+                          <span><Clock size={14} style={{ color: '#0284C7' }} /> {duration}</span>
+                          <span><Star size={14} style={{ color: '#f59e0b', fill: '#f59e0b' }} /> {rating}</span>
                         </div>
 
-                        <div className="profile-inprogress-info">
-                          <div className="profile-inprogress-level-badge" style={{ fontSize: '0.72rem', color: '#00385E', fontWeight: 700, marginBottom: '2px' }}>
-                            {level}
+                        {/* Progress Bar Container */}
+                        <div className="profile-inprogress-progress-container">
+                          <div className="profile-inprogress-progress-labels">
+                            <span>Course Progress</span>
+                            <span style={{ color: '#00385E' }}>{progressPct}%</span>
                           </div>
-                          <h3 className="profile-inprogress-title" title={title}>{title}</h3>
-                          
-                          <div className="profile-inprogress-meta-line">
-                            <span><Clock size={13} className="meta-icon-indigo" /> {duration}</span>
-                            <span><Star size={13} style={{ color: '#f59e0b', fill: '#f59e0b' }} /> {rating}</span>
-                          </div>
-
                           <div className="profile-inprogress-progress-bar-track">
                             <div 
                               className="profile-inprogress-progress-bar-fill" 
                               style={{ width: `${progressPct}%` }} 
                             />
                           </div>
-
-                          {/* Enrollment & Expiry Dates */}
-                          {(c.enrollmentDate || c.expiryDate) && (
-                            <div 
-                              className="profile-inprogress-dates-block" 
-                              style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr 1fr',
-                                gap: '8px',
-                                padding: '8px 10px',
-                                background: '#f8fafc',
-                                borderRadius: '8px',
-                                marginTop: '10px',
-                                border: '1px solid #e2e8f0',
-                                fontSize: '0.73rem'
-                              }}
-                            >
-                              {c.enrollmentDate && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                  <span style={{ color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <Calendar size={12} style={{ color: '#2563eb' }} /> Enrolled On
-                                  </span>
-                                  <strong style={{ color: '#1e293b', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {c.enrollmentDate}
-                                  </strong>
-                                </div>
-                              )}
-                              {c.expiryDate && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                  <span style={{ color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <Clock size={12} style={{ color: '#e11d48' }} /> Expires On
-                                  </span>
-                                  <strong style={{ color: '#1e293b', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {c.expiryDate}
-                                  </strong>
-                                </div>
-                              )}
-                            </div>
-                          )}
                         </div>
-                      </div>
 
-                      {/* Card Bottom Button */}
-                      <button 
-                        type="button" 
-                        className="btn-card-continue-learning"
-                        onClick={() => onViewCourse({
-                          id: courseId,
-                          microcredentialCourseId: courseId,
-                          encryptedMicrocredentialCourseId: c.encryptedMicrocredentialCourseId || '',
-                          title: title,
-                          name: title,
-                          thumbnail: thumb,
-                          category: c.streamName || 'Management',
-                          level: level,
-                          duration: duration,
-                          rating: rating,
-                          ...c
-                        })}
-                      >
-                        <PlayCircle size={15} />
-                        <span>Continue Learning</span>
-                      </button>
+                        {/* Enrollment & Expiry Dates */}
+                        {(c.enrollmentDate || c.expiryDate) && (
+                          <div className="profile-inprogress-dates-block">
+                            {c.enrollmentDate && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                <span style={{ color: '#64748b', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <Calendar size={13} style={{ color: '#0284C7' }} /> Enrolled On
+                                </span>
+                                <strong style={{ color: '#0f172a', fontWeight: 700, fontSize: '0.74rem' }}>
+                                  {c.enrollmentDate}
+                                </strong>
+                              </div>
+                            )}
+                            {c.expiryDate && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                <span style={{ color: '#64748b', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <Clock size={13} style={{ color: '#e11d48' }} /> Expires On
+                                </span>
+                                <strong style={{ color: '#0f172a', fontWeight: 700, fontSize: '0.74rem' }}>
+                                  {c.expiryDate}
+                                </strong>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Card Bottom Action Button */}
+                        <button 
+                          type="button" 
+                          className="btn-card-continue-learning"
+                          onClick={() => onViewCourse({
+                            id: courseId,
+                            microcredentialCourseId: courseId,
+                            encryptedMicrocredentialCourseId: c.encryptedMicrocredentialCourseId || '',
+                            title: title,
+                            name: title,
+                            thumbnail: thumb,
+                            category: c.streamName || 'Management',
+                            level: level,
+                            duration: duration,
+                            rating: rating,
+                            ...c
+                          })}
+                        >
+                          <PlayCircle size={16} />
+                          <span>Continue Learning</span>
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
               </div>
             )}
           </div>
-        )}
 
       </div>
     </div>

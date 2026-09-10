@@ -93,7 +93,7 @@ export default function FeaturedSection({
           </h2>
 
           <p className="section-subtitle">
-            A curated collection of amazing courses, chosen based on popularity and ratings by students. Welcome to our diverse and dynamic course catalog.
+            A curated collection of amazing courses, chosen based on popularity and ratings by employees. Welcome to our diverse and dynamic course catalog.
           </p>
         </div>
 

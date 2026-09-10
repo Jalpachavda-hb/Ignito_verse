@@ -1,0 +1,560 @@
+/* ==========================================================================
+   IGNITOVERSE - EXACT MATCH QUIZ ATTEMPT DETAILS MODAL STYLES (quizAttemptModal.css)
+   Pixel-Perfect Match to Provided UI Design
+   ========================================================================== */
+
+.quiz-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(5, 20, 40, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.quiz-modal-backdrop {
+  position: absolute;
+  inset: 0;
+}
+
+.quiz-modal-container {
+  position: relative;
+  width: 100%;
+  max-width: 580px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 
+    0 20px 50px -10px rgba(0, 30, 60, 0.28),
+    0 0 0 1px rgba(0, 56, 94, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 92vh;
+  z-index: 1;
+  font-family: 'Hind Vadodara', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  animation: modalScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ==========================================================================
+   1. MODAL HEADER
+   ========================================================================== */
+.quiz-modal-header {
+  padding: 18px 22px 14px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+}
+
+.quiz-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.quiz-modal-header-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #005a96;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.quiz-modal-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.quiz-modal-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #091e42;
+  line-height: 1.25;
+}
+
+.quiz-modal-subtitle {
+  margin: 3px 0 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.quiz-modal-close-btn {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.quiz-modal-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* ==========================================================================
+   2. SCROLLABLE BODY
+   ========================================================================== */
+.quiz-modal-body {
+  padding: 4px 22px 18px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Loading & Error States */
+.quiz-modal-loading-state {
+  text-align: center;
+  padding: 36px 16px;
+  color: #00385E;
+}
+
+.quiz-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e0f2fe;
+  border-top: 3px solid #005a96;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.quiz-loading-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0;
+  color: #475569;
+}
+
+.quiz-modal-error-box {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #991b1b;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+
+/* ==========================================================================
+   3. TOP CARD: ASSESSMENT OVERVIEW
+   ========================================================================== */
+.quiz-overview-box {
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.overview-top-section {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.overview-header-info {
+  flex: 1;
+}
+
+.overview-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: #e0f2fe;
+  color: #0284c7;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  margin-bottom: 6px;
+}
+
+.overview-headline {
+  margin: 0 0 4px 0;
+  font-size: 1.22rem;
+  font-weight: 800;
+  color: #091e42;
+}
+
+.overview-description {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* Top Right Illustration */
+.overview-avatar-illustration {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #e0f2fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.overview-svg-art {
+  width: 44px;
+  height: 44px;
+}
+
+/* Metrics 2-Column Grid matching Screenshot */
+.overview-specs-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.spec-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.spec-entry.space-between {
+  justify-content: space-between;
+}
+
+.spec-entry-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.spec-icon-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.spec-icon-circle.blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.spec-icon-circle.green {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.spec-icon-circle.orange {
+  background: #fffbeb;
+  color: #f59e0b;
+}
+
+.spec-text-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.spec-label-text {
+  font-size: 0.78rem;
+  color: #475569;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.spec-value-text {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #091e42;
+  margin-top: 2px;
+}
+
+.remaining-count-pill {
+  background: #e6f9ed;
+  color: #10b981;
+  font-weight: 800;
+  font-size: 0.9rem;
+  padding: 3px 12px;
+  border-radius: 6px;
+  border: 1px solid #bbf7d0;
+}
+
+/* ==========================================================================
+   4. MIDDLE CARD: ATTEMPT HISTORY
+   ========================================================================== */
+.quiz-history-box {
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.history-box-top-bar {
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.history-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-header-icon {
+  color: #1d68f0;
+}
+
+.history-box-title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #091e42;
+}
+
+.history-records-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.history-box-content {
+  padding: 24px 16px;
+}
+
+.history-empty-wrapper {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.history-empty-art-icon {
+  width: 48px;
+  height: 48px;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.history-empty-main-text {
+  margin: 0 0 4px 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.history-empty-sub-text {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+/* Table when attempts exist */
+.history-records-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.86rem;
+}
+
+.history-records-table thead tr {
+  background: #00385E;
+  color: #ffffff;
+}
+
+.history-records-table th {
+  padding: 10px 16px;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.history-records-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.history-records-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+.attempt-pill-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.76rem;
+}
+
+.score-badge-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.score-badge-pill.pass {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.score-badge-pill.pending {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+/* ==========================================================================
+   5. INFO BANNER
+   ========================================================================== */
+.quiz-info-callout {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #0284c7;
+  font-weight: 500;
+}
+
+.info-callout-icon {
+  color: #0284c7;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   6. MODAL ACTION FOOTER
+   ========================================================================== */
+.quiz-modal-footer {
+  padding: 14px 22px 18px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #ffffff;
+}
+
+.btn-action-close {
+  padding: 9px 24px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.btn-action-close:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.btn-action-start-quiz {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 24px;
+  border-radius: 8px;
+  border: none;
+  background: #005a96;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.btn-action-start-quiz:hover:not(:disabled) {
+  background: #004b80;
+}
+
+.btn-action-start-quiz:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* ==========================================================================
+   7. RESPONSIVE
+   ========================================================================== */
+@media (max-width: 540px) {
+  .overview-specs-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .quiz-modal-container {
+    border-radius: 14px;
+  }
+
+  .quiz-modal-header {
+    padding: 14px 16px;
+  }
+
+  .quiz-modal-body {
+    padding: 4px 16px 14px 16px;
+  }
+
+  .quiz-modal-footer {
+    padding: 12px 16px 14px 16px;
+  }
+}

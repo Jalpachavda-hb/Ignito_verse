@@ -121,7 +121,7 @@ export default function MicrocredentialsCatalog({
                 onClick={() => setSelectedLevel('All')}
               >
                 <span>All Programs</span>
-                <span className="pill-count-circle">{coursesList.length}</span>
+                {!loading && <span className="pill-count-circle">{coursesList.length}</span>}
               </button>
 
               {levelList.map((lvl) => (
@@ -132,7 +132,7 @@ export default function MicrocredentialsCatalog({
                   onClick={() => setSelectedLevel(lvl.levelName)}
                 >
                   <span>{lvl.levelName}</span>
-                  {lvl.courseCount && (
+                  {!loading && lvl.courseCount && (
                     <span className="pill-count-circle">{lvl.courseCount}</span>
                   )}
                 </button>
@@ -140,12 +140,21 @@ export default function MicrocredentialsCatalog({
             </div>
 
             <div className="mc-catalog-count-text">
-              We found <strong>{filteredCourses.length}</strong> courses available for you
+              {loading ? (
+                <span>Loading available courses...</span>
+              ) : (
+                <>We found <strong>{filteredCourses.length}</strong> courses available for you</>
+              )}
             </div>
           </div>
 
           {/* 3. Full-Width 4-Column Course Cards Grid */}
-          {filteredCourses.length > 0 ? (
+          {loading ? (
+            <div className="catalog-loading-state">
+              <div className="catalog-spinner" />
+              <p>Loading microcredential courses...</p>
+            </div>
+          ) : filteredCourses.length > 0 ? (
             <div className="catalog-courses-clean-grid">
               {filteredCourses.map((course) => (
                 <CourseCard

@@ -10,7 +10,7 @@ const iconMap = {
   Layers: Layers
 };
 
-export default function WhyEnterprises({ onBookDemo = () => {} }) {
+export default function WhyEnterprises({ onExploreCatalog = () => {} }) {
   return (
     <section className="why-enterprise-section" id="why-enterprises">
       <div className="why-container">
@@ -56,8 +56,8 @@ export default function WhyEnterprises({ onBookDemo = () => {} }) {
             <h3>Standardize Skills Across 50 to 50,000+ Learners</h3>
             <p>Get a custom enterprise tier with volume seat licensing, dedicated LMS webhooks, and customized learning blueprints.</p>
           </div>
-          <button type="button" className="btn-compare-demo" onClick={onBookDemo}>
-            <span>Talk to an Enterprise Specialist</span>
+          <button type="button" className="btn-compare-demo" onClick={onExploreCatalog}>
+            <span>Explore Microcredentials</span>
             <ArrowRight size={16} />
           </button>
         </div>

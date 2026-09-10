@@ -14,13 +14,23 @@ export function parseMicrocredentialQuizStudentAttemptDetailOutput(rawJson = {},
 
     const microcredentialQuizStudentAttemptDetail = Array.isArray(rawList)
         ? rawList.map(item => ({
-            microcredentialQuizAttemptNumber: item?.microcredentialQuizAttemptNumber ?? item?.MicrocredentialQuizAttemptNumber ?? 0,
-            quizCompletionTime: item?.quizCompletionTime || item?.QuizCompletionTime || '',
-            scoreMessage: item?.scoreMessage || item?.ScoreMessage || ''
+            microcredentialQuizAttemptNumber: item?.microcredentialQuizAttemptNumber ?? item?.MicrocredentialQuizAttemptNumber ?? item?.attemptNumber ?? item?.AttemptNumber ?? 0,
+            quizCompletionTime: item?.quizCompletionTime || item?.QuizCompletionTime || item?.completionTime || item?.CompletionTime || '',
+            scoreMessage: item?.scoreMessage || item?.ScoreMessage || item?.score || item?.Score || ''
         }))
         : [];
 
-    const studentAttemptDetail = rawJson?.studentAttemptDetail || rawJson?.StudentAttemptDetail || {};
+    const rawDetail = rawJson?.studentAttemptDetail || rawJson?.StudentAttemptDetail || {};
+    const studentAttemptDetail = {
+        isAllAttemptDone: Boolean(rawDetail?.isAllAttemptDone ?? rawDetail?.IsAllAttemptDone ?? false),
+        quizTitle: rawDetail?.quizTitle || rawDetail?.QuizTitle || 'Final Module Assessment',
+        quizAvailability: rawDetail?.quizAvailability || rawDetail?.QuizAvailability || 'Available',
+        quizTimeLimit: rawDetail?.quizTimeLimit || rawDetail?.QuizTimeLimit || '30 mins',
+        quizTotalAttempts: Number(rawDetail?.quizTotalAttempts ?? rawDetail?.QuizTotalAttempts ?? 3),
+        usedAttempts: Number(rawDetail?.usedAttempts ?? rawDetail?.UsedAttempts ?? 0),
+        remainingAttempts: Number(rawDetail?.remainingAttempts ?? rawDetail?.RemainingAttempts ?? 0),
+        ...rawDetail
+    };
 
     return {
         success: isSuccess,
@@ -43,7 +53,15 @@ export function parseMicrocredentialQuizStudentAttemptDetailErrorOutput(rawJson 
         errorDescription: rawJson?.errorDescription || rawJson?.ErrorDescription || rawJson?.error || 'Network/Server Error',
         errorNo: rawJson?.errorNo || rawJson?.ErrorNo || status,
 
-        studentAttemptDetail: {},
+        studentAttemptDetail: {
+            isAllAttemptDone: false,
+            quizTitle: 'Final Module Assessment',
+            quizAvailability: 'Available',
+            quizTimeLimit: '30 mins',
+            quizTotalAttempts: 3,
+            usedAttempts: 0,
+            remainingAttempts: 3
+        },
         microcredentialQuizStudentAttemptDetail: [],
         rawData: rawJson
     };

@@ -71,42 +71,40 @@ export default function AboutPage({ onBookDemo = () => {}, onExploreCatalog = ()
         </div>
       </section>
 
-      {/* Academic & Industry Advisory Council */}
+      {/* 3. Academic & Industry Advisory Council */}
       <section className="about-council-section">
         <div className="detail-container">
-          <div className="section-header-center">
-            <h2 className="section-main-title">Governed by Global Industry & Academic Leaders</h2>
-            <p className="section-subtitle">
-              Our curriculum boards feature principal architects, former Fortune 500 tech leaders, and corporate psychology researchers.
-            </p>
+          <div className="council-header">
+            <h2>Guided by Global Industry Veterans</h2>
+            <p>Our curriculum is reviewed and accredited alongside chief learning officers and engineering architects from top global firms.</p>
           </div>
 
           <div className="council-grid">
             <div className="council-card">
               <img 
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80" 
-                alt="Dr. Rajesh Verma" 
+                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" 
+                alt="Dr. Aris Thorne" 
                 className="council-img"
               />
-              <h4>Dr. Rajesh Verma</h4>
-              <p className="council-role">Chief Academic Officer</p>
-              <span className="council-org">Ex-Oracle Principal Architect</span>
+              <h4>Dr. Aris Thorne</h4>
+              <p className="council-role">Chair, Microcredential Standards</p>
+              <span className="council-org">Ex-MIT Sloan Fellow</span>
             </div>
 
             <div className="council-card">
               <img 
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80" 
-                alt="Dr. Sarah Lin" 
+                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80" 
+                alt="Devin Vance" 
                 className="council-img"
               />
-              <h4>Dr. Sarah Lin</h4>
-              <p className="council-role">Head of Behavioral Science</p>
-              <span className="council-org">Cognitive Behavioral Researcher</span>
+              <h4>Devin Vance</h4>
+              <p className="council-role">VP Enterprise Talent Architecture</p>
+              <span className="council-org">Former CLO, Fintech Global</span>
             </div>
 
             <div className="council-card">
               <img 
-                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80" 
+                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80" 
                 alt="Elena Rostova" 
                 className="council-img"
               />
@@ -124,12 +122,9 @@ export default function AboutPage({ onBookDemo = () => {}, onExploreCatalog = ()
           <div className="about-cta-content">
             <h2>Ready to Transform Your Organization's Learning Culture?</h2>
             <div className="about-btn-group">
-              <button type="button" className="btn-about-demo" onClick={onBookDemo}>
-                <span>Book an Enterprise Demo</span>
+              <button type="button" className="btn-about-catalog" onClick={onExploreCatalog} style={{ padding: '14px 28px', fontSize: '1rem' }}>
+                <span>Explore Microcredentials Catalog</span>
                 <ArrowRight size={16} />
-              </button>
-              <button type="button" className="btn-about-catalog" onClick={onExploreCatalog}>
-                <span>Explore Catalog</span>
               </button>
             </div>
           </div>

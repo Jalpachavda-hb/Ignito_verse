@@ -16,8 +16,10 @@ export function buildMicrocredentialQuizStudentAttemptDetailInput(
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            microcredentialCourseId: microcredentialCourseId,
-            studentId: studentId
+            MicrocredentialCourseId: Number(microcredentialCourseId) || 0,
+            StudentId: Number(studentId) || 0,
+            microcredentialCourseId: Number(microcredentialCourseId) || 0,
+            studentId: Number(studentId) || 0
         })
     };
 }

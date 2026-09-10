@@ -148,14 +148,18 @@ export async function getMicrocredentialCourseBindDataList(
 
 export async function getMicroCourseTopicDetail(
     microcredentialCourseId,
-    studentId,
+    studentId = 0,
     encryptedMicrocredentialCourseId = ''
 ) {
-   
     try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
+
         const inputDto = buildGetMicroCourseTopicDetailInput(
             microcredentialCourseId,
-            studentId,
+            finalStudentId,
             encryptedMicrocredentialCourseId
         );
         const response = await apiClient('api/IgnitoMicroCredencialAPI/GetMicroCourseTopicDetail', {
@@ -519,7 +523,7 @@ export async function getStudentMicrocredentialRaiseHandAnswerList(
 
 /**
  * Fetches student quiz attempt details and attempt history for a microcredential course.
- * API: POST /api/IgnitoMicroCredencialAPI/MicrocredentialQuizStudentAttemptDetail
+ * API: POST /api/StudentMicrocredentialQuizAPI/MicrocredentialQuizStudentAttemptDetail
  * 
  * @param {number} [microcredentialCourseId=0] - Microcredential course ID
  * @param {number} [studentId=0] - Student ID (0 uses session studentId on backend)
@@ -530,8 +534,13 @@ export async function microcredentialQuizStudentAttemptDetail(
     studentId = 0
 ) {
     try {
-        const inputDto = buildMicrocredentialQuizStudentAttemptDetailInput(microcredentialCourseId, studentId);
-        const response = await apiClient('api/IgnitoMicroCredencialAPI/MicrocredentialQuizStudentAttemptDetail', {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
+
+        const inputDto = buildMicrocredentialQuizStudentAttemptDetailInput(microcredentialCourseId, finalStudentId);
+        const response = await apiClient('api/StudentMicrocredentialQuizAPI/MicrocredentialQuizStudentAttemptDetail', {
             method: 'POST',
             headers: inputDto.headers,
             body: inputDto.body
@@ -554,12 +563,16 @@ export async function microcredentialQuizStudentAttemptDetail(
  * API: POST /api/MicroDiscussionForumAPI/GetMicroManyDiscussionQuestion
  * 
  * @param {number} [microCorseId=0] - Microcredential course ID
- * @param {number} [studentId=3] - Student ID
+ * @param {number} [studentId=0] - Student ID
  * @returns {Promise<object>} Parsed output containing microDiscussionQuestions list
  */
-export async function getMicroManyDiscussionQuestion(microCorseId = 0, studentId = 3) {
+export async function getMicroManyDiscussionQuestion(microCorseId = 0, studentId = 0) {
     try {
-        const inputDto = buildGetMicroManyDiscussionQuestionInput(microCorseId, studentId);
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
+        const inputDto = buildGetMicroManyDiscussionQuestionInput(microCorseId, finalStudentId);
         const response = await apiClient('api/MicroDiscussionForumAPI/GetMicroManyDiscussionQuestion', {
             method: 'POST',
             headers: inputDto.headers,
@@ -582,21 +595,25 @@ export async function getMicroManyDiscussionQuestion(microCorseId = 0, studentId
  * Inserts/submits a discussion question for a microcredential course.
  * API: POST /api/MicroDiscussionForumAPI/InsertMicroManyDiscussionQuestion
  * 
- * @param {number} [studentId=3] - Student ID
+ * @param {number} [studentId=0] - Student ID
  * @param {number} [professorId=0] - Professor ID
  * @param {number} [microCorseId=0] - Microcredential course ID
  * @param {string} [question=''] - Discussion question text
  * @returns {Promise<object>} Parsed output containing `{ success, message, status, errorDescription, rawData }`
  */
 export async function insertMicroManyDiscussionQuestion(
-    studentId = 3,
+    studentId = 0,
     professorId = 0,
     microCorseId = 0,
     question = ''
 ) {
     try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
         const inputDto = buildInsertMicroManyDiscussionQuestionInput(
-            studentId,
+            finalStudentId,
             professorId,
             microCorseId,
             question
@@ -624,19 +641,23 @@ export async function insertMicroManyDiscussionQuestion(
  * API: POST /api/MicroDiscussionForumAPI/MicroCourseDiscussionQuestionLike
  * 
  * @param {number} [microCourseDiscussionQuestionId=0] - Microcourse discussion question ID
- * @param {number} [studentId=3] - Student ID
+ * @param {number} [studentId=0] - Student ID
  * @param {number} [microCourseId=0] - Microcredential course ID
  * @returns {Promise<object>} Parsed output containing `{ success, message, status, errorDescription, rawData }`
  */
 export async function microCourseDiscussionQuestionLike(
     microCourseDiscussionQuestionId = 0,
-    studentId = 3,
+    studentId = 0,
     microCourseId = 0
 ) {
     try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
         const inputDto = buildMicroCourseDiscussionQuestionLikeInput(
             microCourseDiscussionQuestionId,
-            studentId,
+            finalStudentId,
             microCourseId
         );
         const response = await apiClient('api/MicroDiscussionForumAPI/MicroCourseDiscussionQuestionLike', {
@@ -662,7 +683,7 @@ export async function microCourseDiscussionQuestionLike(
  * API: POST /api/MicroDiscussionForumAPI/InsertManyMicroCourseDiscussionReply
  * 
  * @param {number} [microCourseDiscussionQuestionId=0] - Microcourse discussion question ID
- * @param {number} [studentId=3] - Student ID
+ * @param {number} [studentId=0] - Student ID
  * @param {number} [professorId=0] - Professor ID
  * @param {number} [microCorseId=0] - Microcredential course ID
  * @param {string} [reply=''] - Discussion reply text
@@ -670,15 +691,19 @@ export async function microCourseDiscussionQuestionLike(
  */
 export async function insertManyMicroCourseDiscussionReply(
     microCourseDiscussionQuestionId = 0,
-    studentId = 3,
+    studentId = 0,
     professorId = 0,
     microCorseId = 0,
     reply = ''
 ) {
     try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
         const inputDto = buildInsertMicroManyDiscussionReplyInput(
             microCourseDiscussionQuestionId,
-            studentId,
+            finalStudentId,
             professorId,
             microCorseId,
             reply
@@ -733,16 +758,20 @@ export async function getManyMicroCourseDiscussionQuestionReply(microDiscussionQ
  * Fetches the list of microcredential courses enrolled by a student for Profile Page.
  * API: POST /api/StudentMyProfileAPI/GetStudentEnrolledMicrocredentialCourse
  * 
- * @param {number} [studentId=3] - Student ID (default 3)
+ * @param {number} [studentId=0] - Student ID (default 0)
  * @param {number} [enrolledMode=1] - Enrolled Mode (default 1)
  * @returns {Promise<object>} Formatted output DTO with getStudentEnrolledMicrocredentialCourseList
  */
 export async function getStudentEnrolledMicrocredentialCourse(
-    studentId = 3,
+    studentId = 0,
     enrolledMode = 1
 ) {
     try {
-        const inputDto = buildGetStudentEnrolledMicrocredentialCourseInput(studentId, enrolledMode);
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
+        const inputDto = buildGetStudentEnrolledMicrocredentialCourseInput(finalStudentId, enrolledMode);
         const response = await apiClient('api/StudentMyProfileAPI/GetStudentEnrolledMicrocredentialCourse', {
             method: 'POST',
             headers: inputDto.headers,
@@ -774,10 +803,14 @@ export async function askMicrocredentialTopicAI({
     pdfUrl = '',
     pageContent = '',
     question = '',
-    studentId = 3,
+    studentId = 0,
     matchedKeywords = []
 } = {}) {
     try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
         const inputDto = buildAskMicrocredentialTopicAIInput({
             microcredentialCourseId,
             topicId,
@@ -785,7 +818,7 @@ export async function askMicrocredentialTopicAI({
             pdfUrl,
             pageContent,
             question,
-            studentId,
+            studentId: finalStudentId,
             matchedKeywords
         });
 

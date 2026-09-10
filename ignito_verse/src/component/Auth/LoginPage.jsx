@@ -345,7 +345,7 @@ export default function LoginPage({
 
             {/* Title & Tagline */}
             <h2 className="executive-card-heading">
-              {step === 'send_otp' ? 'Student Login' : 'Enter Verification OTP'}
+              {step === 'send_otp' ? 'Employee Login' : 'Enter Verification OTP'}
             </h2>
             <p className="executive-card-subheading">
               {step === 'send_otp' 
@@ -409,7 +409,7 @@ export default function LoginPage({
                       type="text"
                       id="exec-identifier"
                       required
-                      placeholder="student@company.com or +1234567890"
+                      placeholder="employee@company.com or +1234567890"
                       value={emailOrMobile}
                       onChange={(e) => setEmailOrMobile(e.target.value)}
                       onFocus={() => setFocusedField('identifier')}

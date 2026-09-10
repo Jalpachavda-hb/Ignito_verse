@@ -17,17 +17,17 @@ export function buildCommonUploadFileInput(
     const formData = new FormData();
 
     if (files) {
-        if (files instanceof FileList || Array.isArray(files)) {
-            Array.from(files).forEach(file => {
-                formData.append('files', file);
-            });
-        } else if (files instanceof File) {
-            formData.append('files', files);
-        } else if (files instanceof FormData) {
+        if (files instanceof FormData) {
             return {
                 headers: {},
                 body: files
             };
+        } else if (files instanceof FileList || Array.isArray(files)) {
+            Array.from(files).forEach((file, index) => {
+                formData.append(`file${index}`, file);
+            });
+        } else if (files instanceof File) {
+            formData.append('file0', files);
         }
     }
 
@@ -44,3 +44,4 @@ export function buildCommonUploadFileInput(
         body: formData
     };
 }
+

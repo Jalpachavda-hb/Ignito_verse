@@ -2,7 +2,7 @@
 import React from 'react';
 import { ArrowRight, Sparkles, ShieldCheck, Headphones, Calendar } from 'lucide-react';
 
-export default function CtaBanner({ onBookDemo = () => {}, onContact = () => {} }) {
+export default function CtaBanner({ onExploreCatalog = () => {}, onContact = () => {} }) {
   return (
     <section className="cta-banner-section">
       <div className="cta-banner-container">
@@ -27,10 +27,10 @@ export default function CtaBanner({ onBookDemo = () => {}, onContact = () => {} 
             <button 
               type="button" 
               className="cta-primary-btn"
-              onClick={onBookDemo}
+              onClick={onExploreCatalog}
             >
-              <Calendar size={17} />
-              <span>Book an Enterprise Demo</span>
+              <Sparkles size={17} />
+              <span>Explore Microcredentials</span>
               <ArrowRight size={17} />
             </button>
 
@@ -40,7 +40,7 @@ export default function CtaBanner({ onBookDemo = () => {}, onContact = () => {} 
               onClick={onContact}
             >
               <Headphones size={17} />
-              <span>Contact Sales Team</span>
+              <span>Contact Support Team</span>
             </button>
           </div>
 
