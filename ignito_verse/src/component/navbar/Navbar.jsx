@@ -112,7 +112,7 @@ export default function Navbar({
                   aria-expanded={profileDropdownOpen}
                 >
                   <img 
-                    src={user.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80'} 
+                    src={'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'} 
                     alt={user.name} 
                     className="navbar-user-avatar" 
                   />
