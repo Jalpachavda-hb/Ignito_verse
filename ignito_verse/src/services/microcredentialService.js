@@ -39,6 +39,33 @@ import { buildGetMicroCourseMaterialIncludeDataInput } from '../dto/input/getMic
 import { parseGetMicroCourseMaterialIncludeDataOutput, parseGetMicroCourseMaterialIncludeDataErrorOutput } from '../dto/output/getMicroCourseMaterialIncludeDataOutput';
 import { buildGetMicroCourseLearnDataInput } from '../dto/input/getMicroCourseLearnDataInput';
 import { parseGetMicroCourseLearnDataOutput, parseGetMicroCourseLearnDataErrorOutput } from '../dto/output/getMicroCourseLearnDataOutput';
+import { buildGetMicrocredentialModuleByCourseIdInput } from '../dto/input/getMicrocredentialModuleByCourseIdInput';
+import { parseGetMicrocredentialModuleByCourseIdOutput, parseGetMicrocredentialModuleByCourseIdErrorOutput } from '../dto/output/getMicrocredentialModuleByCourseIdOutput';
+
+/**
+ * Fetches list of modules for a microcredential course by course ID.
+ * API: POST /api/IgnitoMicroCredencialAPI/GetMicrocredentialModuleByCourseId
+ */
+export async function getMicrocredentialModuleByCourseId(microcredentialCourseId = 0) {
+    try {
+        const inputDto = buildGetMicrocredentialModuleByCourseIdInput(microcredentialCourseId);
+        const response = await apiClient('api/IgnitoMicroCredencialAPI/GetMicrocredentialModuleByCourseId', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseGetMicrocredentialModuleByCourseIdErrorOutput(response.data, response.status);
+        }
+
+        const outputDto = parseGetMicrocredentialModuleByCourseIdOutput(response.data, response.status);
+        return outputDto;
+    } catch (error) {
+        console.error('Error fetching microcredential modules by course id:', error);
+        return parseGetMicrocredentialModuleByCourseIdErrorOutput({ message: error.message }, 500);
+    }
+}
 
 /**
  * Fetches micro course material include data list for a course.
@@ -149,7 +176,8 @@ export async function getMicrocredentialCourseBindDataList(
 export async function getMicroCourseTopicDetail(
     microcredentialCourseId,
     studentId = 0,
-    encryptedMicrocredentialCourseId = ''
+    encryptedMicrocredentialCourseId = '',
+    microcredentialModuleMasterId = 0
 ) {
     try {
         let finalStudentId = Number(studentId) || 0;
@@ -160,7 +188,8 @@ export async function getMicroCourseTopicDetail(
         const inputDto = buildGetMicroCourseTopicDetailInput(
             microcredentialCourseId,
             finalStudentId,
-            encryptedMicrocredentialCourseId
+            encryptedMicrocredentialCourseId,
+            microcredentialModuleMasterId
         );
         const response = await apiClient('api/IgnitoMicroCredencialAPI/GetMicroCourseTopicDetail', {
             method: 'POST',
@@ -173,7 +202,7 @@ export async function getMicroCourseTopicDetail(
         const outputDto = parseGetMicroCourseTopicDetailOutput(response.data, response.status);
         return outputDto;
     } catch (error) {
-        console.error('Error fetching microcredential course list:', error);
+        console.error('Error fetching microcredential course topic detail:', error);
         return parseGetMicroCourseTopicDetailErrorOutput({ message: error.message }, 500);
     }
 }
@@ -187,7 +216,8 @@ export async function microCredencialWatchvideoAddUpdate(
     studentId = 0,
     microcredentialCourseId = 0,
     overallPercentage = 0,
-    studentwatchvideodetails = []
+    studentwatchvideodetails = [],
+    microcredentialModuleMasterId = 0
 ) {
     try {
         let finalStudentId = Number(studentId) || 0;
@@ -199,7 +229,8 @@ export async function microCredencialWatchvideoAddUpdate(
             finalStudentId,
             microcredentialCourseId,
             overallPercentage,
-            studentwatchvideodetails
+            studentwatchvideodetails,
+            microcredentialModuleMasterId
         );
         const response = await apiClient('api/MicroCredencialStudentWatchVideoAPI/MicroCredencialWatchvideoAddUpdate', {
             method: 'POST',
@@ -392,16 +423,25 @@ export function getLoggedInStudentId() {
  * 
  * @param {number} [studentId=0] - Student identifier (if 0 or omitted, automatically reads from session/localStorage)
  * @param {number} [microcredentialCourseId=0] - Microcredential course identifier
+ * @param {number} [microcredentialModuleMasterId=0] - Microcredential module master identifier
  * @returns {Promise<object>} Parsed output containing overall percentage, student watch video details, and quiz metadata
  */
-export async function getMicrocredentialStudentWatchVideoData(studentId = 0, microcredentialCourseId = 0) {
+export async function getMicrocredentialStudentWatchVideoData(
+    studentId = 0, 
+    microcredentialCourseId = 0, 
+    microcredentialModuleMasterId = 0
+) {
     try {
         let finalStudentId = Number(studentId) || 0;
         if (!finalStudentId || finalStudentId === 0) {
             finalStudentId = getLoggedInStudentId();
         }
 
-        const inputDto = buildGetMicrocredentialStudentWatchVideoDataInput(finalStudentId, microcredentialCourseId);
+        const inputDto = buildGetMicrocredentialStudentWatchVideoDataInput(
+            finalStudentId, 
+            microcredentialCourseId, 
+            microcredentialModuleMasterId
+        );
         const response = await apiClient('api/MicroCredencialStudentWatchVideoAPI/GetMicrocredentialStudentWatchVideoData', {
             method: 'POST',
             headers: inputDto.headers,
@@ -432,6 +472,7 @@ export async function getMicrocredentialStudentWatchVideoData(studentId = 0, mic
  * @param {number} [handRaiseTime=0] - Hand raise timestamp/seconds
  * @param {string} [econtent=''] - E-content text
  * @param {boolean} [isEcontent=false] - Flag indicating if content is E-content
+ * @param {number} [microcredentialModuleMasterId=0] - Microcredential module master identifier
  * @returns {Promise<object>} Parsed output containing raise hand answer DTO
  */
 export async function microcredentialTranscriptByTime(
@@ -442,18 +483,25 @@ export async function microcredentialTranscriptByTime(
     microcredentialCourseId = 0,
     handRaiseTime = 0,
     econtent = '',
-    isEcontent = false
+    isEcontent = false,
+    microcredentialModuleMasterId = 0
 ) {
     try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
+
         const inputDto = buildMicrocredentialTranscriptByTimeInput(
-            studentId,
+            finalStudentId,
             studentDegreeAdmissionId,
             videoId,
             question,
             microcredentialCourseId,
             handRaiseTime,
             econtent,
-            isEcontent
+            isEcontent,
+            microcredentialModuleMasterId
         );
         const response = await apiClient('api/IgnitoMicroCredencialAPI/MicrocredentialTranscriptByTime', {
             method: 'POST',
@@ -494,8 +542,13 @@ export async function getStudentMicrocredentialRaiseHandAnswerList(
     pageSize = 10
 ) {
     try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId || finalStudentId === 0) {
+            finalStudentId = getLoggedInStudentId();
+        }
+
         const inputDto = buildGetStudentMicrocredentialRaiseHandAnswerListInput(
-            studentId,
+            finalStudentId,
             studentDegreeAdmissionId,
             microcredentialCourseId,
             videoId,

@@ -135,6 +135,7 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authCourseTitle, setAuthCourseTitle] = useState('');
   const [pendingWatchCourse, setPendingWatchCourse] = useState(null);
+  const [pendingRedirect, setPendingRedirect] = useState(null);
   const [videoModal, setVideoModal] = useState({
     isOpen: false,
     lectureTitle: '',
@@ -150,7 +151,15 @@ export default function App() {
       setActivePage(page);
 
       if (page === 'profile') {
-        setProfileTab(param || 'dashboard');
+        const tab = param || 'dashboard';
+        setProfileTab(tab);
+        const currentUser = user || getSavedUserSession();
+        const currentStudentId = getLoggedInStudentId();
+        if (!currentUser && (!currentStudentId || currentStudentId <= 0)) {
+          setAuthCourseTitle('');
+          setPendingRedirect({ page: 'profile', param: tab });
+          setIsAuthModalOpen(true);
+        }
       } else if (page === 'detail' || page === 'watch' || page === 'quiz') {
         if (param) {
           const resolved = resolveSelectedCourse(param);
@@ -188,6 +197,13 @@ export default function App() {
       const tab = subParam || 'dashboard';
       setProfileTab(tab);
       targetPath = `/profile/${tab}`;
+      const currentUser = user || getSavedUserSession();
+      const currentStudentId = getLoggedInStudentId();
+      if (!currentUser && (!currentStudentId || currentStudentId <= 0)) {
+        setAuthCourseTitle('');
+        setPendingRedirect({ page: 'profile', param: tab });
+        setIsAuthModalOpen(true);
+      }
     } else if (pageId === 'detail') {
       const courseId = subParam?.microcredentialCourseId || subParam?.encryptedMicrocredentialCourseId || subParam?.id || (typeof subParam === 'string' ? subParam : '') || selectedCourse?.microcredentialCourseId || selectedCourse?.encryptedMicrocredentialCourseId || selectedCourse?.id || '';
       targetPath = courseId ? `/microcredentials/${courseId}` : '/microcredentials';
@@ -218,12 +234,25 @@ export default function App() {
       window.history.pushState({}, '', courseId ? `/watch/${courseId}` : '/microcredentials');
       setActivePage('watch');
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (pendingRedirect) {
+      const target = pendingRedirect;
+      setPendingRedirect(null);
+      if (target.page === 'profile') {
+        const tab = target.param || 'dashboard';
+        setProfileTab(tab);
+        window.history.pushState({}, '', `/profile/${tab}`);
+        setActivePage('profile');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        handleNavigate(target.page, target.param);
+      }
     } else {
       setActivePage('home');
       window.history.pushState({}, '', '/');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+
 
   const handleLogout = () => {
     logoutUser();
@@ -364,6 +393,11 @@ export default function App() {
             initialTab={profileTab}
             onExploreCatalog={() => handleNavigate('microcredentials')}
             onViewCourse={handleWatchCourse}
+            onNavigate={handleNavigate}
+            onLogin={() => {
+              setPendingRedirect({ page: 'profile', param: profileTab });
+              handleNavigate('login');
+            }}
           />
         )}
 
@@ -397,6 +431,7 @@ export default function App() {
         onClose={() => setIsAuthModalOpen(false)}
         onLogin={handleProceedToLogin}
         courseTitle={authCourseTitle}
+        actionText="access your learning profile, course dashboard, and certificates"
       />
     </div>
   );

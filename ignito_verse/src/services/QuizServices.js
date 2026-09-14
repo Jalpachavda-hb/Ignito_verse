@@ -623,20 +623,11 @@ export async function getQuizResultByQuizId(quizId, attemptId = 0, studentId = 0
             finalAttemptId
         );
 
-        let response = await apiClient('api/StudentMicrocredentialQuizAPI/GetStudentMicrocredentialQuizResultGetByQuizId', {
+        const response = await apiClient('api/StudentMicrocredentialQuizAPI/GetStudentMicrocredentialQuizResultGetByQuizId', {
             method: 'POST',
             headers: inputDto.headers,
             body: inputDto.body
         });
-
-        // Fallback endpoint if primary path is 404
-        if (response.status === 404) {
-            response = await apiClient('api/StudentMyProfileAPI/GetStudentMicrocredentialQuizResultGetByQuizId', {
-                method: 'POST',
-                headers: inputDto.headers,
-                body: inputDto.body
-            });
-        }
 
         if (!response.ok && response.status !== 200) {
             return parseGetStudentMicrocredentialQuizResultGetByQuizIdErrorOutput(response.data, response.status);

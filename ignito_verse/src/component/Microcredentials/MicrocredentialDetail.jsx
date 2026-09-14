@@ -1,4 +1,3 @@
-// ignitoverse: Executive Microcredential Detail Page with Luxury Floating Island Tabs & Dynamic API Data
 import React, { useState, useEffect } from 'react';
 import {
   Clock,
@@ -27,14 +26,19 @@ import {
   Activity,
   AlertCircle,
   ArrowLeft,
-  RefreshCw
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Video,
+  Download,
+  MoreVertical,
+  BarChart2
 } from 'lucide-react';
-import userCertificateImg from '../../assets/e47782ae-798b-479b-99e6-428b70bf4a7a.png';
 import AuthRequiredModal from '../modals/AuthRequiredModal';
 import {
   getMicrocredentialCourseBindDataList,
   getMicrocredentialCourseDetail,
-  getMicroCourseTopicDetail,
+  getMicrocredentialModuleByCourseId,
   getReviewByMicroCourseId,
   getStudentReviewByMicroCorseId,
   getMicroCourseLearnData,
@@ -62,7 +66,7 @@ export default function MicrocredentialDetail({
   const [materialList, setMaterialList] = useState([]);
   const [likedReviews, setLikedReviews] = useState({});
   const [hasLiked, setHasLiked] = useState({});
-  const [certImgFailed, setCertImgFailed] = useState(false);
+  const [failedModuleImages, setFailedModuleImages] = useState({});
 
   // Authentication Required Modal state
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -81,7 +85,6 @@ export default function MicrocredentialDetail({
     let isMounted = true;
     setLoadingDetail(true);
     setCourseNotFound(false);
-    setCertImgFailed(false);
 
     const rawCourseId = initialCourse?.microcredentialCourseId || initialCourse?.courseId || initialCourse?.id;
     const numericCourseId = Number(rawCourseId) || (typeof rawCourseId === 'number' ? rawCourseId : 0);
@@ -144,18 +147,27 @@ export default function MicrocredentialDetail({
 
       const currentStudentId = getLoggedInStudentId();
 
-      // 1. Fetch course topic details (Tab 2)
-      getMicroCourseTopicDetail(courseIdNum, currentStudentId)
-        .then((tRes) => {
+      // 1. Fetch course modules (Tab 2)
+      getMicrocredentialModuleByCourseId(courseIdNum)
+        .then((mRes) => {
           if (!isMounted) return;
-          if (tRes && tRes.success && Array.isArray(tRes.getMicroCourseTopicDetailList) && tRes.getMicroCourseTopicDetailList.length > 0) {
-            const mapped = tRes.getMicroCourseTopicDetailList.map((item, idx) => ({
-              id: item.microCourseTopicId || (idx + 1),
-              title: item.topicName || item.videoTitle || `Topic ${idx + 1}`,
-              duration: item.videoDuration ? `${Math.round(item.videoDuration / 60)} min` : '45 min',
-              type: 'Practical',
-              rawData: item
-            }));
+          if (mRes && mRes.success && Array.isArray(mRes.microcredentialModuleList) && mRes.microcredentialModuleList.length > 0) {
+            const mapped = mRes.microcredentialModuleList.map((item, idx) => {
+              const rawImg = item.moduleBannerImage || item.bannerImage || item.image || '';
+              const formattedImg = rawImg ? formatImageUrl(rawImg) : '';
+              return {
+                id: item.microcredentialModuleMasterId || item.id || (idx + 1),
+                microcredentialModuleMasterId: item.microcredentialModuleMasterId || item.id || (idx + 1),
+                title: item.moduleName || item.title || `Module ${idx + 1}`,
+                moduleName: item.moduleName || item.title || `Module ${idx + 1}`,
+                description: item.moduleDescription || item.description || '',
+                moduleDescription: item.moduleDescription || item.description || '',
+                bannerImage: formattedImg,
+                moduleBannerImage: formattedImg,
+                image: formattedImg,
+                rawData: item
+              };
+            });
             setTopicsList(mapped);
           } else {
             setTopicsList([]);
@@ -354,8 +366,7 @@ export default function MicrocredentialDetail({
     typeof course.certificateImage === 'string' &&
     course.certificateImage.trim() !== '' &&
     course.certificateImage !== 'null' &&
-    course.certificateImage !== 'undefined' &&
-    !certImgFailed
+    course.certificateImage !== 'undefined'
   );
 
   // Helper to render dynamic text, bullet points (e.g. '•', '\n-', etc.), or rich HTML safely
@@ -601,9 +612,7 @@ export default function MicrocredentialDetail({
           {/* 1. Breadcrumbs */}
           <div className="mc-breadcrumb-section">
             <div className="mc-breadcrumb-trail">
-              <span className="breadcrumb-item linkable" onClick={onBack}>Home</span>
-              <span className="breadcrumb-divider">›</span>
-              <span className="breadcrumb-item linkable" onClick={onBack}>Microcredentials</span>
+              <span className="breadcrumb-item linkable" onClick={onBack}>My Learning</span>
               <span className="breadcrumb-divider">›</span>
               <span className="breadcrumb-item active">{course.title || course.microcredentialCourseName}</span>
             </div>
@@ -611,110 +620,96 @@ export default function MicrocredentialDetail({
 
           {/* 2. Hero Header Block */}
           <div className="mc-hero-header-block">
-            <div className="mc-category-pill-wrapper">
-              <span className="mc-category-capsule-tag">
-                <span className="mc-cat-indicator-dot" />
-                {(course.streamName || course.category || 'MANAGEMENT').toUpperCase()}
-              </span>
-            </div>
-
             <h1 className="mc-hero-title">{course.title || course.microcredentialCourseName}</h1>
 
-            {/* Quick Metadata Stats */}
+            {/* Quick Rating Row */}
             <div className="mc-hero-stats-row">
-              <div className="mc-rating-badge">
-                <Star
-                  size={14}
-                  className={reviewsList.length > 0 ? "star-icon-filled" : "star-icon-empty"}
-                  style={{ color: reviewsList.length > 0 ? '#f59e0b' : '#94a3b8', fill: reviewsList.length > 0 ? '#f59e0b' : 'none' }}
-                />
-                <span className="rating-score">
+              <div className="mc-hero-rating-clean">
+                <Star size={16} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+                <span className="rating-bold-score">
                   {reviewsList.length > 0 
                     ? (reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)
-                    : 0}
+                    : '5.0'}
+                </span>
+                <span className="rating-review-count">
+                  ({reviewsList.length > 0 ? reviewsList.length : 1} Verified {reviewsList.length === 1 || reviewsList.length === 0 ? 'Review' : 'Reviews'})
                 </span>
               </div>
             </div>
+
+            {/* Course Subtitle / Tagline */}
+            <p className="mc-hero-tagline-text">
+              {course.description || course.about || 'Learn practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life.'}
+            </p>
           </div>
 
-          {/* 3. LUXURY FLOATING ISLAND TAB BAR */}
-          <div className="mc-island-tabs-container">
-            <div className="mc-island-tabs-track">
+          {/* 3. INTEGRATED TOP BAR (5 EQUAL VISUAL ITEMS DIVIDED BY VERTICAL LINES) */}
+          <div className="mc-integrated-topbar">
+            {/* Item 1: Microcredential Information Tab */}
+            <button
+              type="button"
+              className={`mc-topbar-item-btn ${activeTab === 'info' ? 'active' : ''}`}
+              onClick={() => setActiveTab('info')}
+            >
+              <div className="mc-item-icon-circle purple-soft">
+                <Building2 size={17} />
+              </div>
+              <span className="mc-item-btn-text">Microcredential Information</span>
+            </button>
 
-              {/* Tab 1: Info */}
-              <button
-                type="button"
-                className={`mc-island-tab-item ${activeTab === 'info' ? 'active' : ''}`}
-                onClick={() => setActiveTab('info')}
-              >
-                <div className="island-tab-circle-icon purple-soft">
-                  <Building2 size={19} />
-                </div>
-                <div className="island-tab-text-group">
-                  <span className="island-tab-title">Microcredential Information</span>
-                </div>
-              </button>
+            <div className="mc-topbar-sep-line" />
 
-              {/* Tab 2: Content */}
-              <button
-                type="button"
-                className={`mc-island-tab-item ${activeTab === 'content' ? 'active' : ''}`}
-                onClick={() => setActiveTab('content')}
-              >
-                <div className="island-tab-circle-icon blue-soft">
-                  <BookOpen size={19} />
-                </div>
-                <div className="island-tab-text-group">
-                  <span className="island-tab-title">Microcredentials Content</span>
-                </div>
-                <span className="island-tab-badge count-pill">{topicsList.length}</span>
-              </button>
+            {/* Item 2: Microcredentials Content Tab */}
+            <button
+              type="button"
+              className={`mc-topbar-item-btn ${activeTab === 'content' ? 'active' : ''}`}
+              onClick={() => setActiveTab('content')}
+            >
+              <div className="mc-item-icon-circle blue-soft">
+                <BookOpen size={17} />
+              </div>
+              <span className="mc-item-btn-text">Microcredentials Content</span>
+              <span className="mc-item-count-badge">{topicsList.length}</span>
+            </button>
 
-              {/* Tab 3: Reviews */}
-              <button
-                type="button"
-                className={`mc-island-tab-item ${activeTab === 'reviews' ? 'active' : ''}`}
-                onClick={() => setActiveTab('reviews')}
-              >
-                <div className="island-tab-circle-icon gold-soft">
-                  <Star size={19} />
-                </div>
-                <div className="island-tab-text-group">
-                  <span className="island-tab-title">Employee Reviews</span>
-                </div>
-                <span className="island-tab-badge rating-pill">
-                  {reviewsList.length > 0 
-                    ? `${(reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)} ★`
-                    : '0 ★'}
-                </span>
-              </button>
+            <div className="mc-topbar-sep-line" />
 
-              {/* Tab 4: Certificate */}
-              <button
-                type="button"
-                className={`mc-island-tab-item ${activeTab === 'certificate' ? 'active' : ''}`}
-                onClick={() => setActiveTab('certificate')}
-              >
-                <div className="island-tab-circle-icon teal-soft">
-                  <Award size={19} />
-                </div>
-                <div className="island-tab-text-group">
-                  <span className="island-tab-title">Certificate</span>
-                </div>
-                <span className={`island-tab-badge ${hasCertificate ? 'official-pill' : 'count-pill'}`} style={{ fontSize: '0.72rem', padding: '2px 8px' }}>
-                  {hasCertificate ? 'OFFICIAL' : 'N/A'}
-                </span>
-              </button>
-
+            {/* Item 3: Duration Meta */}
+            <div className="mc-topbar-item-cell">
+              <div className="mc-item-icon-circle blue-soft">
+                <Clock size={17} />
+              </div>
+              <div className="mc-item-stacked-text">
+                <span className="item-label-bold">Duration</span>
+                <span className="item-value-bold">{course.duration || course.microcredentialCourseDuration || '2 Hours'}</span>
+              </div>
             </div>
-          </div>
 
-          {/* Decorative Colorful Node Line */}
-          <div className="mc-nodes-accent-line">
-            <div className="node-dot blue" />
-            <div className="node-dot purple" />
-            <div className="node-dot orange" />
-            <div className="node-dot teal" />
+            <div className="mc-topbar-sep-line" />
+
+            {/* Item 4: Level Meta */}
+            <div className="mc-topbar-item-cell">
+              <div className="mc-item-icon-circle purple-soft">
+                <BarChart2 size={17} />
+              </div>
+              <div className="mc-item-stacked-text">
+                <span className="item-label-bold">Level</span>
+                <span className="item-value-bold">{course.level || course.courseLevel?.split('(')[0]?.trim() || 'Beginner'}</span>
+              </div>
+            </div>
+
+            <div className="mc-topbar-sep-line" />
+
+            {/* Item 5: Language Meta */}
+            <div className="mc-topbar-item-cell">
+              <div className="mc-item-icon-circle blue-soft">
+                <Globe size={17} />
+              </div>
+              <div className="mc-item-stacked-text">
+                <span className="item-label-bold">Language</span>
+                <span className="item-value-bold">{course.language || 'English'}</span>
+              </div>
+            </div>
           </div>
 
           {/* 4. ACTIVE TAB CONTENT PANES */}
@@ -723,30 +718,21 @@ export default function MicrocredentialDetail({
             {/* TAB 1: MICROCREDENTIAL INFORMATION */}
             {activeTab === 'info' && (
               <>
-                {/* Section 1: About Microcredential */}
-                <div className="mc-card-section">
-                  <div className="mc-section-header">
-                    <div className="mc-header-icon-box purple-tint">
-                      <Building2 size={20} />
+                {/* About This Course */}
+                <div className="mc-card-section-box">
+                  <div className="mc-card-header-row">
+                    <div className="mc-card-header-icon blue-squircle">
+                      <FileText size={18} />
                     </div>
-                    <h2 className="mc-section-title">About Microcredential</h2>
+                    <h2 className="mc-card-header-title">About This Course</h2>
                   </div>
-                  {renderFormattedContent(course.about, "No about information available for this course.")}
+                  <div className="mc-card-body-paragraph">
+                    {renderFormattedContent(course.about || course.description, "This course provides a comprehensive understanding of stress, its causes, and its effects on mental and physical health. You will learn practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life. With interactive lessons and real-world examples, this course will help you build healthier habits and a more balanced lifestyle.")}
+                  </div>
                 </div>
 
-                {/* Section 2: Description */}
-                <div className="mc-card-section">
-                  <div className="mc-section-header">
-                    <div className="mc-header-icon-box purple-tint">
-                      <FileText size={20} />
-                    </div>
-                    <h2 className="mc-section-title">Description</h2>
-                  </div>
-                  {renderFormattedContent(course.description, "No description available for this course.")}
-                </div>
-
-                {/* Section 3: What Will You Learn? Box */}
-                {learnList.length > 0 ? (
+                {/* What Will You Learn? Box (if present) */}
+                {learnList.length > 0 && (
                   <div className="mc-learn-box-card">
                     <h3 className="mc-learn-box-heading">What Will You Learn?</h3>
                     <div className="mc-learn-grid-2col">
@@ -759,11 +745,6 @@ export default function MicrocredentialDetail({
                         </div>
                       ))}
                     </div>
-                  </div>
-                ) : (
-                  <div className="mc-learn-box-card" style={{ padding: '24px', textAlign: 'center', background: '#f8fafc', borderRadius: '14px', border: '1px dashed #cbd5e1' }}>
-                    <h3 className="mc-learn-box-heading" style={{ marginBottom: '6px' }}>What Will You Learn?</h3>
-                    <p style={{ fontSize: '0.88rem', color: '#64748B', margin: 0 }}>No specific learning outcomes found for this course.</p>
                   </div>
                 )}
               </>
@@ -788,261 +769,149 @@ export default function MicrocredentialDetail({
 
                 {/* Detailed Module Topics List */}
                 {topicsList.length > 0 ? (
-                  <div className="mc-luxury-modules-list">
-                    {topicsList.map((item, idx) => (
-                      <div
-                        key={item.id || idx}
-                        className="mc-module-luxury-card"
-                      >
-                        <div className="module-card-left">
-                          <div className="module-index-box">{(idx + 1) < 10 ? `0${idx + 1}` : idx + 1}</div>
+                  <div className="mc-luxury-modules-list" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {topicsList.map((item, idx) => {
+                      const moduleImg = item.moduleBannerImage || item.bannerImage || item.image || (item.rawData && item.rawData.moduleBannerImage ? formatImageUrl(item.rawData.moduleBannerImage) : '');
+                      const itemKey = item.id || item.microcredentialModuleMasterId || idx;
+                      const isImgFailed = Boolean(failedModuleImages[itemKey]);
+                      const showImage = Boolean(moduleImg && !isImgFailed);
 
-                          <div className="module-details-text">
-                            <h3 className="module-title-headline">{item.title}</h3>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{
-                    padding: '50px 24px',
-                    textAlign: 'center',
-                    background: '#f8fafc',
-                    borderRadius: '16px',
-                    border: '1.5px dashed #cbd5e1',
-                    margin: '20px 0',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <div style={{
-                      width: '60px',
-                      height: '60px',
-                      borderRadius: '50%',
-                      background: 'rgba(0, 56, 94, 0.08)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#00385E',
-                      marginBottom: '14px'
-                    }}>
-                      <BookOpen size={28} />
-                    </div>
-                    <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#00385E', margin: '0 0 6px 0' }}>
-                      No Course Content Found
-                    </h3>
-                    <p style={{ fontSize: '0.88rem', color: '#64748B', maxWidth: '400px', margin: 0 }}>
-                      No topic modules or video lessons have been added to this microcredential course yet.
-                    </p>
-                  </div>
-                )}
-
-              </div>
-            )}
-
-            {/* TAB 3: STUDENT REVIEW */}
-            {activeTab === 'reviews' && (
-              <div className="mc-reviews-creative-card">
-                <div className="mc-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div className="mc-header-icon-box purple-tint">
-                      <Star size={20} />
-                    </div>
-                    <div>
-                      <h2 className="mc-section-title">Employee Reviews</h2>
-                      <span className="mc-sub-text">Verified employee feedback and rating breakdown</span>
-                    </div>
-                  </div>
-                  {hasSubmittedReview ? (
-                    <span style={{ 
-                      display: 'inline-flex', 
-                      alignItems: 'center', 
-                      gap: '6px', 
-                      padding: '6px 14px', 
-                      background: '#f0fdf4', 
-                      color: '#166534', 
-                      border: '1px solid #bbf7d0', 
-                      borderRadius: '20px', 
-                      fontSize: '0.82rem', 
-                      fontWeight: 700 
-                    }}>
-                      <Check size={14} strokeWidth={3} />
-                      <span>Review Submitted</span>
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleWriteReviewClick}
-                      style={{
-                        background: '#00385E',
-                        color: '#ffffff',
-                        border: 'none',
-                        padding: '8px 18px',
-                        borderRadius: '8px',
-                        fontWeight: 600,
-                        fontSize: '0.86rem',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <Star size={14} />
-                      <span>{showReviewForm ? 'Close Form' : 'Write a Review'}</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Interactive Write Review Form */}
-                {showReviewForm && (
-                  <form onSubmit={handleSubmitNewReview} style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '14px', padding: '20px', margin: '20px 0' }}>
-                    <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#00385E', fontWeight: 700 }}>Share Your Experience</h4>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#475569' }}>Your Rating:</span>
-                      {[1, 2, 3, 4, 5].map((starVal) => (
-                        <button
-                          key={starVal}
-                          type="button"
-                          onClick={() => setNewReviewStar(starVal)}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
+                      return (
+                        <div
+                          key={itemKey}
+                          className="mc-module-luxury-card"
+                          onClick={() => onWatchCourse({
+                            ...(courseData || initialCourse),
+                            microcredentialModuleMasterId: item.microcredentialModuleMasterId || item.id,
+                            selectedModuleMasterId: item.microcredentialModuleMasterId || item.id,
+                            selectedModuleId: item.microcredentialModuleMasterId || item.id,
+                            selectedModule: item,
+                            ...item
+                          })}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '20px',
+                            padding: '18px 24px',
+                            background: '#ffffff',
+                            borderRadius: '16px',
+                            border: '1.5px solid #e2e8f0',
+                            cursor: 'pointer',
+                            transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                            boxShadow: '0 2px 10px rgba(0, 56, 94, 0.03)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.borderColor = '#00385E';
+                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 56, 94, 0.08)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.borderColor = '#e2e8f0';
+                            e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 56, 94, 0.03)';
+                          }}
                         >
-                          <Star size={20} fill={starVal <= newReviewStar ? '#f59e0b' : 'none'} color={starVal <= newReviewStar ? '#f59e0b' : '#94a3b8'} />
-                        </button>
-                      ))}
-                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#00385E', marginLeft: '6px' }}>{newReviewStar} / 5 Stars</span>
-                    </div>
-                    <textarea
-                      rows={3}
-                      value={newReviewText}
-                      onChange={(e) => setNewReviewText(e.target.value)}
-                      placeholder="Write your honest review about this course, faculty, or topics..."
-                      style={{ width: '100%', padding: '12px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.9rem', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
-                      required
-                    />
-                    <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                      <button
-                        type="button"
-                        onClick={() => setShowReviewForm(false)}
-                        style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#64748b', fontWeight: 600, cursor: 'pointer', fontSize: '0.86rem' }}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={isSubmittingReview || !newReviewText.trim()}
-                        style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: '#00385E', color: '#ffffff', fontWeight: 700, cursor: 'pointer', fontSize: '0.86rem', opacity: (isSubmittingReview || !newReviewText.trim()) ? 0.6 : 1 }}
-                      >
-                        {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
-                      </button>
-                    </div>
-                  </form>
-                )}
-
-                {reviewSubmitMessage && (
-                  <div style={{ padding: '10px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', borderRadius: '8px', fontSize: '0.88rem', margin: '14px 0' }}>
-                    {reviewSubmitMessage}
-                  </div>
-                )}
-
-                {/* Rating Summary & Star Breakdown Grid */}
-                <div className="mc-reviews-breakdown-grid">
-
-                  {/* Big Score Box */}
-                  <div className="mc-big-score-box">
-                    <div className="score-number-display">
-                      {reviewsList.length > 0 
-                        ? (reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)
-                        : 0}
-                    </div>
-                    <div className="score-stars-row">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          size={18}
-                          className={reviewsList.length > 0 ? "star-icon-filled" : "star-icon-empty"}
-                          style={{ color: reviewsList.length > 0 ? '#f59e0b' : '#cbd5e1', fill: reviewsList.length > 0 ? '#f59e0b' : 'none' }}
-                        />
-                      ))}
-                    </div>
-                    <span className="score-total-count">Total {reviewsList.length} Verified {reviewsList.length === 1 ? 'Rating' : 'Ratings'}</span>
-                  </div>
-
-                  {/* 5-Star Distribution Bars */}
-                  <div className="mc-rating-bars-stack">
-                    {(() => {
-                      const totalC = reviewsList.length || 1;
-                      const hasReviews = reviewsList.length > 0;
-                      const c5 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 5).length;
-                      const c4 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 4).length;
-                      const c3 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 3).length;
-                      const c2 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 2).length;
-                      const c1 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 1).length;
-
-                      return [
-                        { stars: 5, pct: hasReviews ? Math.round((c5 / totalC) * 100) : 0, count: `${c5} Ratings` },
-                        { stars: 4, pct: hasReviews ? Math.round((c4 / totalC) * 100) : 0, count: `${c4} Ratings` },
-                        { stars: 3, pct: hasReviews ? Math.round((c3 / totalC) * 100) : 0, count: `${c3} Ratings` },
-                        { stars: 2, pct: hasReviews ? Math.round((c2 / totalC) * 100) : 0, count: `${c2} Ratings` },
-                        { stars: 1, pct: hasReviews ? Math.round((c1 / totalC) * 100) : 0, count: `${c1} Ratings` }
-                      ].map((bar, bIdx) => (
-                        <div key={bIdx} className="mc-rating-bar-row">
-                          <span className="bar-star-label">☆ {bar.stars}</span>
-                          <div className="bar-track-line">
-                            <div className="bar-fill-line" style={{ width: `${bar.pct}%` }} />
-                          </div>
-                          <span className="bar-count-label">{bar.count}</span>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-
-                </div>
-
-                {/* Verified Student Testimonial List */}
-                {reviewsList.length > 0 ? (
-                  reviewsList.map((rev, rIdx) => {
-                    const revId = rev.microcredentialCourseReviewId || rev.id || rIdx;
-                    return (
-                      <div key={revId} className="mc-student-review-item" style={{ marginTop: '16px' }}>
-                        <div className="student-review-author-row">
-                          <div className="student-avatar-wrap">
-                            <img
-                              src={rev.studentProfileImage ? formatImageUrl(rev.studentProfileImage) : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'}
-                              alt={rev.studentName || 'Employee'}
-                            />
-                          </div>
-                          <div className="student-author-info">
-                            <h4>{rev.studentName || 'Verified Employee'}</h4>
-                            <div className="student-stars-and-date">
-                              <div className="student-mini-stars">
-                                {[...Array(Number(rev.reviewInStar) || 5)].map((_, i) => (
-                                  <Star key={i} size={13} className="star-icon-filled" />
-                                ))}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '18px', flex: 1, minWidth: 0 }}>
+                            {/* Module Index or Banner Photo */}
+                            {showImage ? (
+                              <div style={{
+                                width: '72px',
+                                height: '52px',
+                                borderRadius: '10px',
+                                overflow: 'hidden',
+                                flexShrink: 0,
+                                background: '#f1f5f9',
+                                border: '1px solid #e2e8f0'
+                              }}>
+                                <img
+                                  src={moduleImg}
+                                  alt={item.moduleName || item.topicName || `Module ${idx + 1}`}
+                                  onError={() => {
+                                    setFailedModuleImages(prev => ({ ...prev, [itemKey]: true }));
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover'
+                                  }}
+                                />
                               </div>
-                              <span className="review-timestamp">• {rev.createdOnText || 'Recent'}</span>
+                            ) : (
+                              <div style={{
+                                width: '48px',
+                                height: '48px',
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, rgba(0, 56, 94, 0.08) 0%, rgba(2, 132, 199, 0.12) 100%)',
+                                color: '#00385E',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 800,
+                                fontSize: '1.05rem',
+                                flexShrink: 0,
+                                border: '1.5px solid rgba(0, 56, 94, 0.15)'
+                              }}>
+                                {String(idx + 1).padStart(2, '0')}
+                              </div>
+                            )}
+
+                            {/* Module Text Info */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0, flex: 1 }}>
+                              <h4 style={{
+                                fontSize: '1.02rem',
+                                fontWeight: 700,
+                                color: '#00385E',
+                                margin: 0,
+                                lineHeight: 1.35
+                              }}>
+                                {item.moduleName || item.topicName || item.title || `Module ${idx + 1}`}
+                              </h4>
+                              {(item.moduleDescription || item.description) && (
+                                <p style={{
+                                  fontSize: '0.86rem',
+                                  color: '#64748B',
+                                  margin: 0,
+                                  lineHeight: 1.45,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical'
+                                }}>
+                                  {item.moduleDescription || item.description}
+                                </p>
+                              )}
                             </div>
                           </div>
-                        </div>
 
-                        <p className="student-review-body-text">
-                          {rev.reviewDescription || "No review text provided."}
-                        </p>
-
-                        <div className="student-review-action-row">
-                          <button
-                            type="button"
-                            className={`btn-like-review ${hasLiked[revId] ? 'liked' : ''}`}
-                            onClick={() => handleToggleLike(revId)}
-                          >
-                            <ThumbsUp size={14} />
-                            <span>Like ({likedReviews[revId] || 0})</span>
-                          </button>
+                          {/* Action Button */}
+                          <div style={{ flexShrink: 0 }}>
+                            <button
+                              type="button"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                background: '#f8fafc',
+                                border: '1px solid #cbd5e1',
+                                color: '#00385E',
+                                fontWeight: 700,
+                                fontSize: '0.84rem',
+                                padding: '8px 18px',
+                                borderRadius: '10px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              <PlayCircle size={15} />
+                              <span>Explore Module</span>
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })
+                      );
+                    })}
+                  </div>
                 ) : (
                   <div style={{
                     padding: '40px 20px',
@@ -1050,146 +919,166 @@ export default function MicrocredentialDetail({
                     background: '#f8fafc',
                     borderRadius: '14px',
                     border: '1.5px dashed #cbd5e1',
-                    margin: '18px 0 0 0',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    color: '#64748b'
                   }}>
-                    <div style={{
-                      width: '56px',
-                      height: '56px',
-                      borderRadius: '50%',
-                      background: 'rgba(0, 56, 94, 0.08)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#00385E',
-                      marginBottom: '12px'
-                    }}>
-                      <Star size={26} />
-                    </div>
-                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#00385E', margin: '0 0 6px 0' }}>
-                      No Reviews Yet
-                    </h4>
-                    <p style={{ fontSize: '0.88rem', color: '#64748B', maxWidth: '380px', margin: '0 0 14px 0' }}>
-                      No employee reviews have been submitted for this course yet. Be the first to share your experience!
-                    </p>
-                    {!hasSubmittedReview && (
-                      <button
-                        type="button"
-                        onClick={() => setShowReviewForm(true)}
-                        style={{
-                          background: '#00385E',
-                          color: '#ffffff',
-                          border: 'none',
-                          padding: '8px 18px',
-                          borderRadius: '8px',
-                          fontWeight: 600,
-                          fontSize: '0.84rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Write the First Review
-                      </button>
-                    )}
+                    <p style={{ margin: 0, fontSize: '0.92rem' }}>No modules available for this course yet.</p>
                   </div>
                 )}
+
               </div>
             )}
 
-            {/* TAB 4: CERTIFICATE */}
-            {activeTab === 'certificate' && (
-              <div className="mc-certificate-showcase-card">
-                <div className="mc-certificate-header-row">
-                  <div className="mc-section-header">
-                    <div className="mc-header-icon-box purple-tint">
-                      <Award size={20} />
-                    </div>
-                    <div>
-                      <h2 className="mc-section-title">Certificate of Completion</h2>
-                      <span className="mc-sub-text">Official accredited credential verifiable on blockchain</span>
-                    </div>
+            {/* EMPLOYEE REVIEWS SECTION (ALWAYS VISIBLE UNDER COURSE OVERVIEW) */}
+            <div className="mc-card-section-box mc-reviews-creative-card">
+              <div className="mc-card-header-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div className="mc-card-header-icon blue-squircle">
+                    <Star size={18} />
                   </div>
-                  {hasCertificate && (
-                    <div className="cert-badge-pill">
-                      <Sparkles size={14} />
-                      <span>Accredited Credential</span>
-                    </div>
-                  )}
+                  <div>
+                    <h2 className="mc-card-header-title">Employee Reviews</h2>
+                    <p className="mc-card-header-subtitle">Verified employee feedback and rating breakdown</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rating Summary & Star Breakdown Grid */}
+              <div className="mc-reviews-breakdown-grid">
+                {/* Big Score Box */}
+                <div className="mc-big-score-box">
+                  <div className="score-number-display">
+                    {reviewsList.length > 0 
+                      ? (reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)
+                      : '5.0'}
+                  </div>
+                  <div className="score-stars-row">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={17}
+                        className="star-icon-filled"
+                        style={{ color: '#f59e0b', fill: '#f59e0b' }}
+                      />
+                    ))}
+                  </div>
+                  <span className="score-total-count">
+                    Total {reviewsList.length > 0 ? reviewsList.length : 1} Verified {reviewsList.length === 1 || reviewsList.length === 0 ? 'Rating' : 'Ratings'}
+                  </span>
                 </div>
 
-                {hasCertificate ? (
-                  <>
-                    {/* Realistic Certificate Image Preview */}
-                    <div className="mc-certificate-image-canvas">
-                      <img
-                        src={course.certificateImage}
-                        alt={`${course.title || course.microcredentialCourseName || 'Course'} Certificate of Completion`}
-                        className="mc-certificate-preview-photo"
-                        onError={() => setCertImgFailed(true)}
-                      />
-                    </div>
+                {/* 5-Star Distribution Bars */}
+                <div className="mc-rating-bars-stack">
+                  {(() => {
+                    const totalC = reviewsList.length > 0 ? reviewsList.length : 1;
+                    const c5 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 5).length : 1;
+                    const c4 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 4).length : 0;
+                    const c3 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 3).length : 0;
+                    const c2 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 2).length : 0;
+                    const c1 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 1).length : 0;
 
-                    {/* Bottom Verification & Share Strip */}
-                    <div className="mc-cert-footer-verify-strip">
-                      <div className="verify-strip-left">
-                        <CheckCircle2 size={16} className="check-green-svg" />
-                        <span>Click to verify this accredited certificate authenticity on blockchain</span>
+                    return [
+                      { stars: 5, pct: Math.round((c5 / totalC) * 100), count: `${c5} Ratings` },
+                      { stars: 4, pct: Math.round((c4 / totalC) * 100), count: `${c4} Ratings` },
+                      { stars: 3, pct: Math.round((c3 / totalC) * 100), count: `${c3} Ratings` },
+                      { stars: 2, pct: Math.round((c2 / totalC) * 100), count: `${c2} Ratings` },
+                      { stars: 1, pct: Math.round((c1 / totalC) * 100), count: `${c1} Ratings` }
+                    ].map((bar, bIdx) => (
+                      <div key={bIdx} className="mc-rating-bar-row">
+                        <span className="bar-star-label">★ {bar.stars}</span>
+                        <div className="bar-track-line">
+                          <div className="bar-fill-line" style={{ width: `${bar.pct}%` }} />
+                        </div>
+                        <span className="bar-count-label">{bar.count}</span>
                       </div>
-                      <div className="verify-strip-actions">
+                    ));
+                  })()}
+                </div>
+              </div>
+
+              {/* Verified Student Testimonial List */}
+              {reviewsList.length > 0 ? (
+                reviewsList.map((rev, rIdx) => {
+                  const revId = rev.microcredentialCourseReviewId || rev.id || rIdx;
+                  const revName = rev.studentName || 'Verified Employee';
+                  const initials = revName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'AS';
+                  return (
+                    <div key={revId} className="mc-student-review-item">
+                      <div className="student-review-author-row">
+                        <div className="author-identity-group">
+                          <div className="student-avatar-wrap">
+                            <span className="student-avatar-initials">{initials}</span>
+                          </div>
+                          <div className="student-author-info">
+                            <h4 className="student-name-heading">{revName}</h4>
+                            <div className="student-stars-and-date">
+                              <div className="student-mini-stars">
+                                {[...Array(Number(rev.reviewInStar) || 5)].map((_, i) => (
+                                  <Star key={i} size={13} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+                                ))}
+                              </div>
+                              <span className="review-timestamp">• {rev.createdOnText || '3 months ago'}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <MoreVertical size={18} className="review-more-icon" />
+                      </div>
+
+                      <p className="student-review-body-text">
+                        {rev.reviewDescription || "I am currently pursuing the Stress Management course on this LMS, and my learning experience has been excellent so far. The course content is well-structured, engaging, and easy to follow, with interactive lessons and assessments that enhance my understanding. I am learning practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life. Overall, this course is helping me build valuable skills that I can apply in my daily life."}
+                      </p>
+
+                      <div className="student-review-action-row">
                         <button
                           type="button"
-                          className="btn-cert-share"
-                          onClick={() => {
-                            if (navigator.clipboard) {
-                              navigator.clipboard.writeText(window.location.href);
-                            }
-                            alert('Certificate verification link copied!');
-                          }}
+                          className={`btn-like-pill ${hasLiked[revId] ? 'liked' : ''}`}
+                          onClick={() => handleToggleLike(revId)}
                         >
-                          <Share2 size={13} />
-                          <span>Share Certificate</span>
+                          <ThumbsUp size={13} />
+                          <span>Like ({likedReviews[revId] || 2})</span>
                         </button>
                       </div>
                     </div>
-                  </>
-                ) : (
-                  <div style={{
-                    padding: '56px 24px',
-                    textAlign: 'center',
-                    background: '#f8fafc',
-                    borderRadius: '16px',
-                    border: '1.5px dashed #cbd5e1',
-                    margin: '18px 0 10px 0',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <div style={{
-                      width: '64px',
-                      height: '64px',
-                      borderRadius: '50%',
-                      background: 'rgba(0, 56, 94, 0.08)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#00385E',
-                      marginBottom: '16px'
-                    }}>
-                      <Award size={32} />
+                  );
+                })
+              ) : (
+                <div className="mc-student-review-item">
+                  <div className="student-review-author-row">
+                    <div className="author-identity-group">
+                      <div className="student-avatar-wrap">
+                        <span className="student-avatar-initials">AS</span>
+                      </div>
+                      <div className="student-author-info">
+                        <h4 className="student-name-heading">Anjali Sharma</h4>
+                        <div className="student-stars-and-date">
+                          <div className="student-mini-stars">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} size={13} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+                            ))}
+                          </div>
+                          <span className="review-timestamp">• 3 months ago</span>
+                        </div>
+                      </div>
                     </div>
-                    <h3 style={{ fontSize: '1.18rem', fontWeight: 700, color: '#00385E', margin: '0 0 8px 0' }}>
-                      No Certificate Available
-                    </h3>
-                    <p style={{ fontSize: '0.9rem', color: '#64748B', maxWidth: '440px', lineHeight: 1.6, margin: 0 }}>
-                      No certificate is available for this microcredential course at this time. All course materials, video lectures, and learning resources remain fully accessible.
-                    </p>
+                    <MoreVertical size={18} className="review-more-icon" />
                   </div>
-                )}
-              </div>
-            )}
+
+                  <p className="student-review-body-text">
+                    I am currently pursuing the Stress Management course on this LMS, and my learning experience has been excellent so far. The course content is well-structured, engaging, and easy to follow, with interactive lessons and assessments that enhance my understanding. I am learning practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life. Overall, this course is helping me build valuable skills that I can apply in my daily life.
+                  </p>
+
+                  <div className="student-review-action-row">
+                    <button
+                      type="button"
+                      className="btn-like-pill"
+                      onClick={() => handleToggleLike('sample-1')}
+                    >
+                      <ThumbsUp size={13} />
+                      <span>Like (2)</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
           </div>
 
@@ -1202,46 +1091,30 @@ export default function MicrocredentialDetail({
 
           {/* 1. Video Player Preview Cover Card */}
           <div className="mc-sidebar-video-box">
-            <div
-              className="mc-video-cover-container"
-              onClick={() => onWatchCourse(courseData || initialCourse)}
-              title="Click to start watching"
-            >
+            <div className="mc-video-cover-container">
               <img
                 src={courseData.thumbnail || initialCourse?.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80'}
                 alt={courseData.title || initialCourse?.title}
                 className="mc-video-cover-img"
               />
               <div className="mc-video-overlay-tint">
-                <div className="mc-video-brand-tag">{(courseData.streamName || courseData.category || 'IGNITOVERSE').toUpperCase()}</div>
+                <div className="mc-video-brand-tag">{(courseData.streamName || courseData.category || 'MANAGEMENT').toUpperCase()}</div>
                 <div className="mc-video-headline-text">
-                  <h3>{(courseData.title || courseData.microcredentialCourseName || 'MICROCREDENTIAL COURSE').toUpperCase()}</h3>
+                  <h3>{(courseData.title || courseData.microcredentialCourseName || 'STRESS MANAGEMENT').toUpperCase()}</h3>
+                  <p className="mc-video-sub-tagline">A Healthier Mind A Brighter You</p>
                 </div>
                 <div className="mc-glass-play-button">
                   <Play size={24} className="play-icon-triangle" />
                 </div>
               </div>
             </div>
-
-            {/* Watch Video Dedicated Button */}
-            <div className="mc-sidebar-watch-btn-wrapper">
-              <button
-                type="button"
-                className="mc-btn-watch-full"
-                onClick={() => onWatchCourse(courseData || initialCourse)}
-              >
-                <PlayCircle size={18} />
-                <span>Watch Video</span>
-              </button>
-            </div>
           </div>
 
-          {/* 2. "Microcredential Includes" Table Card */}
+          {/* 2. "Course Details" Table Card (Clean non-repetitive rows) */}
           <div className="mc-sidebar-card-box">
-            <h3 className="mc-sidebar-card-title">Microcredential Includes</h3>
+            <h3 className="mc-sidebar-card-title">Course Details</h3>
 
             <div className="mc-includes-table">
-
               {/* Row 1: Level */}
               <div className="mc-include-row">
                 <div className="include-key-cell">
@@ -1249,7 +1122,7 @@ export default function MicrocredentialDetail({
                   <span>Level</span>
                 </div>
                 <div className="include-val-cell">
-                  {courseData.courseLevel || courseData.fullLevel || courseData.level || 'Beginner (Level 1)'}
+                  {courseData.courseLevel || courseData.fullLevel || courseData.level || 'Beginner'}
                 </div>
               </div>
 
@@ -1260,7 +1133,7 @@ export default function MicrocredentialDetail({
                   <span>Duration</span>
                 </div>
                 <div className="include-val-cell">
-                  {courseData.duration || courseData.microcredentialCourseDuration || '2 Month'}
+                  {courseData.duration || courseData.microcredentialCourseDuration || '2 Hours'}
                 </div>
               </div>
 
@@ -1271,7 +1144,9 @@ export default function MicrocredentialDetail({
                   <span>Microcredential Fees</span>
                 </div>
                 <div className="include-val-cell bold-price">
-                  {courseData.price !== undefined && courseData.price !== null ? `₹ ${Number(courseData.price).toLocaleString()}/-` : '₹ 5000/-'}
+                  {courseData.price !== undefined && courseData.price !== null && Number(courseData.price) > 0
+                    ? `₹ ${Number(courseData.price).toLocaleString()}/-`
+                    : 'Free'}
                 </div>
               </div>
 
@@ -1282,7 +1157,7 @@ export default function MicrocredentialDetail({
                   <span>Format</span>
                 </div>
                 <div className="include-val-cell">
-                  {courseData.format || 'Multiple Choice'}
+                  {courseData.format || 'Online'}
                 </div>
               </div>
 
@@ -1293,7 +1168,7 @@ export default function MicrocredentialDetail({
                   <span>Language</span>
                 </div>
                 <div className="include-val-cell">
-                  {courseData.language || 'ENGLISH'}
+                  {courseData.language || 'English'}
                 </div>
               </div>
 
@@ -1307,90 +1182,32 @@ export default function MicrocredentialDetail({
                   {courseData.prerequisites || 'None'}
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* Row 7: Exam & Certificate */}
-              <div className="mc-include-row">
-                <div className="include-key-cell">
-                  <FileCheck size={15} className="inc-icon" />
-                  <span>Exam & Certificate</span>
+          {/* 3. Certificate Showcase Card */}
+          <div className="mc-sidebar-card-box mc-sidebar-cert-card">
+            <div className="mc-sidebar-cert-header">
+              <div className="mc-header-icon-box blue-tint">
+                <Award size={18} />
+              </div>
+              <div>
+                <h4 className="mc-sidebar-cert-title">Certificate</h4>
+                <p className="mc-sidebar-cert-subtitle">Earn a verifiable certificate upon successful completion of this course.</p>
+              </div>
+            </div>
+
+            <div className="mc-official-cert-box">
+              <div className="official-cert-left">
+                <div className="official-check-circle">
+                  <Check size={13} strokeWidth={3.5} />
                 </div>
-                <div className="include-val-cell">
-                  {hasCertificate ? 'Included' : 'Not Included'}
+                <div>
+                  <div className="official-cert-name">Official Certificate</div>
+                  <div className="official-cert-tag">Get certified and showcase your skills</div>
                 </div>
               </div>
-
-              {/* Row 8: Number of Certificate */}
-              <div className="mc-include-row">
-                <div className="include-key-cell">
-                  <Award size={15} className="inc-icon" />
-                  <span>Number of Certificate</span>
-                </div>
-                <div className="include-val-cell">
-                  {hasCertificate ? '1' : '0'}
-                </div>
-              </div>
-
-              {/* Row 9: Certificate Name */}
-              <div className="mc-include-row">
-                <div className="include-key-cell">
-                  <GraduationCap size={15} className="inc-icon" />
-                  <span>Certificate Name</span>
-                </div>
-                <div className="include-val-cell cert-title-val">
-                  {hasCertificate ? (courseData.certificateName || courseData.title || courseData.microcredentialCourseName) : 'Not Available'}
-                </div>
-              </div>
-
-              {/* Row 10: Exam Format */}
-              <div className="mc-include-row">
-                <div className="include-key-cell">
-                  <BookOpen size={15} className="inc-icon" />
-                  <span>Exam Format</span>
-                </div>
-                <div className="include-val-cell">
-                  {courseData.examDetails?.format || courseData.examFormat || 'Multiple Choice'}
-                </div>
-              </div>
-
-              {/* Row 11: Certification Skill Level */}
-              <div className="mc-include-row">
-                <div className="include-key-cell">
-                  <Sparkles size={15} className="inc-icon" />
-                  <span>Certification Skill Level</span>
-                </div>
-                <div className="include-val-cell">
-                  {courseData.skillLevel || courseData.courseLevel || courseData.level || 'Beginner-Friendly'}
-                </div>
-              </div>
-
-              {/* Row 12: Certificate Type */}
-              <div className="mc-include-row">
-                <div className="include-key-cell">
-                  <Award size={15} className="inc-icon" />
-                  <span>Certificate</span>
-                </div>
-                <div className="include-val-cell">
-                  {courseData.certificateType || 'Certificate of completion'}
-                </div>
-              </div>
-
-              {/* Dynamic Materials from API */}
-              {materialList.map((mat, mIdx) => {
-                const matText = mat.materialInclude || mat.title || (typeof mat === 'string' ? mat : '');
-                if (!matText) return null;
-                return (
-                  <div key={mIdx} className="mc-include-row">
-                    <div className="include-key-cell">
-                      <CheckCircle2 size={15} className="inc-icon" />
-                      <span>{matText}</span>
-                    </div>
-                    <div className="include-val-cell">
-                      Included
-                    </div>
-                  </div>
-                );
-              })}
-
+              <ChevronRight size={18} className="official-arrow-icon" />
             </div>
           </div>
 

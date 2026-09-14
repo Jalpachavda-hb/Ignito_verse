@@ -12,15 +12,22 @@ export function buildGetStudentMicrocredentialQuizResultGetByQuizIdInput(
     studentId = 0,
     attemptId = 0
 ) {
+    const qId = Number(quizId) || 0;
+    const sId = Number(studentId) || 0;
+    const aId = Number(attemptId) || 0;
+
     return {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            quizId: quizId,
-            studentId: studentId,
-            attemptId: attemptId
+            quizId: qId,
+            studentId: sId,
+            attemptId: aId,
+            QuizId: qId,
+            StudentId: sId,
+            AttemptId: aId
         })
     };
 }

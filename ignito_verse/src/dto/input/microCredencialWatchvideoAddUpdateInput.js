@@ -5,26 +5,34 @@
  * @param {number} studentId - Student identifier
  * @param {number} microcredentialCourseId - Microcredential course identifier
  * @param {number} overallPercentage - Overall percentage completed
- * @param {Array<{videoId: string, percentageWatched: number, totalDuration: number, watchedSeconds: number}>} studentwatchvideodetails - Array of student watch video details
+ * @param {Array<{videoId: string, percentageWatched: number, totalDuration: number, watchedSeconds: number, microcredentialModuleMasterId?: number}>} studentwatchvideodetails - Array of student watch video details
+ * @param {number} [microcredentialModuleMasterId=0] - Microcredential module master identifier
  * @returns {object} Formatted request headers and JSON stringified body payload
  */
 export function buildMicroCredencialWatchvideoAddUpdateInput(
     studentId = 0,
     microcredentialCourseId = 0,
     overallPercentage = 0,
-    studentwatchvideodetails = []
+    studentwatchvideodetails = [],
+    microcredentialModuleMasterId = 0
 ) {
+    const numStudentId = Number(studentId) || 0;
+    const numCourseId = Number(microcredentialCourseId) || 0;
+    const numModuleId = Number(microcredentialModuleMasterId) || 0;
+
     return {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            StudentId: studentId,
-            MicrocredentialCourseId: microcredentialCourseId,
+            StudentId: numStudentId,
+            MicrocredentialCourseId: numCourseId,
+            MicrocredentialModuleMasterId: numModuleId,
             OverallPercentage: Math.round(Number(overallPercentage) || 0),
             Studentwatchvideodetails: Array.isArray(studentwatchvideodetails)
                 ? studentwatchvideodetails.map(item => ({
+                    MicrocredentialModuleMasterId: Number(item.microcredentialModuleMasterId ?? item.MicrocredentialModuleMasterId ?? numModuleId) || 0,
                     VideoId: String(item.videoId || item.VideoId || ''),
                     WatchedSeconds: Math.round(Number(item.watchedSeconds ?? item.WatchedSeconds ?? 0)),
                     TotalDuration: Math.round(Number(item.totalDuration ?? item.TotalDuration ?? 0)),

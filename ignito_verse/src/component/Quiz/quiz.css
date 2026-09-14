@@ -115,6 +115,21 @@
   transform: translateY(-1px);
 }
 
+.badge-attempts-completed {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: 1px solid #cbd5e1;
+  user-select: none;
+}
+
+
 .attempt-table-container {
   width: 100%;
   overflow-x: auto;
@@ -874,6 +889,47 @@
   color: #94a3b8;
 }
 
+.final-submit-lock-notice {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 24px 0 28px 0;
+  text-align: left;
+}
+
+.lock-notice-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #dcfce7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lock-notice-text-wrap {
+  flex: 1;
+}
+
+.lock-notice-title {
+  margin: 0 0 4px 0;
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #15803d;
+}
+
+.lock-notice-desc {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #166534;
+  line-height: 1.45;
+}
+
 .result-actions-tray {
   display: flex;
   align-items: center;
@@ -882,7 +938,7 @@
   flex-wrap: wrap;
 }
 
-.btn-result-retake {
+.btn-result-breakdown {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -890,35 +946,39 @@
   border-radius: 10px;
   border: 1px solid #e2e8f0;
   background: #ffffff;
-  color: #334155;
-  font-weight: 600;
+  color: #0f172a;
+  font-weight: 700;
   font-size: 0.92rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.btn-result-retake:hover {
+.btn-result-breakdown:hover {
   background: #f8fafc;
   border-color: #cbd5e1;
+  transform: translateY(-1px);
 }
 
-.btn-result-mark-final {
+.btn-result-attempts {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 26px;
+  padding: 12px 24px;
   border-radius: 10px;
-  border: none;
-  background: #16a34a;
-  color: #ffffff;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
   font-weight: 700;
   font-size: 0.92rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.btn-result-mark-final:hover {
-  background: #15803d;
+.btn-result-attempts:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
 }
 
 .btn-result-return {
@@ -930,7 +990,7 @@
   border: none;
   background: #1d68f0;
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.92rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -938,7 +998,9 @@
 
 .btn-result-return:hover {
   background: #1555c9;
+  transform: translateY(-1px);
 }
+
 
 /* ==========================================================================
    6. RESULT DETAIL MODAL (Step 8: GetStudentMicrocredentialQuizResultGetByQuizId)

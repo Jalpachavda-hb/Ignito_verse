@@ -45,7 +45,7 @@ import {
   getMicrocredentialStudentWatchVideoData,
   getLoggedInStudentId,
   microcredentialTranscriptByTime, 
-  getStudentMicrocredentialRaiseHandAnswerList,
+  getStudentMicrocredentialRaiseHandAnswerList, 
   getMicroManyDiscussionQuestion,
   insertMicroManyDiscussionQuestion,
   microCourseDiscussionQuestionLike,
@@ -167,10 +167,12 @@ export default function MicrocredentialWatchPage({
     const rawId = course?.microcredentialCourseId || course?.courseId || course?.id || course?.rawData?.microcredentialCourseId;
     const courseId = Number(rawId) || 2;
     const encryptedId = course?.encryptedMicrocredentialCourseId || course?.encryptedId || course?.rawData?.encryptedMicrocredentialCourseId || '';
+    const rawModuleMasterId = course?.microcredentialModuleMasterId || course?.selectedModuleMasterId || course?.selectedModuleId || course?.microcredentialModuleId || course?.moduleId || course?.rawData?.microcredentialModuleMasterId || 0;
+    const moduleMasterId = Number(rawModuleMasterId) || 0;
     
     const studentId = getLoggedInStudentId();
 
-    getMicroCourseTopicDetail(courseId, studentId, encryptedId)
+    getMicroCourseTopicDetail(courseId, studentId, encryptedId, moduleMasterId)
       .then((res) => {
         if (!isMounted) return;
         if (res && res.success) {
@@ -181,6 +183,7 @@ export default function MicrocredentialWatchPage({
               const rawDuration = Number(item.videoEndTime) || Number(item.videoDuration) || 0;
               return {
                 id: item.microCourseTopicId || (idx + 1),
+                microcredentialModuleMasterId: item.microcredentialModuleMasterId || item.MicrocredentialModuleMasterId || moduleMasterId,
                 title: item.topicName || item.videoTitle || `Topic ${idx + 1}`,
                 videoTitle: item.videoTitle || item.topicName || `Topic ${idx + 1}`,
                 code: `Unit ${idx + 1}`,
@@ -329,8 +332,10 @@ export default function MicrocredentialWatchPage({
                   activeLecture?.rawData?.microcreditYoutubeDataMasterId || 
                   '8ihY2TZXuz0';
 
+      const studentId = getLoggedInStudentId();
+
       const res = await getStudentMicrocredentialRaiseHandAnswerList(
-        3, // StudentId: 3 static
+        studentId, // StudentId: dynamic logged-in student
         0, // StudentDegreeAdmissionId: 0
         courseId, // MicrocredentialCourseId
         vId, // VideoId (always passed)
@@ -364,6 +369,18 @@ export default function MicrocredentialWatchPage({
 
     const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 1;
     const courseId = Number(rawId) || 1;
+    const rawModuleMasterId = activeLecture?.microcredentialModuleMasterId ||
+                              activeLecture?.rawData?.microcredentialModuleMasterId ||
+                              currentCourse?.microcredentialModuleMasterId || 
+                              currentCourse?.selectedModuleMasterId || 
+                              currentCourse?.selectedModuleId || 
+                              currentCourse?.microcredentialModuleId || 
+                              currentCourse?.moduleId || 
+                              currentCourse?.rawData?.microcredentialModuleMasterId || 
+                              course?.microcredentialModuleMasterId || 
+                              course?.selectedModuleMasterId || 
+                              0;
+    const moduleMasterId = Number(rawModuleMasterId) || 0;
     // Always pass valid VideoId as required by the backend API
     const vId = activeLecture?.ytId || 
                 getYouTubeVideoId(activeLecture?.videoUrl) || 
@@ -382,16 +399,19 @@ export default function MicrocredentialWatchPage({
     setAiQuery('');
     setAiLoading(true);
 
+    const studentId = getLoggedInStudentId();
+
     try {
       const res = await microcredentialTranscriptByTime(
-        3, // StudentId: 3 static
+        studentId, // StudentId: dynamic logged-in student
         0, // StudentDegreeAdmissionId: 0
         vId, // VideoId (always passed)
         questionText, // Question
         courseId, // MicrocredentialCourseId
         timestamp, // HandRaiseTime (0 if PDF; video timestamp if video)
         econtentText, // Econtent (extracted PDF content if viewing PDF; empty if video)
-        isPdf // IsEcontent (true if PDF; false if video)
+        isPdf, // IsEcontent (true if PDF; false if video)
+        moduleMasterId // MicrocredentialModuleMasterId
       );
 
       let answerText = res.answer || res.message;
@@ -563,7 +583,17 @@ export default function MicrocredentialWatchPage({
 
       const rawId = currentCourse.microcredentialCourseId || currentCourse.courseId || currentCourse.id || 1;
       const courseId = Number(rawId) || 1;
-      const res = await getMicrocredentialStudentWatchVideoData(studentId, courseId);
+      const rawModuleMasterId = currentCourse?.microcredentialModuleMasterId || 
+                                currentCourse?.selectedModuleMasterId || 
+                                currentCourse?.selectedModuleId || 
+                                currentCourse?.microcredentialModuleId || 
+                                currentCourse?.moduleId || 
+                                currentCourse?.rawData?.microcredentialModuleMasterId || 
+                                course?.microcredentialModuleMasterId || 
+                                course?.selectedModuleMasterId || 
+                                0;
+      const moduleMasterId = Number(rawModuleMasterId) || 0;
+      const res = await getMicrocredentialStudentWatchVideoData(studentId, courseId, moduleMasterId);
       if (res && res.success) {
         if (typeof res.overallPercentage === 'number' && res.overallPercentage >= 0) {
           setOverallWatchPct(Math.round(res.overallPercentage));
@@ -705,6 +735,19 @@ export default function MicrocredentialWatchPage({
       const studentId = getLoggedInStudentId();
 
       const curLecture = activeLectureRef.current || activeLecture;
+      const rawModuleMasterId = curLecture?.microcredentialModuleMasterId ||
+                                curLecture?.rawData?.microcredentialModuleMasterId ||
+                                curCourse?.microcredentialModuleMasterId || 
+                                curCourse?.selectedModuleMasterId || 
+                                curCourse?.selectedModuleId || 
+                                curCourse?.microcredentialModuleId || 
+                                curCourse?.moduleId || 
+                                curCourse?.rawData?.microcredentialModuleMasterId || 
+                                course?.microcredentialModuleMasterId ||
+                                course?.selectedModuleMasterId ||
+                                0;
+      const moduleMasterId = Number(rawModuleMasterId) || 0;
+
       const vId = curLecture?.ytId || 
                   getYouTubeVideoId(curLecture?.videoUrl) || 
                   curLecture?.videoId || 
@@ -745,6 +788,8 @@ export default function MicrocredentialWatchPage({
 
       const payloadDetails = [
         {
+          MicrocredentialModuleMasterId: moduleMasterId,
+          microcredentialModuleMasterId: moduleMasterId,
           VideoId: vId,
           WatchedSeconds: finalSec,
           TotalDuration: dur,
@@ -752,7 +797,7 @@ export default function MicrocredentialWatchPage({
         }
       ];
 
-      await microCredencialWatchvideoAddUpdate(studentId, courseId, calcOverall, payloadDetails);
+      await microCredencialWatchvideoAddUpdate(studentId, courseId, calcOverall, payloadDetails, moduleMasterId);
     } catch (err) {
       console.error('Error saving video watch progress:', err);
     }

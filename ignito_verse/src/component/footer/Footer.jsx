@@ -1,7 +1,7 @@
 // ignitoverse: Section 11 - Enterprise Footer (Self-contained SVG Social Icons)
 import React from 'react';
 import { Mail, Phone, MapPin } from 'lucide-react';
-import logoImg from '../../assets/Ignitoverse Logo.png';
+import logoImg from '../../assets/Ignitoverse Logof.png';
 import cardWatermark from '../../assets/home/card.png';
 
 export default function Footer() {
@@ -23,10 +23,7 @@ export default function Footer() {
                   <span className="badge-letter">I</span>
                 </div>
               )}
-              <div className="footer-brand-titles">
-                <h3 className="footer-brand-title">Ignitoverse</h3>
-                <span className="footer-brand-subtitle">Enterprise Learning</span>
-              </div>
+            
             </div>
 
             <p className="footer-mission-text">

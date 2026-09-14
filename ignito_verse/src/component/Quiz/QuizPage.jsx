@@ -18,7 +18,9 @@ import {
   Play,
   X,
   FileCheck2,
-  CheckSquare
+  CheckSquare,
+  Lock,
+  ShieldCheck
 } from 'lucide-react';
 import { 
   checkStudentQuizAttemptStatus,
@@ -64,9 +66,10 @@ export default function QuizPage({
   const [viewMode, setViewMode] = useState('loading');
   const [error, setError] = useState(null);
 
-  // Attempt History State (Step 2A)
+  // Attempt History & Finalized State
   const [attemptList, setAttemptList] = useState([]);
   const [activeQuizId, setActiveQuizId] = useState(0);
+  const [isQuizFinalized, setIsQuizFinalized] = useState(false);
 
   // Backend Quiz Metadata (Step 2B & 3)
   const [quizMetadata, setQuizMetadata] = useState({
@@ -154,7 +157,13 @@ export default function QuizPage({
     try {
       const listRes = await getStudentAttemptList(quizId, studentId);
       if (listRes && listRes.isSuccess) {
-        setAttemptList(listRes.quizAttemptList || []);
+        const list = listRes.quizAttemptList || [];
+        setAttemptList(list);
+
+        const hasFinalSubmission = list.some(item => Boolean(item.isFinalSubmission || item.IsFinalSubmission));
+        if (hasFinalSubmission) {
+          setIsQuizFinalized(true);
+        }
         setViewMode('attemptList');
       } else {
         setAttemptList([]);
@@ -170,6 +179,11 @@ export default function QuizPage({
   // STEP 2B & STEP 3 — START QUIZ & PREFILL EXISTING ATTEMPT
   // ==========================================================================
   const startQuizExecution = async (cId = courseId, sId = resolveStudentId()) => {
+    if (isQuizFinalized) {
+      alert('You have already submitted and finalized this assessment. No additional attempts are allowed.');
+      return;
+    }
+
     setViewMode('loading');
     setError(null);
 
@@ -182,15 +196,25 @@ export default function QuizPage({
         const attId = previewRes.attemptId || 0;
         setActiveQuizId(qId);
 
+        const remainingAttempts = previewRes.remainingAttempts !== undefined ? previewRes.remainingAttempts : 10;
+        const attemptsAllowed = previewRes.attemptsAllowed || 10;
+        const attemptsDone = previewRes.attemptsDone || 0;
+
+        if (remainingAttempts <= 0 && attemptsDone > 0) {
+          setIsQuizFinalized(true);
+          await loadAttemptList(qId, sId);
+          return;
+        }
+
         setQuizMetadata({
           quizId: qId,
           attemptId: attId,
           quizName: previewRes.quizName || `Quiz: ${courseTitle}`,
           quizDescription: previewRes.quizDescription || '',
           timeLimit: previewRes.timeLimit || 120,
-          attemptsAllowed: previewRes.attemptsAllowed || 10,
-          remainingAttempts: previewRes.remainingAttempts || 10,
-          attemptsDone: previewRes.attemptsDone || 0,
+          attemptsAllowed: attemptsAllowed,
+          remainingAttempts: remainingAttempts,
+          attemptsDone: attemptsDone,
           currentAttemptNumber: previewRes.currentAttemptNumber || 1,
           allowHints: Boolean(previewRes.allowHints),
           headerDescription: previewRes.headerDescription || '',
@@ -360,9 +384,27 @@ export default function QuizPage({
     try {
       const studentId = resolveStudentId();
       const attemptId = quizMetadata.attemptId || 0;
+      const qId = quizMetadata.quizId || activeQuizId;
 
       // STEP 6A/6B: Final submit API call
       const submitRes = await submitQuizFinal(attemptId, studentId);
+
+      // Lock attempts on backend
+      try {
+        if (qId > 0) {
+          await markAllAttemptsAsDone(qId, studentId);
+        }
+      } catch (e) {
+        console.warn('Could not update all attempts done status on server:', e);
+      }
+
+      // Mark quiz as finalized locally so user can never start again
+      setIsQuizFinalized(true);
+      setQuizMetadata(prev => ({
+        ...prev,
+        remainingAttempts: 0,
+        attemptsDone: prev.attemptsAllowed
+      }));
 
       // Calculate score summary
       let correctCount = 0;
@@ -400,6 +442,7 @@ export default function QuizPage({
       setViewMode('scoreSummary');
     } catch (err) {
       console.error('Error during quiz final submit:', err);
+      setIsQuizFinalized(true);
       setShowConfirmSubmit(false);
       setViewMode('scoreSummary');
     } finally {
@@ -416,12 +459,14 @@ export default function QuizPage({
       const qId = quizMetadata.quizId || activeQuizId;
       
       await markAllAttemptsAsDone(qId, studentId);
+      setIsQuizFinalized(true);
       setShowConfirmFinalAttempt(false);
       
       // Reload Attempt List to reflect final completed status
       await loadAttemptList(qId, studentId);
     } catch (err) {
       console.error('Error marking all attempts done:', err);
+      setIsQuizFinalized(true);
       onBack();
     }
   };
@@ -436,8 +481,8 @@ export default function QuizPage({
 
     try {
       const studentId = resolveStudentId();
-      const qId = attempt.quizId || activeQuizId;
-      const attId = attempt.attemptId;
+      const qId = attempt?.quizId || quizMetadata.quizId || activeQuizId;
+      const attId = attempt?.attemptId || quizMetadata.attemptId;
 
       const resultRes = await getQuizResultByQuizId(qId, attId, studentId);
       if (resultRes && resultRes.isSuccess) {
@@ -532,17 +577,28 @@ export default function QuizPage({
             <div className="attempt-history-header">
               <div className="attempt-history-title-wrap">
                 <h2>{courseTitle} - Quiz History</h2>
-                <p>Review your previous attempts or start a new attempt.</p>
+                <p>
+                  {isQuizFinalized 
+                    ? 'Assessment completed. All attempts are finalized.' 
+                    : 'Review your previous attempts or start a new attempt.'}
+                </p>
               </div>
 
-              <button
-                type="button"
-                className="btn-start-new-attempt"
-                onClick={() => startQuizExecution()}
-              >
-                <Play size={16} fill="#ffffff" />
-                <span>Start New Attempt</span>
-              </button>
+              {isQuizFinalized ? (
+                <div className="badge-attempts-completed">
+                  <Lock size={15} />
+                  <span>Assessment Finalized</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-start-new-attempt"
+                  onClick={() => startQuizExecution()}
+                >
+                  <Play size={16} fill="#ffffff" />
+                  <span>Start New Attempt</span>
+                </button>
+              )}
             </div>
 
             {attemptList && attemptList.length > 0 ? (
@@ -595,17 +651,23 @@ export default function QuizPage({
               <div style={{ textAlign: 'center', padding: '50px 20px', color: '#64748b' }}>
                 <FileCheck2 size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>
-                  No Attempts Recorded Yet
+                  {isQuizFinalized ? 'Assessment Already Finalized' : 'No Attempts Recorded Yet'}
                 </h3>
-                <p style={{ margin: '0 0 20px 0' }}>You can begin your first attempt whenever you're ready.</p>
-                <button
-                  type="button"
-                  className="btn-start-new-attempt"
-                  onClick={() => startQuizExecution()}
-                >
-                  <Play size={16} fill="#ffffff" />
-                  <span>Start Quiz Now</span>
-                </button>
+                <p style={{ margin: '0 0 20px 0' }}>
+                  {isQuizFinalized 
+                    ? 'This assessment has already been completed and locked.' 
+                    : 'You can begin your first attempt whenever you\'re ready.'}
+                </p>
+                {!isQuizFinalized && (
+                  <button
+                    type="button"
+                    className="btn-start-new-attempt"
+                    onClick={() => startQuizExecution()}
+                  >
+                    <Play size={16} fill="#ffffff" />
+                    <span>Start Quiz Now</span>
+                  </button>
+                )}
               </div>
             )}
 
@@ -977,6 +1039,9 @@ export default function QuizPage({
                       ⚠️ You still have {totalQuestions - answeredCount} unanswered question{totalQuestions - answeredCount > 1 ? 's' : ''}!
                     </span>
                   )}
+                  <span style={{ display: 'block', marginTop: 10, fontSize: '0.85rem', color: '#94a3b8' }}>
+                    Note: Once submitted, this assessment will be finalized and cannot be restarted.
+                  </span>
                 </p>
                 
                 <div className="modal-confirm-actions">
@@ -1014,7 +1079,8 @@ export default function QuizPage({
   }
 
   // ==========================================================================
-  // RENDER: STEP 6 & 7 — SCORE / SUMMARY SCREEN
+  // RENDER: STEP 6 & 7 — SCORE / SUMMARY SCREEN (PAGE OPENED AFTER FINAL SUBMIT)
+  // User cannot restart/retake quiz once submitted.
   // ==========================================================================
   return (
     <div className="quiz-page-wrapper">
@@ -1030,7 +1096,7 @@ export default function QuizPage({
             {courseTitle}
           </button>
           <span className="breadcrumb-separator">&gt;</span>
-          <span className="breadcrumb-current">Result Summary</span>
+          <span className="breadcrumb-current">Assessment Result Summary</span>
         </nav>
 
         {/* Score Summary Card */}
@@ -1045,12 +1111,12 @@ export default function QuizPage({
               )}
             </div>
             <h2 className="result-title">
-              {scoreSummary?.passed ? 'Assessment Completed!' : 'Attempt Finished'}
+              {scoreSummary?.passed ? 'Assessment Completed Successfully!' : 'Assessment Attempt Submitted'}
             </h2>
             <p className="result-subtitle">
               {scoreSummary?.scoreMessage || (scoreSummary?.passed 
-                ? 'Congratulations! You demonstrated strong mastery of the module concepts.' 
-                : 'You have completed this attempt. You can review your results or start another attempt.')}
+                ? 'Congratulations! You have successfully completed and finalized your assessment.' 
+                : 'Your assessment attempt has been recorded. Review your performance breakdown below.')}
             </p>
           </div>
 
@@ -1081,69 +1147,136 @@ export default function QuizPage({
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Final Submission Lock Notice Banner */}
+          <div className="final-submit-lock-notice">
+            <div className="lock-notice-icon-box">
+              <ShieldCheck size={22} color="#16a34a" />
+            </div>
+            <div className="lock-notice-text-wrap">
+              <h4 className="lock-notice-title">Assessment Submission Finalized</h4>
+              <p className="lock-notice-desc">
+                Your assessment has been officially submitted and recorded. Retaking or restarting this quiz is disabled.
+              </p>
+            </div>
+          </div>
+
+          {/* Action Buttons (No Retake / Restart options) */}
           <div className="result-actions-tray">
             <button
               type="button"
-              className="btn-result-retake"
-              onClick={() => startQuizExecution()}
+              className="btn-result-breakdown"
+              onClick={() => handleViewAttemptResult({
+                attemptId: quizMetadata.attemptId,
+                quizId: quizMetadata.quizId || activeQuizId
+              })}
             >
-              <RotateCcw size={16} />
-              <span>Start Next Attempt</span>
+              <Eye size={16} />
+              <span>Review Detailed Breakdown</span>
             </button>
 
             <button
               type="button"
-              className="btn-result-mark-final"
-              onClick={() => setShowConfirmFinalAttempt(true)}
+              className="btn-result-attempts"
+              onClick={() => loadAttemptList(quizMetadata.quizId || activeQuizId, resolveStudentId())}
             >
-              <CheckSquare size={16} />
-              <span>Mark as Final Attempt</span>
+              <FileCheck2 size={16} />
+              <span>View All Past Attempts</span>
             </button>
 
             <button
               type="button"
               className="btn-result-return"
-              onClick={() => loadAttemptList(quizMetadata.quizId || activeQuizId, resolveStudentId())}
+              onClick={onBack}
             >
-              <Eye size={16} />
-              <span>View All Attempts</span>
+              <ArrowLeft size={16} />
+              <span>Back to Course</span>
             </button>
           </div>
 
         </div>
 
-        {/* STEP 7: CONFIRM FINAL ATTEMPT MODAL */}
-        {showConfirmFinalAttempt && (
-          <div className="quiz-confirm-modal-overlay">
-            <div className="quiz-confirm-modal-card">
-              <div className="modal-icon-alert" style={{ background: '#fef3c7', color: '#d97706' }}>
-                <CheckSquare size={30} />
-              </div>
-              <h3 className="modal-confirm-title">
-                Confirm Final Attempt?
-              </h3>
-              <p className="modal-confirm-desc">
-                Marking this attempt as final will lock any further attempts for this quiz assessment.
-              </p>
+        {/* STEP 8: VIEW ATTEMPT RESULT BREAKDOWN MODAL FROM SUMMARY SCREEN */}
+        {viewResultModalOpen && (
+          <div className="quiz-result-modal-overlay">
+            <div className="quiz-result-modal-card">
               
-              <div className="modal-confirm-actions">
-                <button
-                  type="button"
-                  className="btn-modal-back"
-                  onClick={() => setShowConfirmFinalAttempt(false)}
+              <div className="quiz-result-modal-header">
+                <h3>Assessment Attempt Result Breakdown</h3>
+                <button 
+                  type="button" 
+                  className="btn-modal-close-icon"
+                  onClick={() => setViewResultModalOpen(false)}
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn-modal-confirm-submit"
-                  style={{ background: '#16a34a' }}
-                  onClick={handleConfirmFinalAttempt}
-                >
-                  Yes, Mark as Final
+                  <X size={20} />
                 </button>
               </div>
+
+              <div className="quiz-result-modal-body">
+                {resultDetailLoading ? (
+                  <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                    <Loader2 size={36} style={{ animation: 'spin 1s linear infinite', color: '#1d68f0', marginBottom: 12 }} />
+                    <p style={{ color: '#64748b', margin: 0 }}>Loading detailed result breakdown...</p>
+                  </div>
+                ) : resultDetailData ? (
+                  <>
+                    {/* Top Stats */}
+                    <div className="result-breakdown-stats">
+                      <div className="breakdown-stat-box">
+                        <span className="num" style={{ color: '#1d68f0' }}>{resultDetailData.studentPercentage}%</span>
+                        <span className="lbl">Percentage</span>
+                      </div>
+                      <div className="breakdown-stat-box">
+                        <span className="num" style={{ color: '#16a34a' }}>
+                          {resultDetailData.questions?.filter(q => q.isStudentCorrect).length || 0}
+                        </span>
+                        <span className="lbl">Correct</span>
+                      </div>
+                      <div className="breakdown-stat-box">
+                        <span className="num" style={{ color: '#dc2626' }}>{resultDetailData.wrongAnswers || 0}</span>
+                        <span className="lbl">Wrong</span>
+                      </div>
+                      <div className="breakdown-stat-box">
+                        <span className="num" style={{ color: '#64748b' }}>{resultDetailData.skippedQuestions || 0}</span>
+                        <span className="lbl">Skipped</span>
+                      </div>
+                    </div>
+
+                    {/* Question Breakdown List */}
+                    <div className="breakdown-questions-list">
+                      <h4 style={{ margin: '8px 0', fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>
+                        Questions Summary ({resultDetailData.questions?.length || 0})
+                      </h4>
+
+                      {resultDetailData.questions && resultDetailData.questions.map((q, qIdx) => (
+                        <div key={q.questionId || qIdx} className={`result-question-item ${q.isStudentCorrect ? 'correct' : 'wrong'}`}>
+                          <div className="result-q-header">
+                            <span className="result-q-title">Question {qIdx + 1}</span>
+                            <span className={`result-q-badge ${q.isStudentCorrect ? 'correct' : 'wrong'}`}>
+                              {q.isStudentCorrect ? `Correct (+${q.studentPointsAwarded || q.points || 1} pts)` : 'Incorrect (0 pts)'}
+                            </span>
+                          </div>
+
+                          <div 
+                            style={{ color: '#334155', fontSize: '0.92rem', marginBottom: 8 }}
+                            dangerouslySetInnerHTML={renderQuestionHtml(q.questionText)}
+                          />
+
+                          {q.correctAnswerData && (
+                            <div style={{ fontSize: '0.84rem', color: '#16a34a', background: '#f0fdf4', padding: '6px 10px', borderRadius: 6 }}>
+                              <strong>Correct Answer:</strong> {q.correctAnswerData}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p style={{ textAlign: 'center', color: '#64748b', padding: '40px 0' }}>
+                    Result breakdown details are not available.
+                  </p>
+                )}
+              </div>
+
             </div>
           </div>
         )}
@@ -1152,3 +1285,4 @@ export default function QuizPage({
     </div>
   );
 }
+

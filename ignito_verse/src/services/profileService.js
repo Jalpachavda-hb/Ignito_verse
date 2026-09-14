@@ -101,7 +101,7 @@ export async function studentMicrocredentialsQuizAttemptList(
 
 /**
  * Fetches student microcredential quiz result by Quiz ID.
- * API: POST /api/StudentMyProfileAPI/GetStudentMicrocredentialQuizResultGetByQuizId
+ * Endpoint: POST /api/StudentMicrocredentialQuizAPI/GetStudentMicrocredentialQuizResultGetByQuizId
  * 
  * @param {number} [quizId=0] - Quiz ID
  * @param {number} [studentId=0] - Student ID (0 uses session studentId on backend)
@@ -119,7 +119,9 @@ export async function getStudentMicrocredentialQuizResultGetByQuizId(
             finalStudentId = getLoggedInStudentId();
         }
         const inputDto = buildGetStudentMicrocredentialQuizResultGetByQuizIdInput(quizId, finalStudentId, attemptId);
-        const response = await apiClient('api/StudentMyProfileAPI/GetStudentMicrocredentialQuizResultGetByQuizId', {
+
+        // Backend endpoint is under StudentMicrocredentialQuizAPI
+        const response = await apiClient('api/StudentMicrocredentialQuizAPI/GetStudentMicrocredentialQuizResultGetByQuizId', {
             method: 'POST',
             headers: inputDto.headers,
             body: inputDto.body
@@ -136,5 +138,3 @@ export async function getStudentMicrocredentialQuizResultGetByQuizId(
         return parseGetStudentMicrocredentialQuizResultGetByQuizIdErrorOutput({ message: error.message }, 500);
     }
 }
-
-
