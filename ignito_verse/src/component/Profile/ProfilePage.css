@@ -1,0 +1,960 @@
+/* ==========================================================================
+   IGNITOVERSE - EXACT LEARNER PROFILE PAGE STYLESHEET
+   Matching Screenshot 1 (Quiz Assessments) and Screenshot 2 (Courses in Progress)
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap');
+
+.profile-page-wrapper {
+  background: #f8fafd;
+  min-height: 100vh;
+  padding: 1.5rem clamp(28px, 4vw, 64px) 4rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.profile-page-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   1. HERO PROFILE CARD (Matching Screenshot 1 & 2 Header)
+   ========================================================================== */
+.profile-hero-card-ss {
+  position: relative;
+  background-color: #ffffff;
+  background-size: cover;
+  background-position: right center;
+  background-repeat: no-repeat;
+  border: 1.5px solid #dbeafe;
+  border-radius: 20px;
+  padding: 24px 32px;
+  box-shadow: 0 4px 20px rgba(0, 56, 94, 0.04);
+  overflow: hidden;
+}
+
+.profile-hero-content-ss {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* Left: User Identity Details */
+.profile-hero-left-col {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+  min-width: 320px;
+}
+
+.profile-avatar-ss-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.profile-avatar-ss-img {
+  width: 90px;
+  height: 90px;
+  min-width: 90px;
+  min-height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 56, 94, 0.12);
+  display: block;
+  background: #e0f2fe;
+}
+
+.profile-avatar-camera-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  background: #00385E;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease;
+}
+
+.profile-avatar-camera-btn:hover {
+  transform: scale(1.08);
+}
+
+.profile-user-info-ss {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.profile-user-name-row-ss {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.profile-user-name-ss {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.active-learner-badge-ss {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* User Meta Badges */
+.profile-meta-chips-row-ss {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.user-pill-chip-ss {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #334155;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.user-pill-chip-ss.id-chip {
+  background: #e0f2fe;
+  color: #0284c7;
+  font-weight: 800;
+  border-color: #bae6fd;
+}
+
+.user-quote-line-ss {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-style: italic;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.quote-edit-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.quote-edit-btn:hover {
+  color: #0284c7;
+}
+
+/* Vertical Divider */
+.hero-vertical-divider {
+  width: 1px;
+  height: 68px;
+  background: #cbd5e1;
+  opacity: 0.6;
+}
+
+/* Right: 4 Stat KPI Cards */
+.profile-hero-stats-grid-ss {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.hero-stat-card-ss {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 0.75rem 1.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  min-width: 130px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hero-stat-card-ss:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.stat-icon-square {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon-square.blue {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.stat-icon-square.amber {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.stat-icon-square.green {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.stat-icon-square.purple {
+  background: #f3e8ff;
+  color: #9333ea;
+}
+
+.stat-text-col-ss {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-big-num-ss {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.stat-sub-label-ss {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   2. TOP TAB NAVIGATION BAR (Matching Screenshot 1 & 2 Tab Switcher)
+   ========================================================================== */
+.profile-ss-tabs-bar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  width: fit-content;
+  flex-wrap: wrap;
+}
+
+.profile-ss-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #334155;
+  transition: all 0.2s ease;
+  position: relative;
+  user-select: none;
+}
+
+.profile-ss-tab-btn:hover:not(.active) {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.profile-ss-tab-btn.active {
+  background: #002f54;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 47, 84, 0.25);
+}
+
+/* Downward Caret Arrow on Active Tab */
+.profile-ss-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #002f54;
+}
+
+.ss-tab-pill-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 999px;
+  transition: all 0.2s ease;
+}
+
+.profile-ss-tab-btn.active .ss-tab-pill-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.profile-ss-tab-btn:not(.active) .ss-tab-pill-badge {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* ==========================================================================
+   3. MAIN CONTENT CONTAINER (WHITE CARD WITH TOP HEADER & CONTROLS)
+   ========================================================================== */
+.profile-ss-content-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 24px 28px;
+  box-shadow: 0 4px 16px rgba(0, 56, 94, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Header line */
+.profile-ss-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.profile-ss-title-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-icon-square {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.header-icon-square.blue {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.header-icon-square.yellow {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.header-icon-square.navy {
+  background: #e0f2fe;
+  color: #00385E;
+}
+
+.header-text-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-title-ss {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.header-sub-ss {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 3px 0 0 0;
+}
+
+/* Right Toolbar (Search & Filter) */
+.profile-ss-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ss-search-box-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ss-search-icon-inside {
+  position: absolute;
+  left: 12px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.ss-search-input-field {
+  padding: 8px 16px 8px 36px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.86rem;
+  color: #0f172a;
+  outline: none;
+  background: #ffffff;
+  min-width: 240px;
+  transition: border-color 0.2s ease;
+}
+
+.ss-search-input-field:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+}
+
+.ss-filter-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ss-filter-dropdown-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+/* ==========================================================================
+   4. TAB 1: COURSES IN PROGRESS (HORIZONTAL CARDS - MATCHING SCREENSHOT 2)
+   ========================================================================== */
+.ss-courses-list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.ss-horizontal-course-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.ss-horizontal-course-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+}
+
+/* Left part of horizontal card */
+.ss-course-left-part {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex: 1;
+  min-width: 300px;
+}
+
+.ss-course-thumb-box {
+  width: 170px;
+  height: 105px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0f172a;
+  flex-shrink: 0;
+}
+
+.ss-course-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ss-course-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ss-course-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #e0f2fe;
+  color: #0284c7;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  width: fit-content;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ss-course-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.ss-course-description {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ss-course-meta-bottom {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.ss-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Middle part: Progress */
+.ss-course-progress-part {
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.ss-progress-top-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.ss-progress-num {
+  font-weight: 800;
+  color: #0284c7;
+  font-size: 0.95rem;
+}
+
+.ss-progress-track {
+  width: 100%;
+  height: 8px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ss-progress-fill {
+  height: 100%;
+  background: #0284c7;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.ss-last-accessed-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+/* Right part: Action */
+.ss-course-action-part {
+  flex-shrink: 0;
+}
+
+.btn-ss-continue {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #002f54;
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-ss-continue:hover {
+  background: #001f38;
+}
+
+/* ==========================================================================
+   5. TAB 2: QUIZ ASSESSMENTS (MATCHING SCREENSHOT 1)
+   ========================================================================== */
+.ss-quiz-master-box {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.ss-quiz-master-header-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr;
+  padding: 12px 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ss-quiz-item-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr;
+  padding: 18px 20px;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ss-quiz-title-col {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ss-dot-bullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.ss-quiz-heading {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.ss-quiz-last-attempt {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.ss-quiz-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ss-stream-chip {
+  display: inline-flex;
+  align-items: center;
+  background: #e0f2fe;
+  color: #0284c7;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  width: fit-content;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ss-attempts-count-sub {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.ss-quiz-action-col {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-ss-view-attempts {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #002f54;
+  color: #ffffff;
+  padding: 7px 18px;
+  border-radius: 999px;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-ss-view-attempts:hover {
+  background: #001f38;
+}
+
+/* Expanded Table */
+.ss-attempts-expanded-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-top: 1px solid #e2e8f0;
+  background: #fafbfc;
+  padding: 12px 16px;
+}
+
+.ss-attempts-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  min-width: 780px;
+}
+
+.ss-attempts-table th {
+  padding: 10px 12px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.ss-attempts-table td {
+  padding: 12px 12px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #1e293b;
+  border-top: 1px solid #f1f5f9;
+}
+
+.color-purple {
+  color: #9333ea !important;
+}
+
+.color-green {
+  color: #16a34a !important;
+}
+
+.color-red {
+  color: #dc2626 !important;
+}
+
+.color-amber {
+  color: #ea580c !important;
+}
+
+.btn-ss-doc-view {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-ss-doc-view:hover {
+  background: #f1f5f9;
+  color: #002f54;
+  border-color: #94a3b8;
+}
+
+/* ==========================================================================
+   6. FOOTER PAGINATION BAR (Matching Screenshot 1 & 2)
+   ========================================================================== */
+.ss-footer-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+}
+
+.ss-footer-count-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.ss-page-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-ss-page-nav {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-ss-page-nav:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.btn-ss-page-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ss-page-pill-current {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid #bae6fd;
+  background: #e0f2fe;
+  color: #0284c7;
+  font-size: 0.85rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   7. RESPONSIVE QUERIES
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .profile-hero-stats-grid-ss {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: 100%;
+  }
+  .hero-vertical-divider {
+    display: none;
+  }
+  .ss-horizontal-course-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ss-course-progress-part {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-page-wrapper {
+    padding: 1rem 0.75rem 3rem;
+  }
+  .profile-hero-card-ss {
+    padding: 1.25rem;
+  }
+  .profile-hero-left-col {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .profile-hero-stats-grid-ss {
+    grid-template-columns: 1fr;
+  }
+  .profile-ss-tabs-bar {
+    width: 100%;
+    flex-direction: column;
+  }
+  .profile-ss-tab-btn {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .profile-ss-tab-btn.active::after {
+    display: none;
+  }
+  .ss-course-left-part {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ss-course-thumb-box {
+    width: 100%;
+    height: 160px;
+  }
+  .ss-quiz-master-header-row,
+  .ss-quiz-item-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .ss-quiz-action-col {
+    justify-content: flex-start;
+  }
+}

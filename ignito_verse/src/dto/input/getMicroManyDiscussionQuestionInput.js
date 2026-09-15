@@ -17,7 +17,13 @@ export function buildGetMicroManyDiscussionQuestionInput(
         },
         body: JSON.stringify({
             MicroCorseId: Number(microCorseId) || 0,
-            StudentId: Number(studentId) || 0
+            microCorseId: Number(microCorseId) || 0,
+            MicroCourseId: Number(microCorseId) || 0,
+            microCourseId: Number(microCorseId) || 0,
+            MicrocredentialCourseId: Number(microCorseId) || 0,
+            microcredentialCourseId: Number(microCorseId) || 0,
+            StudentId: Number(studentId) || 0,
+            studentId: Number(studentId) || 0
         })
     };
 }

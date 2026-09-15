@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Menu, X, LogIn, ChevronDown, User, LayoutDashboard, 
-  Award, ShieldCheck, Settings, LogOut 
+  Award, ShieldCheck, Settings, LogOut, Calendar 
 } from 'lucide-react';
 import logoImg from '../../assets/Ignitoverse Logonew.png';
 import './navbar.css';
@@ -136,6 +136,15 @@ export default function Navbar({
                     >
                       <User size={16} className="dropdown-icon" />
                       <span>Profile</span>
+                    </a>
+
+                    <a 
+                      href="/profile" 
+                      className="dropdown-item"
+                      onClick={(e) => handleProfileSubNav('calendar', e)}
+                    >
+                      <Calendar size={16} className="dropdown-icon" />
+                      <span>Calendar</span>
                     </a>
 
                     <div className="dropdown-divider" />

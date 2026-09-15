@@ -35,7 +35,8 @@ import {
   ExternalLink,
   AlertCircle,
   History,
-  RefreshCw
+  RefreshCw,
+  Video
 } from 'lucide-react';
 import userCertificateImg from '../../assets/e47782ae-798b-479b-99e6-428b70bf4a7a.png';
 import watchNowImg from '../../assets/watchnow.png';
@@ -51,10 +52,10 @@ import {
   microCourseDiscussionQuestionLike,
   insertManyMicroCourseDiscussionReply,
   getManyMicroCourseDiscussionQuestionReply,
-  microcredentialQuizStudentAttemptDetail
+  microcredentialQuizStudentAttemptDetail,
+  getMicrocredentialCourseDetail
 } from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
-import { findTopicPdfContent } from '../../data/microcredentialTopicPdfData';
 import QuizAttemptDetailsModal from '../modals/QuizAttemptDetailsModal';
 
 // Helpers for Video duration & YouTube formatting
@@ -83,11 +84,26 @@ export default function MicrocredentialWatchPage({
   onBack = () => {}, 
   onNavigate = () => {} 
 }) {
-  const currentCourse = course || {
-    title: 'Stress Management',
-    category: 'Management',
-    instructor: 'Leesa Shashikant Mehra',
-    rating: '4.5'
+  const [courseDetails, setCourseDetails] = useState(null);
+
+  useEffect(() => {
+    const rawId = course?.microcredentialCourseId || course?.courseId || course?.id;
+    const courseId = Number(rawId) || 0;
+    if (courseId > 0 && !course?.microcredentialCourseName && !course?.title) {
+      getMicrocredentialCourseDetail(courseId)
+        .then(res => {
+          if (res && res.microcredentialCourseName) {
+            setCourseDetails(res);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [course]);
+
+  const currentCourse = {
+    ...(course || {}),
+    ...(courseDetails || {}),
+    title: course?.title || courseDetails?.microcredentialCourseName || course?.microcredentialCourseName || course?.moduleName || ''
   };
 
   const [playlist, setPlaylist] = useState([]);
@@ -165,57 +181,94 @@ export default function MicrocredentialWatchPage({
   useEffect(() => {
     let isMounted = true;
     const rawId = course?.microcredentialCourseId || course?.courseId || course?.id || course?.rawData?.microcredentialCourseId;
-    const courseId = Number(rawId) || 2;
+    const courseId = Number(rawId) || 0;
     const encryptedId = course?.encryptedMicrocredentialCourseId || course?.encryptedId || course?.rawData?.encryptedMicrocredentialCourseId || '';
     const rawModuleMasterId = course?.microcredentialModuleMasterId || course?.selectedModuleMasterId || course?.selectedModuleId || course?.microcredentialModuleId || course?.moduleId || course?.rawData?.microcredentialModuleMasterId || 0;
     const moduleMasterId = Number(rawModuleMasterId) || 0;
     
     const studentId = getLoggedInStudentId();
 
+    if (courseId <= 0 && !encryptedId) {
+      setLoading(false);
+      setPlaylist([]);
+      return;
+    }
+
+    setLoading(true);
+
+    const processTopicsAndDocs = (rawTopics = [], rawDocs = []) => {
+      if (Array.isArray(rawTopics) && rawTopics.length > 0) {
+        const mapped = rawTopics.map((item, idx) => {
+          const vidUrl = item.topicVideoUrl || '';
+          const ytId = getYouTubeVideoId(vidUrl);
+          const rawDuration = Number(item.videoEndTime) || Number(item.videoDuration) || 0;
+          return {
+            id: item.microCourseTopicId || (idx + 1),
+            microcredentialModuleMasterId: item.microcredentialModuleMasterId || item.MicrocredentialModuleMasterId || moduleMasterId,
+            title: item.topicName || item.videoTitle || `Topic ${idx + 1}`,
+            videoTitle: item.videoTitle || item.topicName || `Topic ${idx + 1}`,
+            code: `Unit ${idx + 1}`,
+            org: currentCourse?.streamName || course?.streamName || course?.category || '',
+            duration: formatDuration(rawDuration),
+            videoDuration: Math.round(rawDuration),
+            videoStartTime: Number(item.videoStartTime || 0),
+            videoEndTime: Number(item.videoEndTime || 0),
+            videoUrl: vidUrl,
+            ytId: ytId,
+            isYouTube: Boolean(ytId || isYouTubeUrl(vidUrl)),
+            topicPdf: item.topicPdf ? formatImageUrl(item.topicPdf) : '',
+            progress: 0,
+            isLocked: false,
+            rawData: item
+          };
+        });
+        setPlaylist(mapped);
+      } else {
+        setPlaylist([]);
+      }
+
+      if (Array.isArray(rawDocs) && rawDocs.length > 0) {
+        const mappedDocs = rawDocs.map((doc, dIdx) => ({
+          id: doc.microcredentialStudentDownloadDocumentId || (dIdx + 1),
+          fileName: doc.originalFileName || doc.givenFileName || `Resource-${dIdx + 1}.pdf`,
+          url: doc.microcredentialStudentDownloadDocument ? formatImageUrl(doc.microcredentialStudentDownloadDocument) : ''
+        }));
+        setDownloadDocuments(mappedDocs);
+      } else {
+        setDownloadDocuments([]);
+      }
+    };
+
     getMicroCourseTopicDetail(courseId, studentId, encryptedId, moduleMasterId)
       .then((res) => {
         if (!isMounted) return;
-        if (res && res.success) {
-          if (Array.isArray(res.getMicroCourseTopicDetailList) && res.getMicroCourseTopicDetailList.length > 0) {
-            const mapped = res.getMicroCourseTopicDetailList.map((item, idx) => {
-              const vidUrl = item.topicVideoUrl || '';
-              const ytId = getYouTubeVideoId(vidUrl);
-              const rawDuration = Number(item.videoEndTime) || Number(item.videoDuration) || 0;
-              return {
-                id: item.microCourseTopicId || (idx + 1),
-                microcredentialModuleMasterId: item.microcredentialModuleMasterId || item.MicrocredentialModuleMasterId || moduleMasterId,
-                title: item.topicName || item.videoTitle || `Topic ${idx + 1}`,
-                videoTitle: item.videoTitle || item.topicName || `Topic ${idx + 1}`,
-                code: `Unit ${idx + 1}`,
-                org: course?.streamName || course?.category || 'Management',
-                duration: formatDuration(rawDuration),
-                videoDuration: Math.round(rawDuration),
-                videoStartTime: Number(item.videoStartTime || 0),
-                videoEndTime: Number(item.videoEndTime || 0),
-                videoUrl: vidUrl,
-                ytId: ytId,
-                isYouTube: Boolean(ytId || isYouTubeUrl(vidUrl)),
-                topicPdf: item.topicPdf ? formatImageUrl(item.topicPdf) : 'https://pdfobject.com/pdf/sample.pdf',
-                progress: 0,
-                isLocked: false,
-                rawData: item
-              };
-            });
-            setPlaylist(mapped);
-          }
+        const topicList = res?.getMicroCourseTopicDetailList || res?.rawData?.getMicroCourseTopicDetailList || [];
+        const docList = res?.microcredentialStudentDownloadDocumentList || res?.rawData?.microcredentialStudentDownloadDocumentList || [];
 
-          if (Array.isArray(res.microcredentialStudentDownloadDocumentList)) {
-            const mappedDocs = res.microcredentialStudentDownloadDocumentList.map((doc, dIdx) => ({
-              id: doc.microcredentialStudentDownloadDocumentId || (dIdx + 1),
-              fileName: doc.originalFileName || doc.givenFileName || `Resource-${dIdx + 1}.pdf`,
-              url: doc.microcredentialStudentDownloadDocument ? formatImageUrl(doc.microcredentialStudentDownloadDocument) : ''
-            }));
-            setDownloadDocuments(mappedDocs);
-          }
+        if (Array.isArray(topicList) && topicList.length > 0) {
+          processTopicsAndDocs(topicList, docList);
+        } else if (moduleMasterId > 0) {
+          // If filtering by module returned 0 topics, fallback to all topics for the course (moduleMasterId = 0)
+          getMicroCourseTopicDetail(courseId, studentId, encryptedId, 0)
+            .then((fallbackRes) => {
+              if (!isMounted) return;
+              const fallbackTopics = fallbackRes?.getMicroCourseTopicDetailList || fallbackRes?.rawData?.getMicroCourseTopicDetailList || [];
+              const fallbackDocs = fallbackRes?.microcredentialStudentDownloadDocumentList || fallbackRes?.rawData?.microcredentialStudentDownloadDocumentList || [];
+              processTopicsAndDocs(fallbackTopics, fallbackDocs.length > 0 ? fallbackDocs : docList);
+            })
+            .catch(() => {
+              processTopicsAndDocs([], docList);
+            });
+        } else {
+          processTopicsAndDocs([], docList);
         }
       })
       .catch((err) => {
         console.error('Error fetching course topic details:', err);
+        if (isMounted) {
+          setPlaylist([]);
+          setDownloadDocuments([]);
+        }
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -226,87 +279,8 @@ export default function MicrocredentialWatchPage({
     };
   }, [course]);
 
-  // Dynamic 5-unit fallback playlist matching syllabus
-  const defaultPlaylist = [
-    {
-      id: 1,
-      title: 'INTRODUCTION TO STRESS',
-      videoTitle: 'Introduction to Stress & Homeostasis',
-      code: 'Unit 1',
-      org: currentCourse.category || 'Management',
-      duration: '08:51',
-      videoDuration: 531,
-      videoUrl: 'https://www.youtube.com/watch?v=8ihY2TZXuz0',
-      ytId: '8ihY2TZXuz0',
-      isYouTube: true,
-      topicPdf: 'https://pdfobject.com/pdf/sample.pdf',
-      progress: 0,
-      isLocked: false
-    },
-    {
-      id: 2,
-      title: 'SOURCES OF STRESS',
-      videoTitle: 'Internal & External Triggers of Stress',
-      code: 'Unit 2',
-      org: currentCourse.category || 'Management',
-      duration: '09:20',
-      videoDuration: 560,
-      videoUrl: 'https://www.youtube.com/watch?v=8ihY2TZXuz0',
-      ytId: '8ihY2TZXuz0',
-      isYouTube: true,
-      topicPdf: 'https://pdfobject.com/pdf/sample.pdf',
-      progress: 0,
-      isLocked: false
-    },
-    {
-      id: 3,
-      title: 'IMPACT OF STRESS',
-      videoTitle: 'Physiological and Cognitive Impact',
-      code: 'Unit 3',
-      org: currentCourse.category || 'Management',
-      duration: '11:15',
-      videoDuration: 675,
-      videoUrl: 'https://www.youtube.com/watch?v=8ihY2TZXuz0',
-      ytId: '8ihY2TZXuz0',
-      isYouTube: true,
-      topicPdf: 'https://pdfobject.com/pdf/sample.pdf',
-      progress: 0,
-      isLocked: false
-    },
-    {
-      id: 4,
-      title: 'STRESS RESPONSE',
-      videoTitle: 'Neurological & Endocrine Response',
-      code: 'Unit 4',
-      org: currentCourse.category || 'Management',
-      duration: '07:45',
-      videoDuration: 465,
-      videoUrl: 'https://www.youtube.com/watch?v=8ihY2TZXuz0',
-      ytId: '8ihY2TZXuz0',
-      isYouTube: true,
-      topicPdf: 'https://pdfobject.com/pdf/sample.pdf',
-      progress: 0,
-      isLocked: false
-    },
-    {
-      id: 5,
-      title: 'COPING MECHANISMS',
-      videoTitle: 'Mindfulness, Resilience and Coping',
-      code: 'Unit 5',
-      org: currentCourse.category || 'Management',
-      duration: '12:10',
-      videoDuration: 730,
-      videoUrl: 'https://www.youtube.com/watch?v=8ihY2TZXuz0',
-      ytId: '8ihY2TZXuz0',
-      isYouTube: true,
-      topicPdf: 'https://pdfobject.com/pdf/sample.pdf',
-      progress: 0,
-      isLocked: false
-    }
-  ];
-
-  const currentPlaylist = playlist.length > 0 ? playlist : defaultPlaylist;
-  const activeLecture = currentPlaylist[activeLectureIdx] || currentPlaylist[0];
+  const currentPlaylist = playlist;
+  const activeLecture = currentPlaylist[activeLectureIdx] || currentPlaylist[0] || null;
 
   // Helper to safely format HTML in AI answers (e.g. <p>...</p>)
   const formatAiAnswer = (text) => {
@@ -321,8 +295,8 @@ export default function MicrocredentialWatchPage({
   const fetchAiHistory = async (page = 1) => {
     try {
       setAiHistoryLoading(true);
-      const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 1;
-      const courseId = Number(rawId) || 1;
+      const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 0;
+      const courseId = Number(rawId) || 0;
 
       // Resolve valid VideoId for the current topic / lecture to satisfy backend requirement
       const vId = activeLecture?.ytId || 
@@ -330,7 +304,7 @@ export default function MicrocredentialWatchPage({
                   activeLecture?.videoId || 
                   activeLecture?.rawData?.videoId || 
                   activeLecture?.rawData?.microcreditYoutubeDataMasterId || 
-                  '8ihY2TZXuz0';
+                  '';
 
       const studentId = getLoggedInStudentId();
 
@@ -345,9 +319,12 @@ export default function MicrocredentialWatchPage({
 
       if (res && res.success && Array.isArray(res.getStudentMicrocredentialRaiseHandAnswer)) {
         setAiHistoryList(res.getStudentMicrocredentialRaiseHandAnswer);
+      } else {
+        setAiHistoryList([]);
       }
     } catch (err) {
       console.error('Error fetching student AI raise hand history:', err);
+      setAiHistoryList([]);
     } finally {
       setAiHistoryLoading(false);
     }
@@ -358,17 +335,16 @@ export default function MicrocredentialWatchPage({
     if (!aiQuery.trim() || aiLoading) return;
     const questionText = aiQuery.trim();
     const isPdf = Boolean(selectedPdf);
-    const currentTopicName = selectedPdf ? selectedPdf.title : (activeLecture?.title || 'General');
+    const currentTopicName = selectedPdf ? selectedPdf.title : (activeLecture?.title || '');
 
     // Extract PDF text content if viewing PDF; empty string if viewing video
     let econtentText = '';
     if (isPdf) {
-      const topicData = findTopicPdfContent(currentTopicName, questionText);
-      econtentText = topicData.pageContent || `E-Content notes for topic ${currentTopicName}`;
+      econtentText = `Interactive e-Content notes for topic: ${currentTopicName}`;
     }
 
-    const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 1;
-    const courseId = Number(rawId) || 1;
+    const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 0;
+    const courseId = Number(rawId) || 0;
     const rawModuleMasterId = activeLecture?.microcredentialModuleMasterId ||
                               activeLecture?.rawData?.microcredentialModuleMasterId ||
                               currentCourse?.microcredentialModuleMasterId || 
@@ -387,7 +363,7 @@ export default function MicrocredentialWatchPage({
                 activeLecture?.videoId || 
                 activeLecture?.rawData?.videoId || 
                 activeLecture?.rawData?.microcreditYoutubeDataMasterId || 
-                '8ihY2TZXuz0';
+                '';
     const timestamp = isPdf ? 0 : Number(currentTime || 0);
 
     const userMsg = { 
@@ -416,14 +392,13 @@ export default function MicrocredentialWatchPage({
 
       let answerText = res.answer || res.message;
       if (!answerText) {
-        const topicData = findTopicPdfContent(currentTopicName, questionText);
-        answerText = `Key insight from ${currentTopicName}: ${topicData.pageContent.slice(0, 240)}...`;
+        answerText = 'No response available from the AI Tutor for this question.';
       }
 
       const aiMsg = {
         sender: 'ai',
         text: answerText,
-        citations: [currentTopicName],
+        citations: currentTopicName ? [currentTopicName] : [],
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setAiChatMessages(prev => [...prev, aiMsg]);
@@ -434,8 +409,8 @@ export default function MicrocredentialWatchPage({
       console.error('Error asking AI Coach:', err);
       setAiChatMessages(prev => [...prev, {
         sender: 'ai',
-        text: `Based on accredited course syllabus for ${currentTopicName}, review key concepts and summary notes.`,
-        citations: [currentTopicName]
+        text: 'Unable to get an answer from the AI Tutor at this time. Please try again later.',
+        citations: currentTopicName ? [currentTopicName] : []
       }]);
     } finally {
       setAiLoading(false);
@@ -446,20 +421,31 @@ export default function MicrocredentialWatchPage({
   const fetchDiscussionQuestions = async () => {
     try {
       setLoadingQuestions(true);
-      const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 1;
-      const courseId = Number(rawId) || 1;
-      const res = await getMicroManyDiscussionQuestion(courseId, 3);
-      if (res && res.success && Array.isArray(res.microDiscussionQuestions)) {
-        setDiscussionQuestions(res.microDiscussionQuestions);
+      const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 0;
+      const courseId = Number(rawId) || 0;
+      const studentId = getLoggedInStudentId();
+
+      if (courseId <= 0) {
+        setDiscussionQuestions([]);
+        return;
+      }
+
+      const res = await getMicroManyDiscussionQuestion(courseId, studentId);
+      const qList = res?.microDiscussionQuestions || res?.rawData?.microDiscussionQuestions || [];
+      if (Array.isArray(qList) && qList.length > 0) {
+        setDiscussionQuestions(qList);
         // Automatically fetch replies for all questions so they are shown immediately outside
-        res.microDiscussionQuestions.forEach(q => {
+        qList.forEach(q => {
           if (q.microCourseDiscussionQuestionId) {
             fetchQuestionReplies(q.microCourseDiscussionQuestionId);
           }
         });
+      } else {
+        setDiscussionQuestions([]);
       }
     } catch (err) {
       console.error('Error fetching discussion questions:', err);
+      setDiscussionQuestions([]);
     } finally {
       setLoadingQuestions(false);
     }
@@ -474,9 +460,10 @@ export default function MicrocredentialWatchPage({
     if (!newQuestionText.trim() || submittingQuestion) return;
     try {
       setSubmittingQuestion(true);
-      const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 1;
-      const courseId = Number(rawId) || 1;
-      const res = await insertMicroManyDiscussionQuestion(3, 0, courseId, newQuestionText.trim());
+      const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 0;
+      const courseId = Number(rawId) || 0;
+      const studentId = getLoggedInStudentId();
+      const res = await insertMicroManyDiscussionQuestion(studentId, 0, courseId, newQuestionText.trim());
       if (res && res.success) {
         setNewQuestionText('');
         setShowAskQuestionInput(false);
@@ -494,8 +481,9 @@ export default function MicrocredentialWatchPage({
 
   // Like / unlike discussion question (POST /api/MicroDiscussionForumAPI/MicroCourseDiscussionQuestionLike)
   const handleToggleLikeQuestion = async (questionId, currentIsLiked, currentLikeCount) => {
-    const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 1;
-    const courseId = Number(rawId) || 1;
+    const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 0;
+    const courseId = Number(rawId) || 0;
+    const studentId = getLoggedInStudentId();
 
     // Optimistic UI update
     setDiscussionQuestions(prev => prev.map(q => {
@@ -508,7 +496,7 @@ export default function MicrocredentialWatchPage({
     }));
 
     try {
-      await microCourseDiscussionQuestionLike(questionId, 3, courseId);
+      await microCourseDiscussionQuestionLike(questionId, studentId, courseId);
     } catch (err) {
       console.error('Error liking question:', err);
     }
@@ -521,9 +509,12 @@ export default function MicrocredentialWatchPage({
       const res = await getManyMicroCourseDiscussionQuestionReply(questionId);
       if (res && res.success && Array.isArray(res.getMicroManyDiscussionQuestionReplay)) {
         setQuestionRepliesMap(prev => ({ ...prev, [questionId]: res.getMicroManyDiscussionQuestionReplay }));
+      } else {
+        setQuestionRepliesMap(prev => ({ ...prev, [questionId]: [] }));
       }
     } catch (err) {
       console.error(`Error fetching replies for question ${questionId}:`, err);
+      setQuestionRepliesMap(prev => ({ ...prev, [questionId]: [] }));
     } finally {
       setLoadingRepliesMap(prev => ({ ...prev, [questionId]: false }));
     }
@@ -546,12 +537,13 @@ export default function MicrocredentialWatchPage({
 
     try {
       setSubmittingReplyMap(prev => ({ ...prev, [questionId]: true }));
-      const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 1;
-      const courseId = Number(rawId) || 1;
+      const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 0;
+      const courseId = Number(rawId) || 0;
+      const studentId = getLoggedInStudentId();
 
       const res = await insertManyMicroCourseDiscussionReply(
         questionId,
-        3, // StudentId: 3
+        studentId, // StudentId: dynamic logged-in student
         0, // ProfessorId: 0
         courseId, // MicroCorseId
         replyText.trim()
@@ -581,8 +573,9 @@ export default function MicrocredentialWatchPage({
     try {
       const studentId = getLoggedInStudentId();
 
-      const rawId = currentCourse.microcredentialCourseId || currentCourse.courseId || currentCourse.id || 1;
-      const courseId = Number(rawId) || 1;
+      const rawId = currentCourse.microcredentialCourseId || currentCourse.courseId || currentCourse.id || 0;
+      const courseId = Number(rawId) || 0;
+      if (courseId <= 0) return;
       const rawModuleMasterId = currentCourse?.microcredentialModuleMasterId || 
                                 currentCourse?.selectedModuleMasterId || 
                                 currentCourse?.selectedModuleId || 
@@ -655,8 +648,9 @@ export default function MicrocredentialWatchPage({
       return;
     }
 
-    const rawId = currentCourse.microcredentialCourseId || currentCourse.courseId || currentCourse.id || 1;
-    const courseId = Number(rawId) || 1;
+    const rawId = currentCourse.microcredentialCourseId || currentCourse.courseId || currentCourse.id || 0;
+    const courseId = Number(rawId) || 0;
+    if (courseId <= 0) return;
     const studentId = getLoggedInStudentId();
 
     setShowQuizModal(true);
@@ -730,11 +724,16 @@ export default function MicrocredentialWatchPage({
   const saveCurrentWatchProgress = async (watchedSec, totalDur) => {
     try {
       const curCourse = courseRef.current || currentCourse;
-      const rawId = curCourse.microcredentialCourseId || curCourse.courseId || curCourse.id || 1;
-      const courseId = Number(rawId) || 1;
+      const rawId = curCourse.microcredentialCourseId || curCourse.courseId || curCourse.id || 0;
+      const courseId = Number(rawId) || 0;
+      if (courseId <= 0) return;
+
       const studentId = getLoggedInStudentId();
+      if (!studentId || studentId <= 0) return;
 
       const curLecture = activeLectureRef.current || activeLecture;
+      if (!curLecture) return;
+
       const rawModuleMasterId = curLecture?.microcredentialModuleMasterId ||
                                 curLecture?.rawData?.microcredentialModuleMasterId ||
                                 curCourse?.microcredentialModuleMasterId || 
@@ -743,8 +742,8 @@ export default function MicrocredentialWatchPage({
                                 curCourse?.microcredentialModuleId || 
                                 curCourse?.moduleId || 
                                 curCourse?.rawData?.microcredentialModuleMasterId || 
-                                course?.microcredentialModuleMasterId ||
-                                course?.selectedModuleMasterId ||
+                                course?.microcredentialModuleMasterId || 
+                                course?.selectedModuleMasterId || 
                                 0;
       const moduleMasterId = Number(rawModuleMasterId) || 0;
 
@@ -752,7 +751,8 @@ export default function MicrocredentialWatchPage({
                   getYouTubeVideoId(curLecture?.videoUrl) || 
                   curLecture?.videoId || 
                   curLecture?.rawData?.videoId || 
-                  String(curLecture?.id || '8ihY2TZXuz0');
+                  String(curLecture?.id || '');
+      if (!vId) return;
 
       const sec = Math.round(Number(watchedSec ?? currentTimeRef.current ?? 0));
       const dur = Math.round(Number(totalDur ?? videoDurationRef.current ?? curLecture?.videoDuration ?? 1));
@@ -827,45 +827,26 @@ export default function MicrocredentialWatchPage({
     };
   }, []);
 
-  // Fallback default questions if no backend questions exist yet
-  const defaultQuestions = [
-    {
-      microCourseDiscussionQuestionId: 1,
-      studentName: 'Anjali Sharma',
-      studentProfileImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
-      createdOn: '06/27/2026 14:51:14',
-      question: 'How can I handle stress?',
-      description: '',
-      replyCount: 1,
-      isLiked: true,
-      likeCount: 2
-    }
-  ];
-
-  // Fallback default replies if none returned yet
-  const defaultReplies = [
-    {
-      microCourseDiscussionQuestionReplyId: 1,
-      microCourseDiscussionQuestionId: 1,
-      professorName: currentCourse.instructor || 'Leesa Shashikant Mehra',
-      professorProfileImage: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80',
-      createdOn: '24 August, 2026 03:41:06 PM',
-      reply: 'Stress can be managed by identifying its causes, staying organized, taking regular breaks, practicing deep breathing or relaxation exercises, exercising regularly, getting enough sleep, eating healthy, and talking to someone you trust about your concerns. Making time for hobbies and enjoyable activities can also help you relax and maintain a positive mindset.'
-    }
-  ];
-
-  const activeQuestions = discussionQuestions.length > 0 ? discussionQuestions : defaultQuestions;
+  const activeQuestions = discussionQuestions;
 
   // Initialize or update custom YouTube Player instance
   useEffect(() => {
     let isCancelled = false;
     let timer = null;
 
-    const curVid = activeLecture.ytId || 
-                  getYouTubeVideoId(activeLecture.videoUrl) || 
-                  activeLecture.videoId || 
-                  activeLecture.rawData?.videoId || 
-                  String(activeLecture.id || '');
+    if (!activeLecture || !activeLecture.isYouTube || !activeLecture.ytId) {
+      if (ytPlayerRef.current) {
+        try { ytPlayerRef.current.destroy(); } catch (e) {}
+        ytPlayerRef.current = null;
+      }
+      return;
+    }
+
+    const curVid = activeLecture?.ytId || 
+                  getYouTubeVideoId(activeLecture?.videoUrl) || 
+                  activeLecture?.videoId || 
+                  activeLecture?.rawData?.videoId || 
+                  String(activeLecture?.id || '');
     const savedProgress = videoProgressMap[curVid] || videoProgressMapRef.current[curVid];
     const initialResumeSec = Number(savedProgress?.watchedSeconds || 0);
 
@@ -979,15 +960,15 @@ export default function MicrocredentialWatchPage({
       if (timer) clearTimeout(timer);
       stopProgressTracking();
     };
-  }, [activeLectureIdx, activeLecture.ytId, activeLecture.videoUrl]);
+  }, [activeLectureIdx, activeLecture?.ytId, activeLecture?.videoUrl]);
 
   // Anti-skip enforcement & Progress tracking interval
   const startProgressTracking = () => {
     stopProgressTracking();
     intervalRef.current = setInterval(() => {
-      if (activeLecture.isYouTube && ytPlayerRef.current && typeof ytPlayerRef.current.getCurrentTime === 'function') {
+      if (activeLecture?.isYouTube && ytPlayerRef.current && typeof ytPlayerRef.current.getCurrentTime === 'function') {
         const curr = ytPlayerRef.current.getCurrentTime() || 0;
-        const dur = ytPlayerRef.current.getDuration() || activeLecture.videoDuration || 0;
+        const dur = ytPlayerRef.current.getDuration() || activeLecture?.videoDuration || 0;
         if (dur > 0) setVideoDuration(dur);
         setCurrentTime(curr);
 
@@ -1050,6 +1031,7 @@ export default function MicrocredentialWatchPage({
 
   // Custom Controls Handlers
   const handleTogglePlay = () => {
+    if (!activeLecture) return;
     if (activeLecture.isYouTube && ytPlayerRef.current) {
       if (isPlaying) {
         if (typeof ytPlayerRef.current.pauseVideo === 'function') ytPlayerRef.current.pauseVideo();
@@ -1072,6 +1054,7 @@ export default function MicrocredentialWatchPage({
   };
 
   const handleToggleMute = () => {
+    if (!activeLecture) return;
     if (activeLecture.isYouTube && ytPlayerRef.current) {
       if (isMuted) {
         if (typeof ytPlayerRef.current.unMute === 'function') ytPlayerRef.current.unMute();
@@ -1088,6 +1071,7 @@ export default function MicrocredentialWatchPage({
 
   // Anti-skip protected seek bar click handler
   const handleSeek = (e) => {
+    if (!activeLecture) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const targetPct = Math.max(0, Math.min(1, clickX / rect.width));
@@ -1111,6 +1095,7 @@ export default function MicrocredentialWatchPage({
         setCurrentTime(targetSeconds);
       } else if (videoRef.current) {
         videoRef.current.currentTime = targetSeconds;
+        videoRef.current.currentTime = targetSeconds;
         setCurrentTime(targetSeconds);
       }
     }
@@ -1120,7 +1105,7 @@ export default function MicrocredentialWatchPage({
   const handleHtml5TimeUpdate = () => {
     if (!videoRef.current) return;
     const curr = videoRef.current.currentTime;
-    const dur = videoRef.current.duration || activeLecture.videoDuration || 0;
+    const dur = videoRef.current.duration || activeLecture?.videoDuration || 0;
     if (dur > 0) setVideoDuration(dur);
     setCurrentTime(curr);
 
@@ -1191,42 +1176,27 @@ export default function MicrocredentialWatchPage({
     }
   };
 
-  const handleToggleLike = (id) => {
-    setHasLikedQ(prev => ({ ...prev, [id]: !prev[id] }));
-    setLikedQuestions(prev => ({
-      ...prev,
-      [id]: prev[id] + (hasLikedQ[id] ? -1 : 1)
-    }));
-  };
-
-  const activeDuration = videoDuration || activeLecture.videoDuration || 600;
+  const activeDuration = videoDuration || activeLecture?.videoDuration || 0;
   const currentPct = Math.min(100, Math.max(0, (currentTime / (activeDuration || 1)) * 100));
   const maxWatchedPct = Math.min(100, Math.max(0, (maxWatchedTime / (activeDuration || 1)) * 100));
 
   return (
-    <div className="mc-detail-page-wrapper">
-      <div className="mc-fluid-container mc-main-two-col-grid">
+    <div className="mc-watch-page-container">
+      <div className="mc-watch-fluid-layout">
         
-        {/* ========================================================
-            LEFT COLUMN: VIDEO PLAYER + NAV + DISCUSSION
-            ======================================================== */}
-        <div className="mc-main-left-column">
-          
-          {/* 1. Breadcrumbs */}
-          <div className="mc-breadcrumb-section">
-            <div className="mc-breadcrumb-trail">
-              <span className="breadcrumb-item linkable" onClick={() => onNavigate('home')}>Home</span>
-              <span className="breadcrumb-divider">›</span>
-              <span className="breadcrumb-item linkable" onClick={onBack}>{currentCourse.title}</span>
-              <span className="breadcrumb-divider">›</span>
-              <span className="breadcrumb-item active">Microcredential Video Watch</span>
-            </div>
+        {/* Watch Top Header & Breadcrumbs (Spans across page) */}
+        <div className="mc-watch-top-header">
+          <div className="mc-watch-breadcrumb-row">
+            <span className="watch-crumb linkable" onClick={() => onNavigate('home')}>Home</span>
+            <span className="crumb-sep">›</span>
+            <span className="watch-crumb linkable" onClick={onBack}>{currentCourse.title || currentCourse.microcredentialCourseName || 'Microcredential Course'}</span>
+            <span className="crumb-sep">›</span>
+            <span className="watch-crumb active">Microcredential Video Watch</span>
           </div>
 
-          {/* 2. Course Title & Back to Course Button */}
           <div className="mc-watch-title-row">
             <div className="watch-course-title-group">
-              <h1 className="watch-course-title">{currentCourse.title}</h1>
+              <h1 className="watch-course-title">{currentCourse.title || currentCourse.microcredentialCourseName || 'Microcredential Course'}</h1>
               <div className="watch-verified-badge" title="Accredited & Verified">
                 <ShieldCheck size={18} />
               </div>
@@ -1237,9 +1207,37 @@ export default function MicrocredentialWatchPage({
               <span>Back to Overview</span>
             </button>
           </div>
+        </div>
 
-          {/* 3. Interactive Theater Player Card */}
-          <div className="mc-theater-player-card" ref={theaterCardRef}>
+        {/* Master 2-Column Watch Grid */}
+        <div className="mc-watch-main-grid">
+          
+          {/* ========================================================
+              LEFT COLUMN: VIDEO PLAYER + NAV + DISCUSSION
+              ======================================================== */}
+          <div className="mc-watch-left-column">
+            
+            {/* 3. Interactive Theater Player Card */}
+            <div className="mc-theater-player-card" ref={theaterCardRef}>
+              
+              {/* Theater Player Top Header Overlay */}
+              <div className="theater-header-overlay">
+                <div className="theater-channel-badge">
+                  <div className="theater-avatar-box">
+                    <GraduationCap size={18} />
+                  </div>
+                  <div className="theater-lecture-text">
+                    <h4>{activeLecture ? activeLecture.title : 'Course Lecture'}</h4>
+                    <span className="theater-org-name">{currentCourse.streamName || currentCourse.category || 'Accredited Microcredential'}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="anti-skip-badge">
+                    <ShieldCheck size={13} />
+                    <span>Anti-Skip Protected</span>
+                  </span>
+                </div>
+              </div>
               
               {/* Central Video Frame with Custom Shield Layer & Embedded PDF Viewer */}
               <div className="theater-video-frame custom-player-frame" style={selectedPdf ? { aspectRatio: 'auto', minHeight: '520px', display: 'flex', flexDirection: 'column' } : {}}>
@@ -1283,6 +1281,21 @@ export default function MicrocredentialWatchPage({
                       style={{ width: '100%', flex: 1, minHeight: '480px', border: 'none' }}
                     />
                   </div>
+                ) : loading ? (
+                  <div style={{ width: '100%', minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '14px', background: '#0b1320', color: '#ffffff' }}>
+                    <RefreshCw size={28} className="spinner" style={{ animation: 'spin 1s linear infinite', color: '#38bdf8' }} />
+                    <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 600 }}>Loading video topics...</span>
+                  </div>
+                ) : !activeLecture || currentPlaylist.length === 0 ? (
+                  <div style={{ width: '100%', minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', background: '#0b1320', color: '#ffffff', padding: '36px', textAlign: 'center' }}>
+                    <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+                      <Video size={28} />
+                    </div>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9' }}>No Learning Videos Found</h3>
+                    <p style={{ margin: 0, fontSize: '0.86rem', color: '#94a3b8', maxWidth: '420px', lineHeight: 1.5 }}>
+                      No topics or videos were found for this course or module.
+                    </p>
+                  </div>
                 ) : (
                   <>
                     {/* Anti-Skip Warning Notification Toast */}
@@ -1294,7 +1307,7 @@ export default function MicrocredentialWatchPage({
                     )}
 
                     {/* YouTube API Container */}
-                    {activeLecture?.isYouTube ? (
+                    {activeLecture?.isYouTube && activeLecture?.ytId ? (
                       <div className="theater-yt-api-wrapper" key={activeLecture?.ytId || activeLecture?.id}>
                         <div id="yt-custom-player-container" />
                         {/* Transparent Interaction Shield: intercepts clicks so YouTube UI never opens */}
@@ -1303,16 +1316,16 @@ export default function MicrocredentialWatchPage({
                           onClick={handleTogglePlay}
                         />
                       </div>
-                    ) : (
+                    ) : activeLecture?.videoUrl ? (
                       <video 
                         ref={videoRef}
-                        src={activeLecture?.videoUrl || 'https://www.w3schools.com/html/mov_bbb.mp4'} 
+                        src={activeLecture.videoUrl} 
                         className="theater-html5-video"
                         autoPlay={false}
-                        poster={currentCourse.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1200&auto=format&fit=crop&q=80'}
+                        poster={currentCourse.thumbnail || ''}
                         onLoadedMetadata={(e) => {
                           e.target.pause();
-                          const curVid = activeLecture.ytId || getYouTubeVideoId(activeLecture.videoUrl) || activeLecture.videoId || String(activeLecture.id || '');
+                          const curVid = activeLecture?.ytId || getYouTubeVideoId(activeLecture?.videoUrl) || activeLecture?.videoId || String(activeLecture?.id || '');
                           const savedProgress = videoProgressMap[curVid] || videoProgressMapRef.current[curVid];
                           const initialResumeSec = Number(savedProgress?.watchedSeconds || 0);
                           if (initialResumeSec > 0) {
@@ -1352,10 +1365,15 @@ export default function MicrocredentialWatchPage({
                         disablePictureInPicture
                         onClick={handleTogglePlay}
                       />
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '380px', color: '#94a3b8', gap: '8px' }}>
+                        <Video size={32} />
+                        <span style={{ fontSize: '0.88rem' }}>No video stream available for this topic</span>
+                      </div>
                     )}
 
                     {/* Big Center Glass Play/Pause Button */}
-                    {!isPlaying && (
+                    {!isPlaying && activeLecture?.videoUrl && (
                       <div className="theater-glass-center-play" onClick={handleTogglePlay}>
                         <Play size={28} className="play-triangle-fill" />
                       </div>
@@ -1365,7 +1383,7 @@ export default function MicrocredentialWatchPage({
               </div>
 
               {/* Bottom Custom Playback Bar (Full Custom UI with Anti-Skip Progress Bar) */}
-              {!selectedPdf && (
+              {!selectedPdf && activeLecture && currentPlaylist.length > 0 && (
                 <div className="theater-bottom-controls-bar">
                   <button 
                     type="button" 
@@ -1430,7 +1448,7 @@ export default function MicrocredentialWatchPage({
               type="button" 
               className="btn-lesson-nav prev"
               onClick={handlePrevLesson}
-              disabled={activeLectureIdx === 0}
+              disabled={!activeLecture || activeLectureIdx === 0}
             >
               <ChevronLeft size={16} />
               <span>Previous Lesson</span>
@@ -1449,7 +1467,7 @@ export default function MicrocredentialWatchPage({
               type="button" 
               className="btn-lesson-nav next"
               onClick={handleNextLesson}
-              disabled={activeLectureIdx === currentPlaylist.length - 1}
+              disabled={!activeLecture || activeLectureIdx >= currentPlaylist.length - 1}
             >
               <span>Next Lesson</span>
               <ChevronRight size={16} />
@@ -1593,7 +1611,7 @@ export default function MicrocredentialWatchPage({
               <div className="ai-input-wrap" style={{ display: 'flex', gap: '8px' }}>
                 <input 
                   type="text" 
-                  placeholder={`Ask a question about ${selectedPdf ? selectedPdf.title : activeLecture.title}...`}
+                  placeholder={`Ask a question about ${selectedPdf ? selectedPdf.title : (activeLecture?.title || 'this topic')}...`}
                   value={aiQuery}
                   onChange={e => setAiQuery(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleSendAiQuestion(); }}
@@ -1680,12 +1698,21 @@ export default function MicrocredentialWatchPage({
               </div>
             )}
 
+            {/* Empty questions state */}
+            {!loadingQuestions && activeQuestions.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '36px 20px', background: '#f8fafc', borderRadius: '14px', border: '1.5px dashed #cbd5e1', color: '#64748b' }}>
+                <MessageSquare size={32} style={{ margin: '0 auto 10px', color: '#94a3b8' }} />
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '0.98rem', fontWeight: 700, color: '#00385E' }}>No questions found</h4>
+                <p style={{ margin: 0, fontSize: '0.85rem' }}>No discussions have been started yet. Ask a question above to get started!</p>
+              </div>
+            )}
+
             {/* Questions List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {activeQuestions.map((q, idx) => {
                 const qId = q.microCourseDiscussionQuestionId || (idx + 1);
                 const isReplyOpen = openReplyBoxForQuestionId === qId;
-                const replies = questionRepliesMap[qId] || (qId === 1 && activeQuestions === defaultQuestions ? defaultReplies : []);
+                const replies = questionRepliesMap[qId] || [];
                 const isLoadingReplies = loadingRepliesMap[qId];
                 const isSubmittingReply = submittingReplyMap[qId];
                 const currentReplyInput = replyTextMap[qId] || '';
@@ -1700,16 +1727,21 @@ export default function MicrocredentialWatchPage({
                   >
                     {/* Author Meta */}
                     <div className="question-author-meta" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                      <div className="author-avatar-circle" style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid #c7d2fe', flexShrink: 0 }}>
-                        <img 
-                          src={q.studentProfileImage ? formatImageUrl(q.studentProfileImage) : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'} 
-                          alt={q.studentName || 'Employee'} 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
+                      <div className="author-avatar-circle" style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid #c7d2fe', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e0f2fe', color: '#00385E', fontWeight: '800', fontSize: '0.92rem' }}>
+                        {q.studentProfileImage ? (
+                          <img 
+                            src={formatImageUrl(q.studentProfileImage)} 
+                            alt={q.studentName || 'Learner'} 
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        ) : (
+                          <span>{(q.studentName || 'U').charAt(0).toUpperCase()}</span>
+                        )}
                       </div>
                       <div className="author-name-stamp">
                         <h4 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#1e293b', margin: '0 0 2px 0' }}>
-                          {q.studentName || 'Employee'}
+                          {q.studentName || 'Learner'}
                         </h4>
                         <span className="post-timestamp" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#94a3b8' }}>
                           <Clock size={12} />
@@ -1790,11 +1822,11 @@ export default function MicrocredentialWatchPage({
                           gap: '5px', 
                           fontSize: '0.82rem', 
                           color: '#00385E', 
-                          fontWeight: '700',
-                          background: '#f0f7fc',
-                          border: '1px solid #c9dfef',
-                          padding: '4px 12px',
-                          borderRadius: '12px'
+                          fontWeight: '700', 
+                          background: '#f0f7fc', 
+                          border: '1px solid #c9dfef', 
+                          padding: '4px 12px', 
+                          borderRadius: '12px' 
                         }}
                       >
                         <MessageSquare size={13} />
@@ -1803,7 +1835,7 @@ export default function MicrocredentialWatchPage({
                     </div>
 
                     {/* List of Existing Replies (Always rendered outside) */}
-                    {replies && replies.length > 0 && (
+                    {replies && replies.length > 0 ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
                         {replies.map((r, rIdx) => (
                           <div 
@@ -1813,16 +1845,21 @@ export default function MicrocredentialWatchPage({
                           >
                             <div className="prof-author-meta" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <div className="prof-avatar-circle" style={{ width: '34px', height: '34px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid #cbd5e1' }}>
-                                  <img 
-                                    src={r.professorProfileImage || r.studentProfileImage ? formatImageUrl(r.professorProfileImage || r.studentProfileImage) : 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80'} 
-                                    alt={r.professorName || r.studentName || 'Respondent'} 
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                  />
+                                <div className="prof-avatar-circle" style={{ width: '34px', height: '34px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#00385E', fontWeight: '800', fontSize: '0.8rem', flexShrink: 0 }}>
+                                  {(r.professorProfileImage || r.studentProfileImage) ? (
+                                    <img 
+                                      src={formatImageUrl(r.professorProfileImage || r.studentProfileImage)} 
+                                      alt={r.professorName || r.studentName || 'Respondent'} 
+                                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                    />
+                                  ) : (
+                                    <span>{(r.professorName || r.studentName || 'U').charAt(0).toUpperCase()}</span>
+                                  )}
                                 </div>
                                 <div className="prof-name-stamp">
                                   <h4 style={{ fontSize: '0.88rem', fontWeight: '700', color: '#00385E', margin: 0 }}>
-                                    {r.professorName || r.studentName || 'Faculty / Peer'}
+                                    {r.professorName || r.studentName || 'Respondent'}
                                   </h4>
                                 </div>
                               </div>
@@ -1836,6 +1873,10 @@ export default function MicrocredentialWatchPage({
                             </p>
                           </div>
                         ))}
+                      </div>
+                    ) : isReplyOpen && !isLoadingReplies && (
+                      <div style={{ marginTop: '12px', padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', color: '#64748b', fontSize: '0.82rem', textAlign: 'center' }}>
+                        No replies yet. Be the first to reply!
                       </div>
                     )}
 
@@ -1925,7 +1966,7 @@ export default function MicrocredentialWatchPage({
         {/* ======================================================
             RIGHT COLUMN: LEARNING PROGRESS & VIDEO PLAYLIST SIDEBAR
             ====================================================== */}
-        <div className="mc-main-right-sidebar mc-watch-right-sidebar">
+        <div className="mc-watch-right-sidebar">
           
           {/* 1. Learning Progress Card */}
           {(() => {
@@ -1974,7 +2015,9 @@ export default function MicrocredentialWatchPage({
                     <div className="progress-text-info">
                       <strong>Overall Progress</strong>
                       <span>
-                        {completedCount} of {playlistItems.length} Topics
+                        {playlistItems.length > 0 
+                          ? `${completedCount} of ${playlistItems.length} Topics` 
+                          : 'No topics available'}
                       </span>
                     </div>
 
@@ -1997,216 +2040,237 @@ export default function MicrocredentialWatchPage({
           <div className="mc-watch-playlist-box">
             <div className="playlist-header-row">
               <h3 className="playlist-title">Learning Videos ({currentPlaylist.length} Topics)</h3>
-              <span className="playlist-count-label">{activeLectureIdx + 1}/{currentPlaylist.length} Topics</span>
+              <span className="playlist-count-label">
+                {currentPlaylist.length > 0 ? `${activeLectureIdx + 1}/${currentPlaylist.length} Topics` : '0 Topics'}
+              </span>
             </div>
-            <div className="playlist-progress-bar-line">
-              <div 
-                className="playlist-progress-bar-fill" 
-                style={{ width: `${Math.round(((activeLectureIdx + 1) / currentPlaylist.length) * 100)}%` }} 
-              />
-            </div>
+            {currentPlaylist.length > 0 && (
+              <div className="playlist-progress-bar-line">
+                <div 
+                  className="playlist-progress-bar-fill" 
+                  style={{ width: `${Math.round(((activeLectureIdx + 1) / currentPlaylist.length) * 100)}%` }} 
+                />
+              </div>
+            )}
 
             {/* Video Lecture List Items */}
             <div className="playlist-items-stack">
-              {currentPlaylist.map((item, idx) => {
-                const isActive = idx === activeLectureIdx && !selectedPdf;
-                const itemVid = item.ytId || getYouTubeVideoId(item.videoUrl) || item.id;
-                const rawSavedPct = videoProgressMap[itemVid]?.percentageWatched || 0;
-                
-                let itemProgress = rawSavedPct;
-                if (isActive) {
-                  const activeDur = videoDuration || item.videoDuration || 1;
-                  const liveSec = Math.max(currentTime, maxWatchedTime);
-                  const livePct = activeDur > 0
-                    ? (liveSec >= activeDur ? 100 : Math.min(99, Math.floor((liveSec / activeDur) * 100)))
-                    : 0;
-                  itemProgress = Math.max(livePct, rawSavedPct);
-                }
+              {currentPlaylist.length === 0 ? (
+                <div style={{ padding: '24px 16px', textAlign: 'center', color: '#64748b', fontSize: '0.86rem' }}>
+                  No learning videos found.
+                </div>
+              ) : (
+                currentPlaylist.map((item, idx) => {
+                  const isActive = idx === activeLectureIdx && !selectedPdf;
+                  const itemVid = item.ytId || getYouTubeVideoId(item.videoUrl) || item.id;
+                  const rawSavedPct = videoProgressMap[itemVid]?.percentageWatched || 0;
+                  
+                  let itemProgress = rawSavedPct;
+                  if (isActive) {
+                    const activeDur = videoDuration || item.videoDuration || 1;
+                    const liveSec = Math.max(currentTime, maxWatchedTime);
+                    const livePct = activeDur > 0
+                      ? (liveSec >= activeDur ? 100 : Math.min(99, Math.floor((liveSec / activeDur) * 100)))
+                      : 0;
+                    itemProgress = Math.max(livePct, rawSavedPct);
+                  }
 
-                return (
-                  <div 
-                    key={item.id} 
-                    className={`playlist-item-row ${isActive ? 'active' : ''}`}
-                    onClick={() => {
-                      if (currentTime > 0) saveCurrentWatchProgress(currentTime, videoDuration);
-                      setSelectedPdf(null);
-                      userInitiatedPlayRef.current = false;
-                      setActiveLectureIdx(idx);
-                      setIsPlaying(false);
-                    }}
-                  >
-                    <div className="playlist-item-left">
-                      <div className={`playlist-play-icon-circle ${isActive ? 'active' : ''}`}>
-                        <Play size={12} className="play-svg-arrow" />
+                  return (
+                    <div 
+                      key={item.id} 
+                      className={`playlist-item-row ${isActive ? 'active' : ''}`}
+                      onClick={() => {
+                        if (currentTime > 0) saveCurrentWatchProgress(currentTime, videoDuration);
+                        setSelectedPdf(null);
+                        userInitiatedPlayRef.current = false;
+                        setActiveLectureIdx(idx);
+                        setIsPlaying(false);
+                      }}
+                    >
+                      <div className="playlist-item-left">
+                        <div className={`playlist-play-icon-circle ${isActive ? 'active' : ''}`}>
+                          <Play size={12} className="play-svg-arrow" />
+                        </div>
+                        <span className="playlist-item-name">{item.title}</span>
                       </div>
-                      <span className="playlist-item-name">{item.title}</span>
-                    </div>
 
-                    <div className="playlist-item-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span className="playlist-item-pct">{item.duration}</span>
-                      
-                      {/* Mini Circular Progress Ring */}
-                      <div 
-                        style={{ 
-                          position: 'relative', 
-                          width: '32px', 
-                          height: '32px', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
-                          flexShrink: 0 
-                        }}
-                        title={`${itemProgress}% completed`}
-                      >
-                        <svg width="32" height="32" style={{ transform: 'rotate(-90deg)' }}>
-                          <circle
-                            cx="16"
-                            cy="16"
-                            r="11"
-                            stroke="#cbd5e1"
-                            strokeWidth="2.8"
-                            fill="transparent"
-                          />
-                          {itemProgress > 0 && (
+                      <div className="playlist-item-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="playlist-item-pct">{item.duration}</span>
+                        
+                        {/* Mini Circular Progress Ring */}
+                        <div 
+                          style={{ 
+                            position: 'relative', 
+                            width: '32px', 
+                            height: '32px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            flexShrink: 0 
+                          }}
+                          title={`${itemProgress}% completed`}
+                        >
+                          <svg width="32" height="32" style={{ transform: 'rotate(-90deg)' }}>
                             <circle
                               cx="16"
                               cy="16"
                               r="11"
-                              stroke="#005a96"
+                              stroke="#cbd5e1"
                               strokeWidth="2.8"
                               fill="transparent"
-                              strokeDasharray={2 * Math.PI * 11}
-                              strokeDashoffset={2 * Math.PI * 11 - (itemProgress / 100) * (2 * Math.PI * 11)}
-                              strokeLinecap="round"
                             />
-                          )}
-                        </svg>
-                        <span style={{ 
-                          position: 'absolute', 
-                          fontSize: '0.62rem', 
-                          fontWeight: 800, 
-                          color: itemProgress > 0 ? '#00385E' : '#005a96',
-                          letterSpacing: '-0.02em'
-                        }}>
-                          {itemProgress}%
-                        </span>
+                            {itemProgress > 0 && (
+                              <circle
+                                cx="16"
+                                cy="16"
+                                r="11"
+                                stroke="#005a96"
+                                strokeWidth="2.8"
+                                fill="transparent"
+                                strokeDasharray={2 * Math.PI * 11}
+                                strokeDashoffset={2 * Math.PI * 11 - (itemProgress / 100) * (2 * Math.PI * 11)}
+                                strokeLinecap="round"
+                              />
+                            )}
+                          </svg>
+                          <span style={{ 
+                            position: 'absolute', 
+                            fontSize: '0.62rem', 
+                            fontWeight: 800, 
+                            color: itemProgress > 0 ? '#00385E' : '#005a96',
+                            letterSpacing: '-0.02em'
+                          }}>
+                            {itemProgress}%
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
 
           {/* 3. Dynamic Learning Text e-Content Accordion */}
-          <div className="mc-watch-expandable-card">
-            <div 
-              className="expandable-header"
-              onClick={() => setIsTextContentOpen(!isTextContentOpen)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', cursor: 'pointer', background: '#ffffff' }}
-            >
-              <div className="expandable-left" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00385E', fontWeight: 800 }}>
-                <BookOpen size={16} style={{ color: '#00385E' }} />
-                <span>Learning Text e-Content</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#00385E', background: '#f0f7fc', padding: '2px 8px', borderRadius: '999px', border: '1px solid #c9dfef' }}>
-                  {currentPlaylist.length} Units
-                </span>
-                <ChevronDown size={16} className={`chevron-exp ${isTextContentOpen ? 'open' : ''}`} style={{ color: '#00385E' }} />
-              </div>
-            </div>
-
-            {isTextContentOpen && (
-              <div className="expandable-content-body" style={{ padding: '12px 14px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {currentPlaylist.map((topicItem, idx) => {
-                    const isSelected = selectedPdf?.title === topicItem.title;
-                    const pdfUrl = topicItem.topicPdf || 'https://pdfobject.com/pdf/sample.pdf';
-                    return (
-                      <div 
-                        key={topicItem.id || idx}
-                        onClick={() => {
-                          setSelectedPdf({ url: pdfUrl, title: topicItem.title });
-                          setIsPlaying(false);
-                          if (videoRef.current) videoRef.current.pause();
-                          if (ytPlayerRef.current?.pauseVideo) ytPlayerRef.current.pauseVideo();
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          padding: '10px 12px',
-                          background: isSelected ? '#e0f2fe' : '#ffffff',
-                          border: isSelected ? '1.5px solid #0284C7' : '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                        className="mc-topic-pdf-item-row"
-                      >
-                        {/* Theme White PDF Document Badge */}
-                        <div 
-                          style={{
-                            width: '32px',
-                            height: '38px',
-                            background: '#ffffff',
-                            borderRadius: '5px',
-                            position: 'relative',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                            boxShadow: '0 2px 6px rgba(0, 56, 94, 0.08)',
-                            border: '1.5px solid #00385E',
-                            overflow: 'hidden'
-                          }}
-                        >
-                          <div 
-                            style={{
-                              position: 'absolute',
-                              top: 0,
-                              right: 0,
-                              width: '8px',
-                              height: '8px',
-                              background: '#00385E',
-                              borderBottomLeftRadius: '3px'
-                            }} 
-                          />
-                          <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#00385E', letterSpacing: '0.04em' }}>PDF</span>
-                        </div>
-
-                        {/* Themed Topic Link */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <span 
-                            style={{ 
-                              fontSize: '0.8rem', 
-                              fontWeight: 700, 
-                              color: isSelected ? '#00385E' : '#334155', 
-                              textDecoration: 'none',
-                              textTransform: 'uppercase',
-                              lineHeight: 1.3,
-                              display: 'block',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
-                            }}
-                            className="mc-topic-pdf-link"
-                          >
-                            {topicItem.title}
-                          </span>
-                          <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block', marginTop: '2px', fontWeight: 600 }}>
-                            Unit {idx + 1} • Interactive Study Notes
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
+          {(() => {
+            const textContentList = currentPlaylist.filter(item => Boolean(item.topicPdf));
+            return (
+              <div className="mc-watch-expandable-card">
+                <div 
+                  className="expandable-header"
+                  onClick={() => setIsTextContentOpen(!isTextContentOpen)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', cursor: 'pointer', background: '#ffffff' }}
+                >
+                  <div className="expandable-left" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00385E', fontWeight: 800 }}>
+                    <BookOpen size={16} style={{ color: '#00385E' }} />
+                    <span>Learning Text e-Content</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#00385E', background: '#f0f7fc', padding: '2px 8px', borderRadius: '999px', border: '1px solid #c9dfef' }}>
+                      {textContentList.length} Units
+                    </span>
+                    <ChevronDown size={16} className={`chevron-exp ${isTextContentOpen ? 'open' : ''}`} style={{ color: '#00385E' }} />
+                  </div>
                 </div>
+
+                {isTextContentOpen && (
+                  <div className="expandable-content-body" style={{ padding: '12px 14px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
+                    {textContentList.length === 0 ? (
+                      <div style={{ padding: '16px 12px', textAlign: 'center', color: '#64748b', fontSize: '0.84rem' }}>
+                        No text e-Content found for this course.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {textContentList.map((topicItem, idx) => {
+                          const isSelected = selectedPdf?.title === topicItem.title;
+                          const pdfUrl = topicItem.topicPdf;
+                          return (
+                            <div 
+                              key={topicItem.id || idx}
+                              onClick={() => {
+                                setSelectedPdf({ url: pdfUrl, title: topicItem.title });
+                                setIsPlaying(false);
+                                if (videoRef.current) videoRef.current.pause();
+                                if (ytPlayerRef.current?.pauseVideo) ytPlayerRef.current.pauseVideo();
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                padding: '10px 12px',
+                                background: isSelected ? '#e0f2fe' : '#ffffff',
+                                border: isSelected ? '1.5px solid #0284C7' : '1px solid #e2e8f0',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                              }}
+                              className="mc-topic-pdf-item-row"
+                            >
+                              {/* Theme White PDF Document Badge */}
+                              <div 
+                                style={{
+                                  width: '32px',
+                                  height: '38px',
+                                  background: '#ffffff',
+                                  borderRadius: '5px',
+                                  position: 'relative',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0,
+                                  boxShadow: '0 2px 6px rgba(0, 56, 94, 0.08)',
+                                  border: '1.5px solid #00385E',
+                                  overflow: 'hidden'
+                                }}
+                              >
+                                <div 
+                                  style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    right: 0,
+                                    width: '8px',
+                                    height: '8px',
+                                    background: '#00385E',
+                                    borderBottomLeftRadius: '3px'
+                                  }} 
+                                />
+                                <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#00385E', letterSpacing: '0.04em' }}>PDF</span>
+                              </div>
+
+                              {/* Themed Topic Link */}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <span 
+                                  style={{ 
+                                    fontSize: '0.8rem', 
+                                    fontWeight: 700, 
+                                    color: isSelected ? '#00385E' : '#334155', 
+                                    textDecoration: 'none',
+                                    textTransform: 'uppercase',
+                                    lineHeight: 1.3,
+                                    display: 'block',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                  }}
+                                  className="mc-topic-pdf-link"
+                                >
+                                  {topicItem.title}
+                                </span>
+                                <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block', marginTop: '2px', fontWeight: 600 }}>
+                                  Unit {idx + 1} • Interactive Study Notes
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
 
           {/* 4. Quiz Accordion Section */}
           <div className="mc-watch-expandable-card">
@@ -2221,7 +2285,7 @@ export default function MicrocredentialWatchPage({
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#00385E', background: '#f0f7fc', padding: '2px 8px', borderRadius: '999px', border: '1px solid #c9dfef' }}>
-                  10 MCQs
+                  Assessment
                 </span>
                 <ChevronDown size={16} className={`chevron-exp ${isQuizAccordionOpen ? 'open' : ''}`} style={{ color: '#00385E' }} />
               </div>
@@ -2230,7 +2294,7 @@ export default function MicrocredentialWatchPage({
             {isQuizAccordionOpen && (
               <div className="expandable-content-body" style={{ padding: '14px 18px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
                 <p style={{ fontSize: '0.84rem', color: '#475569', margin: '0 0 12px 0', lineHeight: 1.5 }}>
-                  Benchmark your understanding of <strong>{currentCourse.title?.toUpperCase() || 'STRESS MANAGEMENT'}</strong> across all units. Complete to qualify for final certification.
+                  Benchmark your understanding of <strong>{(currentCourse.title || currentCourse.microcredentialCourseName || 'THIS COURSE').toUpperCase()}</strong> across all units. Complete to qualify for final certification.
                 </p>
                 
                 {/* Eligibility Notice Banner */}
@@ -2351,13 +2415,10 @@ export default function MicrocredentialWatchPage({
               <button 
                 type="button" 
                 className="btn-modal-submit"
-                onClick={() => {
-                  alert('Your question has been posted to the discussion forum!');
-                  setNewQuestionText('');
-                  setShowAskModal(false);
-                }}
+                onClick={handleCreateQuestion}
+                disabled={submittingQuestion || !newQuestionText.trim()}
               >
-                Submit Question
+                {submittingQuestion ? 'Submitting...' : 'Submit Question'}
               </button>
             </div>
           </div>
@@ -2371,10 +2432,11 @@ export default function MicrocredentialWatchPage({
         onStartQuiz={handleStartQuiz}
         loading={quizAttemptLoading}
         error={quizAttemptError}
-        courseTitle={currentCourse.title}
+        courseTitle={currentCourse.title || currentCourse.microcredentialCourseName || 'Microcredential Course'}
         attemptData={quizAttemptData}
       />
 
+      </div>
     </div>
   );
 }

@@ -5965,9 +5965,9 @@ a {
 }
 
 .profile-page-container {
-  max-width: 1360px;
-  margin: 0 auto;
-  padding: 0 clamp(16px, 3.5vw, 44px);
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
   box-sizing: border-box;
 }
 
@@ -8662,13 +8662,16 @@ a {
 .mc-watch-page-container {
   background: #f8fafc;
   min-height: 100vh;
+  width: 100%;
   padding: 24px 0 80px;
   font-family: var(--font-body, 'Inter', sans-serif);
+  box-sizing: border-box;
 }
 
 .mc-watch-fluid-layout {
-  max-width: 1420px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
   padding: 0 clamp(20px, 3.5vw, 48px);
   box-sizing: border-box;
 }
@@ -8770,8 +8773,8 @@ a {
 /* Master 2-Column Watch Grid */
 .mc-watch-main-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 370px;
-  gap: 28px;
+  grid-template-columns: minmax(0, 1fr) clamp(360px, 24vw, 420px);
+  gap: clamp(20px, 2vw, 32px);
   align-items: start;
 }
 

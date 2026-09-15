@@ -17,6 +17,10 @@ export function buildGetMicroCourseTopicDetailInput(
         body: JSON.stringify({
             MicrocredentialCourseId: resolvedCourseId,
             microcredentialCourseId: resolvedCourseId,
+            MicroCorseId: resolvedCourseId,
+            microCorseId: resolvedCourseId,
+            MicroCourseId: resolvedCourseId,
+            microCourseId: resolvedCourseId,
             MicrocredentialModuleMasterId: numModuleId,
             microcredentialModuleMasterId: numModuleId,
             StudentId: numStudentId,

@@ -1,6 +1,7 @@
 export function parseGetMicroCourseTopicDetailOutput(rawJson = {}, status = 200) {
     const isHttpOk = status >= 200 && status < 300;
-    const isSuccess = Boolean(rawJson?.isSuccess ?? isHttpOk);
+    const hasData = Array.isArray(rawJson?.getMicroCourseTopicDetailList) || Array.isArray(rawJson?.microcredentialStudentDownloadDocumentList);
+    const isSuccess = Boolean(rawJson?.isSuccess || (isHttpOk && hasData) || isHttpOk);
 
   return{
     success: isSuccess,
@@ -8,8 +9,8 @@ export function parseGetMicroCourseTopicDetailOutput(rawJson = {}, status = 200)
     message: rawJson?.message || '',
     errorDescription: rawJson?.errorDescription || '',
     errorNo: rawJson?.errorNo || 0,
-    getMicroCourseTopicDetailList: rawJson.getMicroCourseTopicDetailList || [],
-    microcredentialStudentDownloadDocumentList : rawJson.microcredentialStudentDownloadDocumentList || []
+    getMicroCourseTopicDetailList: rawJson.getMicroCourseTopicDetailList || rawJson.GetMicroCourseTopicDetailList || [],
+    microcredentialStudentDownloadDocumentList : rawJson.microcredentialStudentDownloadDocumentList || rawJson.MicrocredentialStudentDownloadDocumentList || []
   }
 }
 

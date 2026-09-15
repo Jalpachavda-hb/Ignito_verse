@@ -23,8 +23,13 @@ export function buildGetMicrocredentialStudentWatchVideoDataInput(
         },
         body: JSON.stringify({
             StudentId: numStudentId,
+            studentId: numStudentId,
             MicrocredentialCourseId: numCourseId,
-            MicrocredentialModuleMasterId: numModuleId
+            microcredentialCourseId: numCourseId,
+            MicroCorseId: numCourseId,
+            microCorseId: numCourseId,
+            MicrocredentialModuleMasterId: numModuleId,
+            microcredentialModuleMasterId: numModuleId
         })
     };
 }

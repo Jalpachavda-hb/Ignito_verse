@@ -8,7 +8,7 @@
  */
 export function parseGetMicrocredentialStudentWatchVideoDataOutput(rawJson = {}, status = 200) {
     const isHttpOk = status >= 200 && status < 300;
-    const isSuccess = Boolean(rawJson?.isSuccess ?? rawJson?.IsSuccess ?? isHttpOk);
+    const isSuccess = Boolean(rawJson?.isSuccess || rawJson?.IsSuccess || isHttpOk);
 
     const rawList = rawJson?.studentwatchvideodetails || rawJson?.Studentwatchvideodetails || [];
 

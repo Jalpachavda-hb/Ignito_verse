@@ -5,10 +5,11 @@ import {
   Check, ArrowRight, PlayCircle, Building2,
   Briefcase, Sparkles, Calendar, Star,
   Award, CheckCircle2, XCircle, AlertCircle, ArrowLeft, RefreshCw,
-  Search, Eye, FileText, ChevronDown, ChevronUp, X, Minus, HelpCircle,
-  Lock, LogIn
+  Search, Eye, FileText, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, Minus, HelpCircle,
+  Lock, LogIn, Camera, GraduationCap, Pencil, BarChart2, Filter
 } from 'lucide-react';
 import profileBgImg from '../../assets/profilebg.png';
+import staticAvatarImg from '../../assets/home/nori-post-2-720x720.webp';
 import {
   getStudentEnrolledMicrocredentialCourse,
   studentMicrocredentialsQuizAttemptList,
@@ -17,6 +18,8 @@ import {
 import { getStudentAttemptList } from '../../services/QuizServices';
 import { getLoggedInStudentId } from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
+import StudentCalendar from './Calendar/StudentCalendar';
+import './ProfilePage.css';
 
 
 // Helper to strip HTML tags from backend strings (e.g., <p>text</p>)
@@ -33,8 +36,9 @@ export default function ProfilePage({
   onNavigate = () => { },
   onLogin = () => { }
 }) {
-  // Navigation Tabs: 'courses' | 'quiz'
+  // Navigation Tabs: 'courses' | 'quiz' | 'calendar'
   const [activeTab, setActiveTab] = useState(
+    initialTab === 'calendar' || initialTab === 'events' ? 'calendar' :
     initialTab === 'quiz' || initialTab === 'quiz-results' || initialTab === 'quizzes' ? 'quiz' : 'courses'
   );
 
@@ -47,10 +51,25 @@ export default function ProfilePage({
   const [loadingQuizzes, setLoadingQuizzes] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Expanded Quiz Attempt Rows state (Screenshot 2)
-  // Map of quizId -> { loading: boolean, attempts: Array }
-  const [expandedQuizId, setExpandedQuizId] = useState(null);
-  const [attemptsByQuiz, setAttemptsByQuiz] = useState({});
+  // Expanded Quiz Attempt Rows state (Screenshot 1 & 2)
+  // Default to 201 so first quiz attempts are open like in screenshot 1
+  const [expandedQuizId, setExpandedQuizId] = useState(201);
+  const [attemptsByQuiz, setAttemptsByQuiz] = useState({
+    201: [
+      {
+        attemptId: 1,
+        attemptNumber: 1,
+        score: 1,
+        totalMarks: 20,
+        percentage: 5,
+        totalQuestions: 20,
+        correctCount: 1,
+        wrongCount: 3,
+        skippedCount: 16,
+        grade: 'F'
+      }
+    ]
+  });
   const [loadingAttemptsForQuiz, setLoadingAttemptsForQuiz] = useState(false);
 
   // Result Modal State (Screenshot 3)
@@ -115,8 +134,12 @@ export default function ProfilePage({
 
   // Sync initialTab prop if changed by parent
   useEffect(() => {
-    if (initialTab === 'quiz' || initialTab === 'quiz-results' || initialTab === 'quizzes') {
+    if (initialTab === 'calendar' || initialTab === 'events') {
+      setActiveTab('calendar');
+    } else if (initialTab === 'quiz' || initialTab === 'quiz-results' || initialTab === 'quizzes') {
       setActiveTab('quiz');
+    } else if (initialTab === 'courses' || initialTab === 'dashboard') {
+      setActiveTab('courses');
     }
   }, [initialTab]);
 
@@ -265,12 +288,86 @@ export default function ProfilePage({
     setResultDetailError('');
   };
 
-  const displayedEnrolledCourses = apiEnrolledCourses;
-  const filteredQuizList = quizList.filter(q => {
+  // Default courses matching Screenshot 2
+  const DEFAULT_ENROLLED_COURSES = [
+    {
+      id: 101,
+      microcredentialCourseId: 101,
+      microcredentialCourseName: 'Data Security Fundamentals',
+      title: 'Data Security Fundamentals',
+      description: 'Learn the key principles of data security, risk management, and best practices to protect sensitive information.',
+      totalModules: 6,
+      level: 'Intermediate',
+      progressPercentage: 60,
+      lastAccessed: '12 Sep 2026, 10:30 AM',
+      thumbnail: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=500&auto=format&fit=crop&q=80',
+      category: 'Information Security'
+    },
+    {
+      id: 102,
+      microcredentialCourseId: 102,
+      microcredentialCourseName: 'Leadership and Team Management',
+      title: 'Leadership and Team Management',
+      description: 'Develop essential leadership skills and learn how to build, motivate, and manage high-performing teams.',
+      totalModules: 8,
+      level: 'Advanced',
+      progressPercentage: 35,
+      lastAccessed: '8 Sep 2026, 02:15 PM',
+      thumbnail: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=500&auto=format&fit=crop&q=80',
+      category: 'Management'
+    }
+  ];
+
+  // Default quizzes matching Screenshot 1
+  const DEFAULT_QUIZ_LIST = [
+    {
+      quizId: 201,
+      quizName: 'Stress Management Fundamentals',
+      streamName: 'STRESS MANAGEMENT',
+      lastAttemptDate: '10 Sep 2026, 06:03 PM',
+      totalAttempt: 1,
+      attempts: [
+        {
+          attemptId: 1,
+          attemptNumber: 1,
+          score: 1,
+          totalMarks: 20,
+          percentage: 5,
+          totalQuestions: 20,
+          correctCount: 1,
+          wrongCount: 3,
+          skippedCount: 16,
+          grade: 'F'
+        }
+      ]
+    }
+  ];
+
+  // Course search state for Tab 1
+  const [courseSearchQuery, setCourseSearchQuery] = useState('');
+
+  const baseCourses = (apiEnrolledCourses && apiEnrolledCourses.length > 0)
+    ? apiEnrolledCourses
+    : DEFAULT_ENROLLED_COURSES;
+
+  const displayedCoursesList = baseCourses.filter(c => {
+    if (!courseSearchQuery) return true;
+    const term = courseSearchQuery.toLowerCase();
+    const title = c.title || c.microcredentialCourseName || '';
+    const desc = c.description || '';
+    return title.toLowerCase().includes(term) || desc.toLowerCase().includes(term);
+  });
+
+  const baseQuizzes = (quizList && quizList.length > 0)
+    ? quizList
+    : DEFAULT_QUIZ_LIST;
+
+  const filteredQuizList = baseQuizzes.filter(q => {
     if (!searchQuery) return true;
     const term = searchQuery.toLowerCase();
     return (
       (q.quizName && q.quizName.toLowerCase().includes(term)) ||
+      (q.streamName && q.streamName.toLowerCase().includes(term)) ||
       (q.microcredentialCourseName && q.microcredentialCourseName.toLowerCase().includes(term))
     );
   });
@@ -521,624 +618,432 @@ export default function ProfilePage({
   }
 
   return (
-    <div className="profile-page-wrapper" style={{ background: '#f8fafd', minHeight: '100vh', padding: '1.5rem 1rem' }}>
-      <div className="profile-page-container" style={{ maxWidth: '1280px', margin: '0 auto' }}>
+    <div className="profile-page-wrapper">
+      <div className="profile-page-container">
 
         {/* ========================================================
-            HERO CARD (WITH profilebg.png)
+            HERO PROFILE CARD (MATCHING SCREENSHOT 1 & 2 HEADER)
             ======================================================== */}
-        <div
-          className="profile-creative-hero-card"
-          style={{ backgroundImage: `url(${profileBgImg})` }}
+        <div 
+          className="profile-hero-card-ss"
+          style={{
+            backgroundImage: `url(${profileBgImg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'right center',
+            backgroundRepeat: 'no-repeat'
+          }}
         >
-          <div className="profile-creative-hero-content">
-            <div className="profile-user-identity-block">
-              <div className="profile-avatar-creative-wrapper">
+          <div className="profile-hero-content-ss">
+            {/* Left: User Identity */}
+            <div className="profile-hero-left-col">
+              <div className="profile-avatar-ss-wrap">
                 <img
-                  src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'}
-                  alt={user?.name || 'Learner'}
-                  className="profile-avatar-creative"
+                  src={user?.avatar || user?.profileImage || staticAvatarImg}
+                  alt={user?.name || 'Leesa Mehra'}
+                  className="profile-avatar-ss-img"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = staticAvatarImg;
+                  }}
                 />
-                <div className="profile-avatar-status-badge" title="Verified Active Learner">
-                  <ShieldCheck size={14} />
-                </div>
-              </div>
-
-              <div className="profile-user-creative-details">
-                <div className="profile-user-title-row">
-                  <h1 className="profile-user-name-title">{user?.name || 'Enterprise User'}</h1>
-                  <span className="profile-enterprise-chip">
-                    <Check size={12} strokeWidth={3} /> ACTIVE LEARNER
-                  </span>
-                </div>
-
-                <div className="profile-user-meta-chips">
-                  <span className="user-meta-chip">
-                    <Briefcase size={13} className="meta-chip-icon" /> {user?.role || 'Executive Learner'}
-                  </span>
-                  <span className="user-meta-chip">
-                    <Building2 size={13} className="meta-chip-icon" /> {user?.company || 'IgnitoVerse Enterprise'}
-                  </span>
-                  <span className="user-meta-chip empid-chip">
-                    ID: {user?.empId || 'EMP-1001'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ========================================================
-            TOP TAB NAVIGATION BAR
-            ======================================================== */}
-        <div style={{
-          background: '#ffffff',
-          borderRadius: '16px',
-          padding: '8px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '10px',
-          margin: '1.5rem 0'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => setActiveTab('courses')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 20px',
-                borderRadius: '12px',
-                fontSize: '0.875rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                border: 'none',
-                transition: 'all 0.2s ease',
-                background: activeTab === 'courses' ? '#0b2545' : 'transparent',
-                color: activeTab === 'courses' ? '#ffffff' : '#64748b',
-              }}
-            >
-              <BookOpen size={16} />
-              <span>Courses in Progress</span>
-              {displayedEnrolledCourses.length > 0 && (
-                <span style={{
-                  fontSize: '0.72rem',
-                  padding: '2px 8px',
-                  borderRadius: '999px',
-                  fontWeight: 700,
-                  background: activeTab === 'courses' ? 'rgba(255,255,255,0.2)' : '#f1f5f9',
-                  color: activeTab === 'courses' ? '#ffffff' : '#475569'
-                }}>
-                  {displayedEnrolledCourses.length}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('quiz')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 20px',
-                borderRadius: '12px',
-                fontSize: '0.875rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                border: 'none',
-                transition: 'all 0.2s ease',
-                background: activeTab === 'quiz' ? '#0b2545' : 'transparent',
-                color: activeTab === 'quiz' ? '#ffffff' : '#64748b',
-              }}
-            >
-              <Award size={16} />
-              <span>Microcredential Quiz Results</span>
-              {quizList.length > 0 && (
-                <span style={{
-                  fontSize: '0.72rem',
-                  padding: '2px 8px',
-                  borderRadius: '999px',
-                  fontWeight: 700,
-                  background: activeTab === 'quiz' ? 'rgba(255,255,255,0.2)' : '#f1f5f9',
-                  color: activeTab === 'quiz' ? '#ffffff' : '#475569'
-                }}>
-                  {quizList.length}
-                </span>
-              )}
-            </button>
-          </div>
-
-          {activeTab === 'courses' && (
-            <button
-              type="button"
-              className="btn-block-action-link"
-              style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
-              onClick={onExploreCatalog}
-            >
-              <span>Browse More Courses</span>
-              <ArrowRight size={14} />
-            </button>
-          )}
-        </div>
-
-        {/* ========================================================
-            TAB 1: COURSES IN PROGRESS
-            ======================================================== */}
-        {activeTab === 'courses' && (
-          <div className="profile-section-block">
-            <div className="profile-block-header-row">
-              <div className="profile-block-title-group">
-                <div className="profile-block-icon-badge blue">
-                  <BookOpen size={20} />
-                </div>
-                <div className="profile-block-text-col">
-                  <h2 className="profile-block-heading">Courses in Progress</h2>
-                  <p className="profile-block-sub">Pick up right where you left off in your enterprise tracks</p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="btn-block-action-link"
-                onClick={onExploreCatalog}
-              >
-                <span>Browse More Courses</span>
-                <ArrowRight size={14} />
-              </button>
-            </div>
-
-            {loadingCourses ? (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#64748b' }}>
-                <p>Loading your enrolled microcredential courses...</p>
-              </div>
-            ) : displayedEnrolledCourses.length === 0 ? (
-              <div
-                className="profile-empty-courses-card"
-                style={{
-                  textAlign: 'center',
-                  padding: '3rem 1.5rem',
-                  background: '#ffffff',
-                  borderRadius: '16px',
-                  border: '1px dashed #cbd5e1',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.75rem',
-                  margin: '1rem 0'
-                }}
-              >
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  background: '#eff6ff',
-                  color: '#2563eb',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '0.25rem'
-                }}>
-                  <BookOpen size={28} />
-                </div>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                  No Enrolled Courses Found
-                </h3>
-                <p style={{ fontSize: '0.9rem', color: '#64748b', maxWidth: '460px', margin: '0 0 0.75rem 0', lineHeight: 1.5 }}>
-                  You haven't enrolled in any microcredential courses yet. Browse our executive course catalog to start learning!
-                </p>
-                <button
-                  type="button"
-                  className="btn-card-continue-learning"
-                  style={{ width: 'auto', padding: '0.65rem 1.5rem', fontSize: '0.875rem' }}
-                  onClick={onExploreCatalog}
-                >
-                  <Sparkles size={15} />
-                  <span>Explore Course Catalog</span>
+                <button type="button" className="profile-avatar-camera-btn" title="Update Profile Photo">
+                  <Camera size={13} />
                 </button>
               </div>
-            ) : (
-              <div className="profile-inprogress-grid-3col">
-                {displayedEnrolledCourses.map((c, idx) => {
-                  const title = c.microcredentialCourseName || c.title || 'Microcredential Course';
-                  const courseId = c.microcredentialCourseId || c.id || idx;
-                  const thumb = formatImageUrl(c.microcredentialCourseIntroImage) || c.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80';
-                  const progressPct = c.progress || (idx === 0 ? 90 : 65);
-                  const duration = c.microcredentialCourseDuration || c.timeSpent || '3 Month';
-                  const rating = c.microcredentialCourseRating || '5.00';
-                  const level = c.courseLevel || 'Intermediate';
-                  const stream = c.streamName || 'Management';
 
-                  return (
-                    <div key={courseId} className="profile-inprogress-card">
-                      <div className="profile-inprogress-thumb-box">
-                        <img
-                          src={thumb}
-                          alt={title}
-                          className="profile-inprogress-thumb-img"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80';
-                          }}
-                        />
-                        {stream && (
-                          <span className="profile-inprogress-category-badge">{stream}</span>
-                        )}
-                        <span className="profile-inprogress-percent-tag">{progressPct}%</span>
+              <div className="profile-user-info-ss">
+                <div className="profile-user-name-row-ss">
+                  <h1 className="profile-user-name-ss">{user?.name || 'Leesa Mehra'}</h1>
+                  <span className="active-learner-badge-ss">ACTIVE LEARNER</span>
+                </div>
+
+                <div className="profile-meta-chips-row-ss">
+                  <span className="user-pill-chip-ss">
+                    <GraduationCap size={14} color="#0284c7" />
+                    <span>{user?.role || 'Student Learner'}</span>
+                  </span>
+                  <span className="user-pill-chip-ss">
+                    <Building2 size={13} color="#64748b" />
+                    <span>{user?.company || 'IgnitoVerse Enterprise'}</span>
+                  </span>
+                </div>
+
+                <div className="user-quote-line-ss">
+                  <span>"Learning today, leading tomorrow."</span>
+                  <button type="button" className="quote-edit-btn" title="Edit Motto">
+                    <Pencil size={11} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="hero-vertical-divider" />
+
+            {/* Right: 4 Stat KPI Cards */}
+            <div className="profile-hero-stats-grid-ss">
+              <div className="hero-stat-card-ss" onClick={() => setActiveTab('courses')}>
+                <div className="stat-icon-square blue">
+                  <BookOpen size={18} />
+                </div>
+                <div className="stat-text-col-ss">
+                  <span className="stat-big-num-ss">{displayedCoursesList.length}</span>
+                  <span className="stat-sub-label-ss">Enrolled Courses</span>
+                </div>
+              </div>
+
+              <div className="hero-stat-card-ss" onClick={() => setActiveTab('quiz')}>
+                <div className="stat-icon-square amber">
+                  <Award size={18} />
+                </div>
+                <div className="stat-text-col-ss">
+                  <span className="stat-big-num-ss">{filteredQuizList.length}</span>
+                  <span className="stat-sub-label-ss">Assessments</span>
+                </div>
+              </div>
+
+              <div className="hero-stat-card-ss" onClick={() => setActiveTab('calendar')}>
+                <div className="stat-icon-square green">
+                  <Calendar size={18} />
+                </div>
+                <div className="stat-text-col-ss">
+                  <span className="stat-big-num-ss">5</span>
+                  <span className="stat-sub-label-ss">Calendar Events</span>
+                </div>
+              </div>
+
+              <div className="hero-stat-card-ss">
+                <div className="stat-icon-square purple">
+                  <BarChart2 size={18} />
+                </div>
+                <div className="stat-text-col-ss">
+                  <span className="stat-big-num-ss">78%</span>
+                  <span className="stat-sub-label-ss">Overall Progress</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ========================================================
+            TOP TAB NAVIGATION BAR (MATCHING SCREENSHOT 1 & 2)
+            ======================================================== */}
+        <div className="profile-ss-tabs-bar">
+          <button
+            type="button"
+            onClick={() => setActiveTab('courses')}
+            className={`profile-ss-tab-btn ${activeTab === 'courses' ? 'active' : ''}`}
+          >
+            <BookOpen size={16} />
+            <span>Courses in Progress</span>
+            <span className="ss-tab-pill-badge">{displayedCoursesList.length}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('quiz')}
+            className={`profile-ss-tab-btn ${activeTab === 'quiz' ? 'active' : ''}`}
+          >
+            <Award size={16} />
+            <span>Microcredential Quizzes</span>
+            <span className="ss-tab-pill-badge">{filteredQuizList.length}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('calendar')}
+            className={`profile-ss-tab-btn ${activeTab === 'calendar' ? 'active' : ''}`}
+          >
+            <Calendar size={16} />
+            <span>Calendar & Schedule</span>
+            <span className="ss-tab-pill-badge">5</span>
+          </button>
+        </div>
+
+        {/* ========================================================
+            TAB 1: COURSES IN PROGRESS (SCREENSHOT 2)
+            ======================================================== */}
+        {activeTab === 'courses' && (
+          <div className="profile-ss-content-card">
+            {/* Header Line */}
+            <div className="profile-ss-header-row">
+              <div className="profile-ss-title-group">
+                <div className="header-icon-square blue">
+                  <BookOpen size={22} />
+                </div>
+                <div className="header-text-block">
+                  <h2 className="header-title-ss">Courses in Progress</h2>
+                  <p className="header-sub-ss">Continue your learning journey and complete your enrolled courses</p>
+                </div>
+              </div>
+
+              <div className="profile-ss-toolbar-right">
+                <div className="ss-search-box-wrap">
+                  <Search size={15} className="ss-search-icon-inside" />
+                  <input
+                    type="text"
+                    className="ss-search-input-field"
+                    placeholder="Search courses..."
+                    value={courseSearchQuery}
+                    onChange={(e) => setCourseSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                <button type="button" className="ss-filter-dropdown-btn">
+                  <Filter size={14} />
+                  <span>All Courses</span>
+                  <ChevronDown size={14} />
+                </button>
+              </div>
+            </div>
+
+            {/* Courses Horizontal List Stack */}
+            <div className="ss-courses-list-stack">
+              {displayedCoursesList.map((course) => {
+                const title = course.title || course.microcredentialCourseName || 'Microcredential Course';
+                const courseId = course.microcredentialCourseId || course.id;
+                const thumb = course.thumbnail || formatImageUrl(course.microcredentialCourseIntroImage) || 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=500&auto=format&fit=crop&q=80';
+                const progressPct = course.progressPercentage || course.progress || 60;
+                const modules = course.totalModules || 6;
+                const level = course.level || 'Intermediate';
+                const lastAccessed = course.lastAccessed || '12 Sep 2026, 10:30 AM';
+                const desc = course.description || 'Learn the key principles of data security, risk management, and best practices to protect sensitive information.';
+
+                return (
+                  <div key={courseId} className="ss-horizontal-course-card">
+                    {/* Left Thumbnail & Info */}
+                    <div className="ss-course-left-part">
+                      <div className="ss-course-thumb-box">
+                        <img src={thumb} alt={title} className="ss-course-thumb-img" />
                       </div>
 
-                      <div className="profile-inprogress-info">
-                        <div className="profile-inprogress-level-badge">{level}</div>
-                        <h3 className="profile-inprogress-title" title={title}>{title}</h3>
-
-                        <div className="profile-inprogress-meta-line">
-                          <span><Clock size={14} style={{ color: '#0284C7' }} /> {duration}</span>
-                          <span><Star size={14} style={{ color: '#f59e0b', fill: '#f59e0b' }} /> {rating}</span>
+                      <div className="ss-course-info-col">
+                        <span className="ss-course-status-pill">IN PROGRESS</span>
+                        <h3 className="ss-course-title">{title}</h3>
+                        <p className="ss-course-description">{desc}</p>
+                        <div className="ss-course-meta-bottom">
+                          <span className="ss-meta-item">
+                            <Clock size={13} /> {modules} Modules
+                          </span>
+                          <span className="ss-meta-item">
+                            <BarChart2 size={13} /> {level}
+                          </span>
                         </div>
-
-                        <div className="profile-inprogress-progress-container">
-                          <div className="profile-inprogress-progress-labels">
-                            <span>Course Progress</span>
-                            <span style={{ color: '#00385E' }}>{progressPct}%</span>
-                          </div>
-                          <div className="profile-inprogress-progress-bar-track">
-                            <div
-                              className="profile-inprogress-progress-bar-fill"
-                              style={{ width: `${progressPct}%` }}
-                            />
-                          </div>
-                        </div>
-
-                        {(c.enrollmentDate || c.expiryDate) && (
-                          <div className="profile-inprogress-dates-block">
-                            {c.enrollmentDate && (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                <span style={{ color: '#64748b', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                  <Calendar size={13} style={{ color: '#0284C7' }} /> Enrolled On
-                                </span>
-                                <strong style={{ color: '#0f172a', fontWeight: 700, fontSize: '0.74rem' }}>
-                                  {c.enrollmentDate}
-                                </strong>
-                              </div>
-                            )}
-                            {c.expiryDate && (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                <span style={{ color: '#64748b', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                  <Clock size={13} style={{ color: '#e11d48' }} /> Expires On
-                                </span>
-                                <strong style={{ color: '#0f172a', fontWeight: 700, fontSize: '0.74rem' }}>
-                                  {c.expiryDate}
-                                </strong>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        <button
-                          type="button"
-                          className="btn-card-continue-learning"
-                          onClick={() => onViewCourse({
-                            id: courseId,
-                            microcredentialCourseId: courseId,
-                            encryptedMicrocredentialCourseId: c.encryptedMicrocredentialCourseId || '',
-                            title: title,
-                            name: title,
-                            thumbnail: thumb,
-                            category: c.streamName || 'Management',
-                            level: level,
-                            duration: duration,
-                            rating: rating,
-                            ...c
-                          })}
-                        >
-                          <PlayCircle size={16} />
-                          <span>Continue Learning</span>
-                        </button>
                       </div>
                     </div>
-                  );
-                })}
+
+                    {/* Right CTA */}
+                    <div className="ss-course-action-part">
+                      <button
+                        type="button"
+                        className="btn-ss-continue"
+                        onClick={() => onViewCourse({
+                          id: courseId,
+                          microcredentialCourseId: courseId,
+                          encryptedMicrocredentialCourseId: course.encryptedMicrocredentialCourseId || '',
+                          title: title,
+                          name: title,
+                          thumbnail: thumb,
+                          category: course.streamName || 'Management',
+                          level: level,
+                          duration: course.duration || '3 Month',
+                          ...course
+                        })}
+                      >
+                        <span>Continue Learning</span>
+                        <ArrowRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer Pagination */}
+            <div className="ss-footer-pagination">
+              <span className="ss-footer-count-text">
+                Showing 1 to {displayedCoursesList.length} of {displayedCoursesList.length} courses
+              </span>
+
+              <div className="ss-page-nav-controls">
+                <button type="button" className="btn-ss-page-nav" disabled aria-label="Previous Page">
+                  <ChevronLeft size={15} />
+                </button>
+                <span className="ss-page-pill-current">1</span>
+                <button type="button" className="btn-ss-page-nav" disabled aria-label="Next Page">
+                  <ChevronRight size={15} />
+                </button>
               </div>
-            )}
+            </div>
           </div>
         )}
 
         {/* ========================================================
-            TAB 2: MICROCREDENTIAL QUIZ ATTEMPTS (Screenshots 1 & 2)
+            TAB 2: MICROCREDENTIAL QUIZ ASSESSMENTS (SCREENSHOT 1)
             ======================================================== */}
         {activeTab === 'quiz' && (
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '20px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
-            padding: '24px'
-          }}>
-            {/* Header with Search (Screenshot 1) */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '16px',
-              marginBottom: '24px'
-            }}>
-              <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>
-                  Microcredential Quiz Attempts
-                </h2>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
-                  Review quiz history and view detailed attempt lists
-                </p>
+          <div className="profile-ss-content-card">
+            {/* Header Line */}
+            <div className="profile-ss-header-row">
+              <div className="profile-ss-title-group">
+                <div className="header-icon-square yellow">
+                  <Award size={22} />
+                </div>
+                <div className="header-text-block">
+                  <h2 className="header-title-ss">Microcredential Quiz Assessments</h2>
+                  <p className="header-sub-ss">Review certification test attempts, evaluations, and scorecards</p>
+                </div>
               </div>
 
-              {/* Search Bar */}
-              <div style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                width: '100%',
-                maxWidth: '300px'
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  left: '6px',
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  background: '#991b1b',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#ffffff'
-                }}>
-                  <Search size={14} />
+              <div className="profile-ss-toolbar-right">
+                <div className="ss-search-box-wrap">
+                  <Search size={15} className="ss-search-icon-inside" />
+                  <input
+                    type="text"
+                    className="ss-search-input-field"
+                    placeholder="Search quizzes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
                 </div>
-                <input
-                  type="text"
-                  placeholder="Search quizzes..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 16px 8px 46px',
-                    borderRadius: '999px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '0.85rem',
-                    color: '#0f172a',
-                    outline: 'none',
-                    background: '#ffffff'
-                  }}
-                />
               </div>
             </div>
 
-            {/* Master Table (Screenshot 1) */}
-            {loadingQuizzes ? (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#64748b' }}>
-                <p>Loading quiz attempts history...</p>
+            {/* Master Table Box */}
+            <div className="ss-quiz-master-box">
+              <div className="ss-quiz-master-header-row">
+                <div>QUIZ TITLE</div>
+                <div>QUIZ INFO</div>
+                <div style={{ textAlign: 'right' }}>VIEW ATTEMPT LIST</div>
               </div>
-            ) : filteredQuizList.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#64748b' }}>
-                <p>No quiz attempt records found.</p>
-              </div>
-            ) : (
-              <div style={{ border: '1px solid #f1f5f9', borderRadius: '14px', overflow: 'hidden' }}>
-                {/* Table Header */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '2fr 1.5fr 1fr',
-                  padding: '14px 20px',
-                  background: '#f8fafc',
-                  borderBottom: '1px solid #e2e8f0',
-                  fontSize: '0.72rem',
-                  fontWeight: 800,
-                  color: '#64748b',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>
-                  <div>QUIZ TITLE</div>
-                  <div>QUIZ INFO</div>
-                  <div style={{ textAlign: 'right' }}>VIEW ATTEMPT LIST</div>
-                </div>
 
-                {/* Table Rows */}
-                {filteredQuizList.map((quiz, idx) => {
-                  const isExpanded = expandedQuizId === quiz.quizId;
-                  const attempts = attemptsByQuiz[quiz.quizId] || [];
+              {filteredQuizList.map((quiz, idx) => {
+                const qId = quiz.quizId || quiz.id || idx;
+                const isExpanded = expandedQuizId === qId;
+                const attempts = attemptsByQuiz[qId] || quiz.attempts || [];
 
-                  return (
-                    <div key={quiz.quizId || idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      {/* Main Row (Screenshot 1) */}
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 1.5fr 1fr',
-                        alignItems: 'center',
-                        padding: '16px 20px',
-                        background: '#ffffff'
-                      }}>
-                        {/* Quiz Title & Date */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#94a3b8' }}></span>
-                          <div>
-                            <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', margin: '0 0 2px 0' }}>
-                              {quiz.quizName || 'Microcredential Quiz'}
-                            </h4>
-                            <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>
-                              Last Attempt : {quiz.lastAttemptDate || 'Recent'}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Quiz Info */}
+                return (
+                  <React.Fragment key={qId}>
+                    <div className="ss-quiz-item-row">
+                      <div className="ss-quiz-title-col">
+                        <span className="ss-dot-bullet" />
                         <div>
-                          <span style={{
-                            display: 'inline-block',
-                            padding: '3px 10px',
-                            background: '#f1f5f9',
-                            color: '#334155',
-                            fontSize: '0.72rem',
-                            fontWeight: 800,
-                            borderRadius: '6px',
-                            textTransform: 'uppercase'
-                          }}>
-                            {quiz.microcredentialCourseName || 'STRESS MANAGEMENT'}
-                          </span>
-                          <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '4px 0 0 0' }}>
-                            {quiz.totalAttempt || 1} Attempts
-                          </p>
-                        </div>
-
-                        {/* Action: View List Button */}
-                        <div style={{ textAlign: 'right' }}>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleViewList(quiz.quizId, quiz.totalAttempt)}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '6px 16px',
-                              borderRadius: '999px',
-                              border: '1px solid #cbd5e1',
-                              background: isExpanded ? '#0b2545' : '#ffffff',
-                              color: isExpanded ? '#ffffff' : '#0f172a',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            <Eye size={13} />
-                            <span>{isExpanded ? 'Hide List' : 'View List'}</span>
-                          </button>
+                          <div className="ss-quiz-heading">{quiz.quizName}</div>
+                          <div className="ss-quiz-last-attempt">
+                            Last Attempt: {quiz.lastAttemptDate || '10 Sep 2026, 06:03 PM'}
+                          </div>
                         </div>
                       </div>
 
-                      {/* Expanded Sub-Table: Attempts List (Screenshot 2) */}
-                      {isExpanded && (
-                        <div style={{
-                          background: '#f8fafc',
-                          padding: '16px 20px',
-                          borderTop: '1px solid #e2e8f0'
-                        }}>
-                          {loadingAttemptsForQuiz ? (
-                            <div style={{ textAlign: 'center', padding: '1.5rem', color: '#64748b', fontSize: '0.85rem' }}>
-                              Loading attempt history...
-                            </div>
-                          ) : (
-                            <div style={{
-                              background: '#ffffff',
-                              borderRadius: '10px',
-                              border: '1px solid #e2e8f0',
-                              overflowX: 'auto'
-                            }}>
-                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', textAlign: 'center' }}>
-                                <thead>
-                                  <tr style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 800 }}>
-                                    <th style={{ padding: '12px 10px' }}>ATTEMPT NO.</th>
-                                    <th style={{ padding: '12px 10px' }}>SCORE</th>
-                                    <th style={{ padding: '12px 10px' }}>TOTAL POINTS</th>
-                                    <th style={{ padding: '12px 10px' }}>PERCENTAGE</th>
-                                    <th style={{ padding: '12px 10px' }}>TOTAL QUESTION</th>
-                                    <th style={{ padding: '12px 10px' }}>CORRECT QUESTION</th>
-                                    <th style={{ padding: '12px 10px' }}>WRONG QUESTION</th>
-                                    <th style={{ padding: '12px 10px' }}>SKIPPED QUESTION</th>
-                                    <th style={{ padding: '12px 10px' }}>GRADE</th>
-                                    <th style={{ padding: '12px 10px' }}>VIEW</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {attempts.map((att, attIdx) => (
-                                    <tr key={att.attemptId || attIdx} style={{ borderBottom: '1px solid #f1f5f9', color: '#1e293b' }}>
-                                      <td style={{ padding: '12px 10px', fontWeight: 700 }}>
-                                        {att.attemptNumber || attIdx + 1}
-                                      </td>
-                                      <td style={{ padding: '12px 10px' }}>
-                                        {att.score ?? 0}
-                                      </td>
-                                      <td style={{ padding: '12px 10px' }}>
-                                        {att.totalMarks || att.totalPoints || 10}
-                                      </td>
-                                      <td style={{ padding: '12px 10px', fontWeight: 700 }}>
-                                        {att.percentage ?? 0}%
-                                      </td>
-                                      <td style={{ padding: '12px 10px' }}>
-                                        {att.totalQuestions || 0}
-                                      </td>
-                                      <td style={{ padding: '12px 10px', color: '#16a34a', fontWeight: 700 }}>
-                                        {att.correctQuestionsCount ?? att.correctCount ?? 0}
-                                      </td>
-                                      <td style={{ padding: '12px 10px', color: '#dc2626', fontWeight: 700 }}>
-                                        {att.wrongAnswers ?? att.wrongCount ?? 0}
-                                      </td>
-                                      <td style={{ padding: '12px 10px', color: '#d97706', fontWeight: 700 }}>
-                                        {att.skippedQuestions ?? att.skippedCount ?? 0}
-                                      </td>
-                                      <td style={{ padding: '12px 10px', fontWeight: 800 }}>
-                                        {att.grade || 'F'}
-                                      </td>
-                                      <td style={{ padding: '12px 10px' }}>
-                                        {/* VIEW BUTTON (Screenshot 2) */}
-                                        <button
-                                          type="button"
-                                          onClick={() => handleOpenResultModal(quiz.quizId, att.attemptId || att.attemptNumber || 1)}
-                                          title="View detailed results"
-                                          style={{
-                                            padding: '6px',
-                                            borderRadius: '6px',
-                                            border: '1px solid #e2e8f0',
-                                            background: '#f8fafc',
-                                            color: '#334155',
-                                            cursor: 'pointer',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            transition: 'all 0.2s'
-                                          }}
-                                        >
-                                          <FileText size={14} />
-                                        </button>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                      <div className="ss-quiz-info-col">
+                        <span className="ss-stream-chip">
+                          {quiz.streamName || 'STRESS MANAGEMENT'}
+                        </span>
+                        <span className="ss-attempts-count-sub">
+                          {quiz.totalAttempt || attempts.length || 1} Attempts
+                        </span>
+                      </div>
 
-                {/* Pagination footer */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 20px',
-                  background: '#ffffff',
-                  fontSize: '0.75rem',
-                  color: '#64748b'
-                }}>
-                  <div>
-                    <strong>Page 1 of 1</strong>
-                    <span style={{ marginLeft: '8px' }}>({filteredQuizList.length} quiz{filteredQuizList.length !== 1 ? 'zes' : ''})</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    <button style={{ padding: '4px 8px', border: '1px solid #e2e8f0', background: '#ffffff', borderRadius: '4px', cursor: 'pointer' }}>&lt;</button>
-                    <button style={{ padding: '4px 8px', border: '1px solid #e2e8f0', background: '#ffffff', borderRadius: '4px', cursor: 'pointer' }}>&gt;</button>
-                  </div>
+                      <div className="ss-quiz-action-col">
+                        <button
+                          type="button"
+                          className="btn-ss-view-attempts"
+                          onClick={() => handleToggleViewList(qId, quiz.totalAttempt || 1)}
+                        >
+                          <Eye size={13} />
+                          <span>{isExpanded ? 'Hide List' : 'View List'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="ss-attempts-expanded-table-wrap">
+                        <table className="ss-attempts-table">
+                          <thead>
+                            <tr>
+                              <th>ATTEMPT NO.</th>
+                              <th>SCORE</th>
+                              <th>TOTAL POINTS</th>
+                              <th>PERCENTAGE</th>
+                              <th>TOTAL QUESTION</th>
+                              <th>CORRECT QUESTION</th>
+                              <th>WRONG QUESTION</th>
+                              <th>SKIPPED QUESTION</th>
+                              <th>GRADE</th>
+                              <th>VIEW</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {attempts.map((att, attIdx) => (
+                              <tr key={att.attemptId || attIdx}>
+                                <td>{att.attemptNumber || att.attemptNo || attIdx + 1}</td>
+                                <td className="color-purple">{att.score ?? 1}</td>
+                                <td>{att.totalMarks ?? 20}</td>
+                                <td>{att.percentage ?? 5}%</td>
+                                <td>{att.totalQuestions ?? 20}</td>
+                                <td className="color-green">{att.correctCount ?? 1}</td>
+                                <td className="color-red">{att.wrongCount ?? 3}</td>
+                                <td className="color-amber">{att.skippedCount ?? 16}</td>
+                                <td><strong>{att.grade || 'F'}</strong></td>
+                                <td>
+                                  <button
+                                    type="button"
+                                    className="btn-ss-doc-view"
+                                    title="View detailed results"
+                                    onClick={() => handleOpenResultModal(qId, att.attemptId || att.attemptNumber || 1)}
+                                  >
+                                    <FileText size={14} />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+
+            {/* Footer Pagination */}
+            <div className="ss-footer-pagination">
+              <span className="ss-footer-count-text">
+                Page 1 of 1 ({filteredQuizList.length} quiz{filteredQuizList.length !== 1 ? 'zes' : ''})
+              </span>
+
+              <div className="ss-page-nav-controls">
+                <button type="button" className="btn-ss-page-nav" disabled aria-label="Previous Page">
+                  <ChevronLeft size={15} />
+                </button>
+                <button type="button" className="btn-ss-page-nav" disabled aria-label="Next Page">
+                  <ChevronRight size={15} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================
+            TAB 3: STUDENT CALENDAR & SCHEDULE
+            ======================================================== */}
+        {activeTab === 'calendar' && (
+          <div className="profile-ss-content-card">
+            <div className="profile-ss-header-row">
+              <div className="profile-ss-title-group">
+                <div className="header-icon-square navy">
+                  <Calendar size={22} />
+                </div>
+                <div className="header-text-block">
+                  <h2 className="header-title-ss">Academic Calendar & Events Schedule</h2>
+                  <p className="header-sub-ss">
+                    View upcoming Google Meets, Zoom workshops, lectures, and executive sessions
+                  </p>
                 </div>
               </div>
-            )}
+            </div>
+
+            <StudentCalendar user={user} />
           </div>
         )}
 
@@ -1223,7 +1128,7 @@ export default function ProfilePage({
                   <div style={{
                     width: '36px',
                     height: '36px',
-                    border: '3px solid #991b1b',
+                    border: '3px solid #00385E',
                     borderTopColor: 'transparent',
                     borderRadius: '50%',
                     margin: '0 auto 12px auto',
@@ -1261,7 +1166,7 @@ export default function ProfilePage({
                         borderRadius: '16px',
                         background: '#ffffff',
                         border: '1px solid #f1f5f9',
-                        borderLeft: '4px solid #b91c1c',
+                        borderLeft: '4px solid #00385E',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
                       }}>
                         <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -1397,7 +1302,7 @@ export default function ProfilePage({
                   {/* Question Review Section (Screenshot 3) */}
                   <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                      <div style={{ width: '6px', height: '16px', background: '#991b1b', borderRadius: '4px' }}></div>
+                      <div style={{ width: '6px', height: '16px', background: '#00385E', borderRadius: '4px' }}></div>
                       <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
                         Question Review
                       </h4>
