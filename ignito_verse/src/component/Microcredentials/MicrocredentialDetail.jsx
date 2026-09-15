@@ -134,7 +134,9 @@ export default function MicrocredentialDetail({
         professorName: merged.professorName || '',
         certificateName: merged.certificateName || '',
         about: merged.aboutMicrocredentialCourse || merged.courseAbout || merged.about || '',
+        aboutMicrocredentialCourse: merged.aboutMicrocredentialCourse || merged.courseAbout || merged.about || '',
         description: merged.microcredentialCourseDescription || merged.courseDescription || merged.description || '',
+        microcredentialCourseDescription: merged.microcredentialCourseDescription || merged.courseDescription || merged.description || '',
         learningOutcomes: directLearn.length > 0 ? directLearn : [],
         materialIncludeList: merged.materialIncludeOutputList || []
       });
@@ -719,17 +721,38 @@ export default function MicrocredentialDetail({
             {activeTab === 'info' && (
               <>
                 {/* About This Course */}
-                <div className="mc-card-section-box">
-                  <div className="mc-card-header-row">
-                    <div className="mc-card-header-icon blue-squircle">
-                      <FileText size={18} />
+                {(course.about || course.aboutMicrocredentialCourse || (!course.description && !course.microcredentialCourseDescription)) && (
+                  <div className="mc-card-section-box">
+                    <div className="mc-card-header-row">
+                      <div className="mc-card-header-icon blue-squircle">
+                        <FileText size={18} />
+                      </div>
+                      <h2 className="mc-card-header-title">About This Course</h2>
                     </div>
-                    <h2 className="mc-card-header-title">About This Course</h2>
+                    <div className="mc-card-body-paragraph">
+                      {renderFormattedContent(
+                        course.about || course.aboutMicrocredentialCourse,
+                        "This course provides a comprehensive understanding of stress, its causes, and its effects on mental and physical health. You will learn practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life. With interactive lessons and real-world examples, this course will help you build healthier habits and a more balanced lifestyle."
+                      )}
+                    </div>
                   </div>
-                  <div className="mc-card-body-paragraph">
-                    {renderFormattedContent(course.about || course.description, "This course provides a comprehensive understanding of stress, its causes, and its effects on mental and physical health. You will learn practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life. With interactive lessons and real-world examples, this course will help you build healthier habits and a more balanced lifestyle.")}
+                )}
+
+                {/* Course Description */}
+                {(course.description || course.microcredentialCourseDescription) &&
+                  (String(course.description || course.microcredentialCourseDescription).trim() !== String(course.about || course.aboutMicrocredentialCourse).trim()) && (
+                  <div className="mc-card-section-box">
+                    <div className="mc-card-header-row">
+                      <div className="mc-card-header-icon blue-squircle">
+                        <FileCheck size={18} />
+                      </div>
+                      <h2 className="mc-card-header-title">Course Description</h2>
+                    </div>
+                    <div className="mc-card-body-paragraph">
+                      {renderFormattedContent(course.description || course.microcredentialCourseDescription)}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* What Will You Learn? Box (if present) */}
                 {learnList.length > 0 && (

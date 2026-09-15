@@ -4,7 +4,7 @@ import {
   Menu, X, LogIn, ChevronDown, User, LayoutDashboard, 
   Award, ShieldCheck, Settings, LogOut 
 } from 'lucide-react';
-import logoImg from '../../assets/Ignitoverse Logo.png';
+import logoImg from '../../assets/Ignitoverse Logonew.png';
 import './navbar.css';
 
 const navItems = [
