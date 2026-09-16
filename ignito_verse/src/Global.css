@@ -145,7 +145,7 @@ a {
 .section-main-title {
   font-family: var(--font-heading);
   font-size: 45px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.22;
   color: var(--text-heading);
   letter-spacing: -0.02em;
@@ -650,10 +650,10 @@ a {
 .section-main-title {
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
   font-size: 45px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.14;
   letter-spacing: -1.5px;
-  color: #0a1128;
+  color: #052765;
   margin-bottom: 1.15rem;
 }
 
@@ -10213,8 +10213,8 @@ a {
 .section-main-title {
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
   font-size: clamp(2rem, 3.2vw, 2.75rem);
-  font-weight: 800;
-  color: #00385E;
+  font-weight: 700;
+  color: #052765;
   margin: 0 0 12px 0;
   letter-spacing: -0.01em;
 }
