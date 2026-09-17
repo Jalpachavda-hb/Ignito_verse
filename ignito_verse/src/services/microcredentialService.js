@@ -47,6 +47,12 @@ import { buildGetMicrocredentialVideoNotesInput } from '../dto/input/getMicrocre
 import { parseGetMicrocredentialVideoNotesOutput, parseGetMicrocredentialVideoNotesErrorOutput } from '../dto/output/getMicrocredentialVideoNotesOutput';
 import { buildDeleteMicrocredentialVideoNoteInput } from '../dto/input/deleteMicrocredentialVideoNoteInput';
 import { parseDeleteMicrocredentialVideoNoteOutput, parseDeleteMicrocredentialVideoNoteErrorOutput } from '../dto/output/deleteMicrocredentialVideoNoteOutput';
+import { buildGetMicrocredentialLiveMeetingsByCourseInput } from '../dto/input/getMicrocredentialLiveMeetingsByCourseInput';
+import { parseGetMicrocredentialLiveMeetingsByCourseOutput, parseGetMicrocredentialLiveMeetingsByCourseErrorOutput } from '../dto/output/getMicrocredentialLiveMeetingsByCourseOutput';
+import { buildGetMicrocredentialMeetingRecordingsInput } from '../dto/input/getMicrocredentialMeetingRecordingsInput';
+import { parseGetMicrocredentialMeetingRecordingsOutput, parseGetMicrocredentialMeetingRecordingsErrorOutput } from '../dto/output/getMicrocredentialMeetingRecordingsOutput';
+import { buildExportMicrocredentialEventIcsInput } from '../dto/input/exportMicrocredentialEventIcsInput';
+import { parseExportMicrocredentialEventIcsOutput, parseExportMicrocredentialEventIcsErrorOutput } from '../dto/output/exportMicrocredentialEventIcsOutput';
 
 /**
  * Fetches list of modules for a microcredential course by course ID.
@@ -1067,6 +1073,173 @@ export async function deleteMicrocredentialVideoNote({
         return parseDeleteMicrocredentialVideoNoteErrorOutput({ message: error.message }, 500);
     }
 }
+
+/**
+ * Fetches course-specific live meetings (Google Meet & Zoom) for an enrolled student.
+ * API: POST /api/StudentMicrocredentialCalendarAPI/GetMicrocredentialLiveMeetingsByCourse
+ */
+export async function getMicrocredentialLiveMeetingsByCourse(microcredentialCourseId = 0, studentId = 0) {
+    try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId) {
+            finalStudentId = getLoggedInStudentId() || 0;
+        }
+        const finalCourseId = Number(microcredentialCourseId) || 0;
+
+        const inputDto = buildGetMicrocredentialLiveMeetingsByCourseInput(finalCourseId, finalStudentId);
+        const response = await apiClient('api/StudentMicrocredentialCalendarAPI/GetMicrocredentialLiveMeetingsByCourse', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseGetMicrocredentialLiveMeetingsByCourseErrorOutput(response.data, response.status);
+        }
+
+        return parseGetMicrocredentialLiveMeetingsByCourseOutput(response.data, response.status);
+    } catch (error) {
+        console.error('Error in getMicrocredentialLiveMeetingsByCourse:', error);
+        return parseGetMicrocredentialLiveMeetingsByCourseErrorOutput({ message: error.message }, 500);
+    }
+}
+
+/**
+ * Fetches recorded lectures and cloud recording URLs for past Google Meet and Zoom sessions.
+ * API: POST /api/StudentMicrocredentialCalendarAPI/GetMicrocredentialMeetingRecordings
+ */
+export async function getMicrocredentialMeetingRecordings(microcredentialCourseId = 0, studentId = 0) {
+    try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId) {
+            finalStudentId = getLoggedInStudentId() || 0;
+        }
+        const finalCourseId = Number(microcredentialCourseId) || 0;
+
+        const inputDto = buildGetMicrocredentialMeetingRecordingsInput(finalCourseId, finalStudentId);
+        const response = await apiClient('api/StudentMicrocredentialCalendarAPI/GetMicrocredentialMeetingRecordings', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseGetMicrocredentialMeetingRecordingsErrorOutput(response.data, response.status);
+        }
+
+        return parseGetMicrocredentialMeetingRecordingsOutput(response.data, response.status);
+    } catch (error) {
+        console.error('Error in getMicrocredentialMeetingRecordings:', error);
+        return parseGetMicrocredentialMeetingRecordingsErrorOutput({ message: error.message }, 500);
+    }
+}
+
+/**
+ * Fetches iCalendar (.ics) content string for a scheduled event/meeting.
+ * API: POST /api/StudentMicrocredentialCalendarAPI/GetEventIcsContent
+ * 
+ * @param {string} eventId - Unique event identifier (e.g. 'MEET_5', 'ZOOM_3', 'EVENT_6')
+ * @returns {Promise<object>} Parsed output containing eventId, fileName, icsContent
+ */
+export async function getEventIcsContent(eventId = '') {
+    try {
+        const cleanEventId = String(eventId || '').trim();
+        const inputDto = buildExportMicrocredentialEventIcsInput(cleanEventId);
+        const response = await apiClient('api/StudentMicrocredentialCalendarAPI/GetEventIcsContent', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseExportMicrocredentialEventIcsErrorOutput(response.data, response.status);
+        }
+
+        return parseExportMicrocredentialEventIcsOutput(response.data, response.status);
+    } catch (error) {
+        console.error('Error in getEventIcsContent:', error);
+        return parseExportMicrocredentialEventIcsErrorOutput({ message: error.message }, 500);
+    }
+}
+
+/**
+ * Downloads .ics calendar file for a given event ID using client blob download.
+ * Falls back to client-generated ICS if API content is unavailable.
+ * 
+ * @param {string} eventId - Event ID (e.g., 'MEET_5')
+ * @param {object} [fallbackEvent=null] - Optional event metadata for fallback generation
+ * @returns {Promise<boolean>} True if download triggered successfully
+ */
+export async function downloadEventIcs(eventId = '', fallbackEvent = null) {
+    try {
+        const cleanEventId = String(eventId || '').trim();
+        if (!cleanEventId) return false;
+
+        const res = await getEventIcsContent(cleanEventId);
+        let icsContent = res?.icsContent;
+        let fileName = res?.fileName || `${cleanEventId}_calendar.ics`;
+
+        // If backend returns empty or fails, generate client-side ICS if fallback metadata exists
+        if (!icsContent && fallbackEvent) {
+            const formatIcsDate = (dateVal) => {
+                if (!dateVal) return '20260920T100000Z';
+                const d = new Date(dateVal);
+                if (isNaN(d.getTime())) return '20260920T100000Z';
+                return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            };
+
+            const uid = `${cleanEventId}@ignitoverse.com`;
+            const summary = fallbackEvent.title || 'Microcredential Live Session';
+            const desc = (fallbackEvent.description || 'Microcredential Live Class') +
+                (fallbackEvent.joinUrl ? `\\nJoin Link: ${fallbackEvent.joinUrl}` : '');
+            const loc = fallbackEvent.joinUrl || 'Online';
+            const dtStart = formatIcsDate(fallbackEvent.startDate || fallbackEvent.meetingDate);
+            const dtEnd = formatIcsDate(fallbackEvent.endDate || fallbackEvent.meetingDate);
+
+            icsContent = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//IgnitoVerse//Microcredential Calendar//EN',
+                'CALSCALE:GREGORIAN',
+                'METHOD:REQUEST',
+                'BEGIN:VEVENT',
+                `UID:${uid}`,
+                `DTSTAMP:${formatIcsDate(new Date())}`,
+                `DTSTART:${dtStart}`,
+                `DTEND:${dtEnd}`,
+                `SUMMARY:${summary}`,
+                `DESCRIPTION:${desc}`,
+                `LOCATION:${loc}`,
+                'STATUS:CONFIRMED',
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].join('\r\n');
+        }
+
+        if (!icsContent) {
+            // Direct GET link fallback
+            window.open(`/api/StudentMicrocredentialCalendarAPI/ExportEventIcs?eventId=${encodeURIComponent(cleanEventId)}`, '_blank');
+            return true;
+        }
+
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        return true;
+    } catch (err) {
+        console.error('Error downloading event ICS:', err);
+        return false;
+    }
+}
+
+
+
 
 
 

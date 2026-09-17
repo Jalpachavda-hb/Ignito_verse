@@ -17,6 +17,7 @@ import {
 } from '../../services/profileService';
 import { getStudentAttemptList } from '../../services/QuizServices';
 import { getLoggedInStudentId } from '../../services/microcredentialService';
+import { getStudentCalendarEvents } from '../../services/calendarService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
 import StudentCalendar from './Calendar/StudentCalendar';
 import './ProfilePage.css';
@@ -50,6 +51,7 @@ export default function ProfilePage({
   const [quizList, setQuizList] = useState([]);
   const [loadingQuizzes, setLoadingQuizzes] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [calendarEventsCount, setCalendarEventsCount] = useState(0);
 
   // Expanded Quiz Attempt Rows state (Screenshot 1 & 2)
   // Default to 201 so first quiz attempts are open like in screenshot 1
@@ -706,7 +708,7 @@ export default function ProfilePage({
                   <Calendar size={18} />
                 </div>
                 <div className="stat-text-col-ss">
-                  <span className="stat-big-num-ss">5</span>
+                  <span className="stat-big-num-ss">{calendarEventsCount}</span>
                   <span className="stat-sub-label-ss">Calendar Events</span>
                 </div>
               </div>
@@ -756,7 +758,7 @@ export default function ProfilePage({
           >
             <Calendar size={16} />
             <span>Calendar & Schedule</span>
-            <span className="ss-tab-pill-badge">5</span>
+            <span className="ss-tab-pill-badge">{calendarEventsCount}</span>
           </button>
         </div>
 
@@ -1043,7 +1045,11 @@ export default function ProfilePage({
               </div>
             </div>
 
-            <StudentCalendar user={user} />
+            <StudentCalendar
+              user={user}
+              enrolledCourses={apiEnrolledCourses}
+              onEventsCountChange={(count) => setCalendarEventsCount(count)}
+            />
           </div>
         )}
 

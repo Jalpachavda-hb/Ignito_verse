@@ -4,174 +4,140 @@
  */
 
 import { apiClient } from './apiClient';
-import { getLoggedInStudentId } from './microcredentialService';
+import {
+  getLoggedInStudentId,
+  getMicrocredentialLiveMeetingsByCourse,
+  getStudentEnrolledMicrocredentialCourse
+} from './microcredentialService';
 
-// Default mock events mirroring the student profile screenshot
-export const INITIAL_CALENDAR_EVENTS = [
-  {
-    id: 1,
-    title: 'Digital Transformation & Information Technology in Global Business',
-    sourceType: 'google_calendar',
-    sourceLabel: 'Google Calendar',
-    subType: 'default',
-    category: 'default',
-    startDate: '2026-08-29T11:00:00',
-    endDate: '2026-08-29T14:00:00',
-    displayStart: '08/29/2026 11:00:00',
-    displayEnd: '08/29/2026 14:00:00',
-    programName: 'Master of Business Administration - International Business',
-    programSub: 'Sem 1 | Information Technology and Global Business',
-    joinUrl: 'https://meet.google.com/abc-defg-hij',
-    createdDate: '08/24/2026 18:14:46',
-    description: 'Executive lecture on Digital Transformation and Emerging Information Systems in multinational business organizations. Attendance is mandatory for Semester 1 students.',
-    color: '#475569'
-  },
-  {
-    id: 2,
-    title: 'Business Stretegy',
-    sourceType: 'google_meet',
-    sourceLabel: 'Google Meet',
-    subType: 'meeting',
-    category: 'google_meeting',
-    startDate: '2026-08-03T17:00:00',
-    endDate: '2026-08-03T19:00:00',
-    displayStart: '08/03/2026 17:00:00',
-    displayEnd: '08/03/2026 19:00:00',
-    programName: 'Master of Business Administration - International Business',
-    programSub: 'Sem 1 | Global Business Strategy',
-    joinUrl: 'https://meet.google.com/xyz-uvwx-rst',
-    createdDate: '08/10/2026 17:01:46',
-    description: 'Interactive session exploring corporate governance, strategic alliances, and market competitiveness in dynamic markets.',
-    color: '#f59e0b'
-  },
-  {
-    id: 3,
-    title: 'Accounting.',
-    sourceType: 'google_calendar',
-    sourceLabel: 'Google Calendar',
-    subType: 'default',
-    category: 'default',
-    startDate: '2026-08-01T11:00:00',
-    endDate: '2026-08-01T19:00:00',
-    displayStart: '08/01/2026 11:00:00',
-    displayEnd: '08/01/2026 19:00:00',
-    programName: 'Master of Business Administration - International Business',
-    programSub: 'Sem 1 | International Accounting Practices',
-    joinUrl: 'https://meet.google.com/acc-intl-101',
-    createdDate: '08/10/2026 16:57:49',
-    description: 'Comprehensive financial accounting workshop: balance sheet analysis, cash flow evaluations, and multinational currency treatments.',
-    color: '#475569'
-  },
-  {
-    id: 4,
-    title: 'Business Strategy Seminar',
-    sourceType: 'google_calendar',
-    sourceLabel: 'Google Calendar',
-    subType: 'default',
-    category: 'default',
-    startDate: '2026-08-01T09:00:00',
-    endDate: '2026-08-01T18:00:00',
-    displayStart: '08/01/2026 09:00:00',
-    displayEnd: '08/01/2026 18:00:00',
-    programName: 'Master of Business Administration - International Business',
-    programSub: 'Sem 1 | Global Business Strategy',
-    joinUrl: 'https://meet.google.com/sem-strat-2026',
-    createdDate: '08/10/2026 16:50:38',
-    description: 'Full-day seminar featuring case studies on competitive market leadership, mergers & acquisitions, and global expansion.',
-    color: '#475569'
-  },
-  {
-    id: 5,
-    title: 'US & UK Accounting Meeting',
-    sourceType: 'google_calendar',
-    sourceLabel: 'Google Calendar',
-    subType: 'focusTime',
-    category: 'focus_time',
-    startDate: '2026-08-10T18:00:00',
-    endDate: '2026-08-10T19:00:00',
-    displayStart: '08/10/2026 18:00:00',
-    displayEnd: '08/10/2026 19:00:00',
-    programName: 'Master of Business Administration - International Business',
-    programSub: 'Sem 1 | International Accounting Practices',
-    joinUrl: 'https://meet.google.com/us-uk-acc-2026',
-    createdDate: '08/10/2026 16:19:25',
-    description: 'Deep dive focus time on cross-border tax regulations, US GAAP vs. IFRS frameworks, and compliance reporting.',
-    color: '#06b6d4'
-  },
-  {
-    id: 6,
-    title: 'Microcredential Course Kickoff',
-    sourceType: 'google_calendar',
-    sourceLabel: 'Google Calendar',
-    subType: 'default',
-    category: 'google_meeting',
-    startDate: '2026-09-25T10:00:00',
-    endDate: '2026-09-25T11:30:00',
-    displayStart: '09/25/2026 10:00:00',
-    displayEnd: '09/25/2026 11:30:00',
-    programName: 'Microcredential in Strategic Leadership',
-    programSub: 'Module 1 | Foundations of Leadership',
-    joinUrl: 'https://meet.google.com/ldr-kickoff-2026',
-    createdDate: '09/01/2026 10:00:00',
-    description: 'Welcome and orientation session for enrolled learners entering the microcredential certification pathway.',
-    color: '#f59e0b'
-  },
-  {
-    id: 7,
-    title: 'Microcredential Assessment Prep',
-    sourceType: 'google_calendar',
-    sourceLabel: 'Google Calendar',
-    subType: 'focusTime',
-    category: 'focus_time',
-    startDate: '2026-09-25T14:00:00',
-    endDate: '2026-09-25T16:00:00',
-    displayStart: '09/25/2026 14:00:00',
-    displayEnd: '09/25/2026 16:00:00',
-    programName: 'Microcredential in Strategic Leadership',
-    programSub: 'Module 2 | Assessment & Quiz Readiness',
-    joinUrl: 'https://meet.google.com/prep-quiz-2026',
-    createdDate: '09/05/2026 12:30:00',
-    description: 'Study group and Q&A session focused on passing the certification quiz assessment.',
-    color: '#06b6d4'
-  }
-];
+export { getMicrocredentialLiveMeetingsByCourse };
+
+export const INITIAL_CALENDAR_EVENTS = [];
 
 /**
- * Calculates metrics summary for stat cards matching user's screenshot
+ * Calculates metrics summary for stat cards dynamically based on real events
  */
-export function calculateEventMetrics(events = INITIAL_CALENDAR_EVENTS) {
+export function calculateEventMetrics(events = []) {
   let googleEvents = 0;
   let zoomMeetings = 0;
   let googleMeets = 0;
 
-  events.forEach((ev) => {
+  (events || []).forEach((ev) => {
     const type = (ev.sourceType || '').toLowerCase();
-    if (type.includes('calendar') || type.includes('google_calendar')) {
-      googleEvents++;
-    } else if (type.includes('zoom')) {
+    const cat = (ev.category || '').toLowerCase();
+    if (type.includes('zoom') || cat.includes('zoom')) {
       zoomMeetings++;
-    } else if (type.includes('meet') || type.includes('google_meet')) {
+    } else if (type.includes('meet') || cat.includes('meet') || type.includes('google_meet')) {
       googleMeets++;
+    } else if (type.includes('calendar') || type.includes('google_calendar')) {
+      googleEvents++;
+    } else {
+      googleEvents++;
     }
   });
 
   return {
-    googleEvents: 4, // 4 as in screenshot
-    zoomMeetings: 0, // 0 as in screenshot
-    googleMeets: 1,  // 1 as in screenshot
-    totalEvents: 5   // 5 as in screenshot
+    googleEvents,
+    zoomMeetings,
+    googleMeets,
+    totalEvents: (events || []).length
   };
 }
 
 /**
- * Fetches calendar events with support for API or local fallback
+ * Fetches calendar events dynamically by querying live meetings for student's enrolled courses.
+ * API: POST /api/StudentMicrocredentialCalendarAPI/GetMicrocredentialLiveMeetingsByCourse
  */
-export async function getStudentCalendarEvents(studentId = 0, month = null, year = null) {
+export async function getStudentCalendarEvents(studentId = 0, passedCourses = null) {
   try {
-    let finalStudentId = Number(studentId) || getLoggedInStudentId();
-  } catch (err) {
-    console.warn('Backend calendar API fallback to default events', err);
-  }
+    let finalStudentId = Number(studentId) || 0;
+    if (!finalStudentId) {
+      finalStudentId = getLoggedInStudentId() || 0;
+    }
 
-  return INITIAL_CALENDAR_EVENTS;
+    let allMeetings = [];
+    let courseList = Array.isArray(passedCourses) ? passedCourses : null;
+
+    // 1. Fetch student's enrolled courses if not passed
+    if (!courseList && finalStudentId > 0) {
+      try {
+        const enrolledRes = await getStudentEnrolledMicrocredentialCourse(finalStudentId, 1);
+        courseList = (enrolledRes?.success && Array.isArray(enrolledRes?.getStudentEnrolledMicrocredentialCourseList))
+          ? enrolledRes.getStudentEnrolledMicrocredentialCourseList
+          : [];
+      } catch (err) {
+        console.warn('Could not load enrolled courses for calendar:', err);
+        courseList = [];
+      }
+    }
+
+    // 2. Query live meetings for enrolled courses, or fallback to courseId=0 if none
+    if (courseList && courseList.length > 0) {
+      const promises = courseList.map(c => {
+        const courseId = Number(c.microcredentialCourseId || c.courseId || c.id) || 0;
+        return getMicrocredentialLiveMeetingsByCourse(courseId, finalStudentId)
+          .then(res => (res?.success && Array.isArray(res.liveMeetings) ? res.liveMeetings : []))
+          .catch(() => []);
+      });
+      const meetingBatches = await Promise.all(promises);
+      meetingBatches.forEach(batch => {
+        allMeetings.push(...batch);
+      });
+    } else {
+      // Only fallback to 0 if student has no specific enrolled courses
+      try {
+        const directRes = await getMicrocredentialLiveMeetingsByCourse(0, finalStudentId);
+        if (directRes?.success && Array.isArray(directRes.liveMeetings)) {
+          allMeetings = directRes.liveMeetings;
+        }
+      } catch (err) {
+        console.warn('Direct live meetings query fallback:', err);
+      }
+    }
+
+    // 3. Deduplicate meetings by meetingId
+    const seenIds = new Set();
+    const uniqueMeetings = [];
+    allMeetings.forEach(m => {
+      const key = m.meetingId || `${m.microcredentialCourseId}_${m.title}_${m.startDateTime}`;
+      if (!seenIds.has(key)) {
+        seenIds.add(key);
+        uniqueMeetings.push(m);
+      }
+    });
+
+    // 4. Map meetings to calendar event format
+    const events = uniqueMeetings.map((item, idx) => {
+      const srcUpper = (item.sourceType || '').toUpperCase();
+      const isZoom = srcUpper === 'ZOOM';
+      const isMeet = srcUpper === 'GOOGLE_MEET';
+      const startIso = item.startDateTime ? item.startDateTime.replace(' ', 'T') : '';
+      const endIso = item.endDateTime ? item.endDateTime.replace(' ', 'T') : '';
+
+      return {
+        id: item.meetingId || idx + 1,
+        title: item.title || 'Live Meeting',
+        sourceType: isZoom ? 'zoom' : (isMeet ? 'google_meet' : 'google_calendar'),
+        sourceLabel: isZoom ? 'Zoom Meeting' : (isMeet ? 'Google Meet' : 'Google Calendar'),
+        subType: isZoom ? 'meeting' : 'meeting',
+        category: isZoom ? 'zoom_meeting' : (isMeet ? 'google_meeting' : 'default'),
+        startDate: startIso,
+        endDate: endIso,
+        displayStart: item.startDateTime || '',
+        displayEnd: item.endDateTime || '',
+        programName: item.microcredentialCourseName || 'Microcredential Course',
+        programSub: item.description || item.title || '',
+        joinUrl: item.joinLink || '',
+        createdDate: item.startDateTime || '',
+        description: item.description || '',
+        liveStatus: item.liveStatus || 'Upcoming',
+        color: isZoom ? '#2563eb' : (isMeet ? '#f59e0b' : '#475569')
+      };
+    });
+
+    return events;
+  } catch (err) {
+    console.error('Error in getStudentCalendarEvents:', err);
+    return [];
+  }
 }

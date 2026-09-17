@@ -659,6 +659,33 @@
   border-color: #00385E;
 }
 
+.btn-event-cal-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid #c9dfef;
+  background: #f0f7fc;
+  color: #00385E;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-event-cal-sync:hover:not(:disabled) {
+  background: #00385E;
+  color: #ffffff;
+  border-color: #00385E;
+}
+
+.btn-event-cal-sync:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .btn-view-desc-link {
   background: transparent;
   border: none;
@@ -861,6 +888,32 @@
   font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
+}
+
+.btn-modal-sync-cal {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  border: 1px solid #c9dfef;
+  background: #f0f7fc;
+  color: #00385E;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.15s ease;
+}
+
+.btn-modal-sync-cal:hover:not(:disabled) {
+  background: #00385E;
+  color: #ffffff;
+  border-color: #00385E;
+}
+
+.btn-modal-sync-cal:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .btn-modal-join-direct {
