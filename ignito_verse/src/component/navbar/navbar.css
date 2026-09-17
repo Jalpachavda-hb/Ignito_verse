@@ -173,7 +173,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #00385E 0%, #002844 100%);
+  background: linear-gradient(135deg, #3a2c8c 0%, #7f489f 100%);
   clip-path: polygon(22% 0, 100% 0, 100% 100%, 0% 100%);
   pointer-events: none;
   z-index: 0;
@@ -209,7 +209,7 @@
 
 .action-btn-login:hover {
   background: #ffffff;
-  color: #00385E;
+  color: #3a2c8c;
   border-color: #ffffff;
   transform: translateY(-1.5px);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);

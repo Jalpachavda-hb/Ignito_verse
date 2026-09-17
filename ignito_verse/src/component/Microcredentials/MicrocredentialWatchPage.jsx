@@ -1,34 +1,34 @@
 // ignitoverse: Dedicated Microcredential Video Learning & Interactive Masterclass Watch Page
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Play, 
-  Pause, 
-  Volume2, 
-  VolumeX, 
-  Maximize, 
-  RotateCcw, 
-  RotateCw, 
-  Settings, 
-  Share2, 
-  Bookmark, 
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+  RotateCcw,
+  RotateCw,
+  Settings,
+  Share2,
+  Bookmark,
   BookmarkCheck,
-  ChevronLeft, 
-  ChevronRight, 
-  ChevronDown, 
-  Sparkles, 
-  Users, 
-  GraduationCap, 
-  MessageSquare, 
-  ThumbsUp, 
-  Send, 
-  Lock, 
-  Gift, 
-  FileText, 
-  HelpCircle, 
-  Award, 
-  Download, 
-  CheckCircle2, 
-  Clock, 
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Sparkles,
+  Users,
+  GraduationCap,
+  MessageSquare,
+  ThumbsUp,
+  Send,
+  Lock,
+  Gift,
+  FileText,
+  HelpCircle,
+  Award,
+  Download,
+  CheckCircle2,
+  Clock,
   ShieldCheck,
   BookOpen,
   ArrowLeft,
@@ -36,24 +36,33 @@ import {
   AlertCircle,
   History,
   RefreshCw,
-  Video
+  Video,
+  X,
+  Plus,
+  Pencil,
+  Trash2,
+  StickyNote
 } from 'lucide-react';
 import userCertificateImg from '../../assets/e47782ae-798b-479b-99e6-428b70bf4a7a.png';
 import watchNowImg from '../../assets/watchnow.png';
-import { 
-  getMicroCourseTopicDetail, 
-  microCredencialWatchvideoAddUpdate, 
+import notesImg from '../../assets/notes.png';
+import {
+  getMicroCourseTopicDetail,
+  microCredencialWatchvideoAddUpdate,
   getMicrocredentialStudentWatchVideoData,
   getLoggedInStudentId,
-  microcredentialTranscriptByTime, 
-  getStudentMicrocredentialRaiseHandAnswerList, 
+  microcredentialTranscriptByTime,
+  getStudentMicrocredentialRaiseHandAnswerList,
   getMicroManyDiscussionQuestion,
   insertMicroManyDiscussionQuestion,
   microCourseDiscussionQuestionLike,
   insertManyMicroCourseDiscussionReply,
   getManyMicroCourseDiscussionQuestionReply,
   microcredentialQuizStudentAttemptDetail,
-  getMicrocredentialCourseDetail
+  getMicrocredentialCourseDetail,
+  addUpdateMicrocredentialVideoNote,
+  getMicrocredentialVideoNotes,
+  deleteMicrocredentialVideoNote
 } from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
 import QuizAttemptDetailsModal from '../modals/QuizAttemptDetailsModal';
@@ -68,6 +77,13 @@ function formatDuration(sec) {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
+function formatNoteTime(sec) {
+  const totalSec = Math.floor(Number(sec) || 0);
+  const mins = Math.floor(totalSec / 60);
+  const secs = Math.floor(totalSec % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 function getYouTubeVideoId(url) {
   if (!url) return '';
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
@@ -79,10 +95,10 @@ function isYouTubeUrl(url) {
   return url.includes('youtube.com') || url.includes('youtu.be');
 }
 
-export default function MicrocredentialWatchPage({ 
-  course, 
-  onBack = () => {}, 
-  onNavigate = () => {} 
+export default function MicrocredentialWatchPage({
+  course,
+  onBack = () => { },
+  onNavigate = () => { }
 }) {
   const [courseDetails, setCourseDetails] = useState(null);
 
@@ -96,7 +112,7 @@ export default function MicrocredentialWatchPage({
             setCourseDetails(res);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [course]);
 
@@ -126,7 +142,7 @@ export default function MicrocredentialWatchPage({
   const [loadingRepliesMap, setLoadingRepliesMap] = useState({});
   const [submittingReplyMap, setSubmittingReplyMap] = useState({});
 
-  const [aiAssistantOpen, setAiAssistantOpen] = useState(true);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
   const [selectedPdf, setSelectedPdf] = useState(null); // { url, title } for in-page embedded PDF viewing
 
   // AI Assistant Chat & History state
@@ -137,8 +153,9 @@ export default function MicrocredentialWatchPage({
   const [aiHistoryList, setAiHistoryList] = useState([]);
   const [aiHistoryLoading, setAiHistoryLoading] = useState(false);
 
+  const [isLearningOpen, setIsLearningOpen] = useState(false);
   const [isTextContentOpen, setIsTextContentOpen] = useState(true);
-  const [isQuizAccordionOpen, setIsQuizAccordionOpen] = useState(true);
+  const [isQuizAccordionOpen, setIsQuizAccordionOpen] = useState(false);
 
   // Student Watch Video Progress states (POST /api/MicroCredencialStudentWatchVideoAPI/GetMicrocredentialStudentWatchVideoData)
   const [overallWatchPct, setOverallWatchPct] = useState(0);
@@ -158,6 +175,17 @@ export default function MicrocredentialWatchPage({
   const [maxWatchedTime, setMaxWatchedTime] = useState(0);
   const [showSkipWarning, setShowSkipWarning] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+
+  // Video Notes states
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [videoNotesList, setVideoNotesList] = useState([]);
+  const [notesLoading, setNotesLoading] = useState(false);
+  const [showAddNoteComposer, setShowAddNoteComposer] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const [capturedNoteTime, setCapturedNoteTime] = useState(0);
+  const [editingNoteId, setEditingNoteId] = useState(0);
+  const [submittingNote, setSubmittingNote] = useState(false);
+  const [deletingNoteId, setDeletingNoteId] = useState(null);
 
   const videoRef = useRef(null);
   const theaterCardRef = useRef(null);
@@ -185,7 +213,7 @@ export default function MicrocredentialWatchPage({
     const encryptedId = course?.encryptedMicrocredentialCourseId || course?.encryptedId || course?.rawData?.encryptedMicrocredentialCourseId || '';
     const rawModuleMasterId = course?.microcredentialModuleMasterId || course?.selectedModuleMasterId || course?.selectedModuleId || course?.microcredentialModuleId || course?.moduleId || course?.rawData?.microcredentialModuleMasterId || 0;
     const moduleMasterId = Number(rawModuleMasterId) || 0;
-    
+
     const studentId = getLoggedInStudentId();
 
     if (courseId <= 0 && !encryptedId) {
@@ -282,6 +310,14 @@ export default function MicrocredentialWatchPage({
   const currentPlaylist = playlist;
   const activeLecture = currentPlaylist[activeLectureIdx] || currentPlaylist[0] || null;
 
+  // Active Video ID for current lecture
+  const currentVideoId = activeLecture?.ytId ||
+    getYouTubeVideoId(activeLecture?.videoUrl) ||
+    activeLecture?.videoId ||
+    activeLecture?.rawData?.videoId ||
+    activeLecture?.rawData?.microcreditYoutubeDataMasterId ||
+    String(activeLecture?.id || '');
+
   // Helper to safely format HTML in AI answers (e.g. <p>...</p>)
   const formatAiAnswer = (text) => {
     if (!text) return null;
@@ -299,12 +335,12 @@ export default function MicrocredentialWatchPage({
       const courseId = Number(rawId) || 0;
 
       // Resolve valid VideoId for the current topic / lecture to satisfy backend requirement
-      const vId = activeLecture?.ytId || 
-                  getYouTubeVideoId(activeLecture?.videoUrl) || 
-                  activeLecture?.videoId || 
-                  activeLecture?.rawData?.videoId || 
-                  activeLecture?.rawData?.microcreditYoutubeDataMasterId || 
-                  '';
+      const vId = activeLecture?.ytId ||
+        getYouTubeVideoId(activeLecture?.videoUrl) ||
+        activeLecture?.videoId ||
+        activeLecture?.rawData?.videoId ||
+        activeLecture?.rawData?.microcreditYoutubeDataMasterId ||
+        '';
 
       const studentId = getLoggedInStudentId();
 
@@ -346,30 +382,30 @@ export default function MicrocredentialWatchPage({
     const rawId = currentCourse.microcredentialCourseId || currentCourse.id || 0;
     const courseId = Number(rawId) || 0;
     const rawModuleMasterId = activeLecture?.microcredentialModuleMasterId ||
-                              activeLecture?.rawData?.microcredentialModuleMasterId ||
-                              currentCourse?.microcredentialModuleMasterId || 
-                              currentCourse?.selectedModuleMasterId || 
-                              currentCourse?.selectedModuleId || 
-                              currentCourse?.microcredentialModuleId || 
-                              currentCourse?.moduleId || 
-                              currentCourse?.rawData?.microcredentialModuleMasterId || 
-                              course?.microcredentialModuleMasterId || 
-                              course?.selectedModuleMasterId || 
-                              0;
+      activeLecture?.rawData?.microcredentialModuleMasterId ||
+      currentCourse?.microcredentialModuleMasterId ||
+      currentCourse?.selectedModuleMasterId ||
+      currentCourse?.selectedModuleId ||
+      currentCourse?.microcredentialModuleId ||
+      currentCourse?.moduleId ||
+      currentCourse?.rawData?.microcredentialModuleMasterId ||
+      course?.microcredentialModuleMasterId ||
+      course?.selectedModuleMasterId ||
+      0;
     const moduleMasterId = Number(rawModuleMasterId) || 0;
     // Always pass valid VideoId as required by the backend API
-    const vId = activeLecture?.ytId || 
-                getYouTubeVideoId(activeLecture?.videoUrl) || 
-                activeLecture?.videoId || 
-                activeLecture?.rawData?.videoId || 
-                activeLecture?.rawData?.microcreditYoutubeDataMasterId || 
-                '';
+    const vId = activeLecture?.ytId ||
+      getYouTubeVideoId(activeLecture?.videoUrl) ||
+      activeLecture?.videoId ||
+      activeLecture?.rawData?.videoId ||
+      activeLecture?.rawData?.microcreditYoutubeDataMasterId ||
+      '';
     const timestamp = isPdf ? 0 : Number(currentTime || 0);
 
-    const userMsg = { 
-      sender: 'user', 
-      text: questionText, 
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+    const userMsg = {
+      sender: 'user',
+      text: questionText,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     setAiChatMessages(prev => [...prev, userMsg]);
     setAiQuery('');
@@ -576,15 +612,15 @@ export default function MicrocredentialWatchPage({
       const rawId = currentCourse.microcredentialCourseId || currentCourse.courseId || currentCourse.id || 0;
       const courseId = Number(rawId) || 0;
       if (courseId <= 0) return;
-      const rawModuleMasterId = currentCourse?.microcredentialModuleMasterId || 
-                                currentCourse?.selectedModuleMasterId || 
-                                currentCourse?.selectedModuleId || 
-                                currentCourse?.microcredentialModuleId || 
-                                currentCourse?.moduleId || 
-                                currentCourse?.rawData?.microcredentialModuleMasterId || 
-                                course?.microcredentialModuleMasterId || 
-                                course?.selectedModuleMasterId || 
-                                0;
+      const rawModuleMasterId = currentCourse?.microcredentialModuleMasterId ||
+        currentCourse?.selectedModuleMasterId ||
+        currentCourse?.selectedModuleId ||
+        currentCourse?.microcredentialModuleId ||
+        currentCourse?.moduleId ||
+        currentCourse?.rawData?.microcredentialModuleMasterId ||
+        course?.microcredentialModuleMasterId ||
+        course?.selectedModuleMasterId ||
+        0;
       const moduleMasterId = Number(rawModuleMasterId) || 0;
       const res = await getMicrocredentialStudentWatchVideoData(studentId, courseId, moduleMasterId);
       if (res && res.success) {
@@ -619,19 +655,19 @@ export default function MicrocredentialWatchPage({
             setMaxWatchedTime(savedSec);
             maxWatchedRef.current = savedSec;
             if (ytPlayerRef.current && typeof ytPlayerRef.current.seekTo === 'function') {
-              try { 
-                ytPlayerRef.current.seekTo(savedSec, false); 
+              try {
+                ytPlayerRef.current.seekTo(savedSec, false);
                 if (!userInitiatedPlayRef.current) {
                   ytPlayerRef.current.pauseVideo();
                 }
-              } catch (e) {}
+              } catch (e) { }
             } else if (videoRef.current) {
-              try { 
-                videoRef.current.currentTime = savedSec; 
+              try {
+                videoRef.current.currentTime = savedSec;
                 if (!userInitiatedPlayRef.current) {
                   videoRef.current.pause();
                 }
-              } catch (e) {}
+              } catch (e) { }
             }
           }
         }
@@ -735,23 +771,23 @@ export default function MicrocredentialWatchPage({
       if (!curLecture) return;
 
       const rawModuleMasterId = curLecture?.microcredentialModuleMasterId ||
-                                curLecture?.rawData?.microcredentialModuleMasterId ||
-                                curCourse?.microcredentialModuleMasterId || 
-                                curCourse?.selectedModuleMasterId || 
-                                curCourse?.selectedModuleId || 
-                                curCourse?.microcredentialModuleId || 
-                                curCourse?.moduleId || 
-                                curCourse?.rawData?.microcredentialModuleMasterId || 
-                                course?.microcredentialModuleMasterId || 
-                                course?.selectedModuleMasterId || 
-                                0;
+        curLecture?.rawData?.microcredentialModuleMasterId ||
+        curCourse?.microcredentialModuleMasterId ||
+        curCourse?.selectedModuleMasterId ||
+        curCourse?.selectedModuleId ||
+        curCourse?.microcredentialModuleId ||
+        curCourse?.moduleId ||
+        curCourse?.rawData?.microcredentialModuleMasterId ||
+        course?.microcredentialModuleMasterId ||
+        course?.selectedModuleMasterId ||
+        0;
       const moduleMasterId = Number(rawModuleMasterId) || 0;
 
-      const vId = curLecture?.ytId || 
-                  getYouTubeVideoId(curLecture?.videoUrl) || 
-                  curLecture?.videoId || 
-                  curLecture?.rawData?.videoId || 
-                  String(curLecture?.id || '');
+      const vId = curLecture?.ytId ||
+        getYouTubeVideoId(curLecture?.videoUrl) ||
+        curLecture?.videoId ||
+        curLecture?.rawData?.videoId ||
+        String(curLecture?.id || '');
       if (!vId) return;
 
       const sec = Math.round(Number(watchedSec ?? currentTimeRef.current ?? 0));
@@ -836,17 +872,17 @@ export default function MicrocredentialWatchPage({
 
     if (!activeLecture || !activeLecture.isYouTube || !activeLecture.ytId) {
       if (ytPlayerRef.current) {
-        try { ytPlayerRef.current.destroy(); } catch (e) {}
+        try { ytPlayerRef.current.destroy(); } catch (e) { }
         ytPlayerRef.current = null;
       }
       return;
     }
 
-    const curVid = activeLecture?.ytId || 
-                  getYouTubeVideoId(activeLecture?.videoUrl) || 
-                  activeLecture?.videoId || 
-                  activeLecture?.rawData?.videoId || 
-                  String(activeLecture?.id || '');
+    const curVid = activeLecture?.ytId ||
+      getYouTubeVideoId(activeLecture?.videoUrl) ||
+      activeLecture?.videoId ||
+      activeLecture?.rawData?.videoId ||
+      String(activeLecture?.id || '');
     const savedProgress = videoProgressMap[curVid] || videoProgressMapRef.current[curVid];
     const initialResumeSec = Number(savedProgress?.watchedSeconds || 0);
 
@@ -863,7 +899,12 @@ export default function MicrocredentialWatchPage({
     const checkAndInit = () => {
       if (isCancelled) return;
       if (window.YT && window.YT.Player) {
-        const container = document.getElementById('yt-custom-player-container');
+        let container = document.getElementById('yt-custom-player-container');
+        if (!container && ytContainerRef.current) {
+          container = document.createElement('div');
+          container.id = 'yt-custom-player-container';
+          ytContainerRef.current.prepend(container);
+        }
         if (!container) {
           timer = setTimeout(checkAndInit, 100);
           return;
@@ -873,7 +914,15 @@ export default function MicrocredentialWatchPage({
           if (ytPlayerRef.current && typeof ytPlayerRef.current.destroy === 'function') {
             ytPlayerRef.current.destroy();
           }
-        } catch (e) {}
+        } catch (e) { }
+
+        // Re-ensure container exists after destroy()
+        let postDestroyContainer = document.getElementById('yt-custom-player-container');
+        if (!postDestroyContainer && ytContainerRef.current) {
+          postDestroyContainer = document.createElement('div');
+          postDestroyContainer.id = 'yt-custom-player-container';
+          ytContainerRef.current.prepend(postDestroyContainer);
+        }
 
         try {
           ytPlayerRef.current = new window.YT.Player('yt-custom-player-container', {
@@ -889,8 +938,7 @@ export default function MicrocredentialWatchPage({
               fs: 0, // Hides native fullscreen button
               playsinline: 1,
               enablejsapi: 1,
-              start: initialResumeSec > 0 ? Math.floor(initialResumeSec) : undefined,
-              origin: window.location.origin
+              start: initialResumeSec > 0 ? Math.floor(initialResumeSec) : undefined
             },
             events: {
               onReady: (event) => {
@@ -899,31 +947,33 @@ export default function MicrocredentialWatchPage({
                 if (dur && dur > 0) setVideoDuration(dur);
                 else if (activeLecture.videoDuration) setVideoDuration(activeLecture.videoDuration);
 
-                // Position scrubber at saved watch seconds without auto-playing
+                // Position scrubber at saved watch seconds
                 if (initialResumeSec > 0) {
                   try {
-                    event.target.seekTo(initialResumeSec, false);
-                    event.target.pauseVideo();
-                  } catch (e) {}
-                } else {
+                    event.target.seekTo(initialResumeSec, true);
+                  } catch (e) { }
+                }
+
+                // If user already initiated play while player was initializing
+                if (userInitiatedPlayRef.current) {
                   try {
-                    event.target.pauseVideo();
-                  } catch (e) {}
+                    event.target.playVideo();
+                    setIsPlaying(true);
+                  } catch (e) { }
                 }
               },
               onStateChange: (event) => {
                 if (isCancelled) return;
                 if (event.data === window.YT.PlayerState.PLAYING) {
-                  // If user did not explicitly initiate playback, force pause
-                  if (!userInitiatedPlayRef.current) {
-                    try {
-                      event.target.pauseVideo();
-                    } catch (e) {}
-                    setIsPlaying(false);
-                    return;
-                  }
+                  userInitiatedPlayRef.current = true;
                   setIsPlaying(true);
                   startProgressTracking();
+                } else if (event.data === window.YT.PlayerState.PAUSED) {
+                  setIsPlaying(false);
+                  stopProgressTracking();
+                  const curr = ytPlayerRef.current?.getCurrentTime() || currentTimeRef.current;
+                  const dur = ytPlayerRef.current?.getDuration() || videoDurationRef.current || activeLecture.videoDuration;
+                  saveCurrentWatchProgress(curr, dur);
                 } else if (event.data === window.YT.PlayerState.ENDED) {
                   setIsPlaying(false);
                   stopProgressTracking();
@@ -932,15 +982,6 @@ export default function MicrocredentialWatchPage({
                   setMaxWatchedTime(finalDur);
                   maxWatchedRef.current = finalDur;
                   saveCurrentWatchProgress(finalDur, finalDur);
-                } else if (event.data === window.YT.PlayerState.PAUSED) {
-                  setIsPlaying(false);
-                  stopProgressTracking();
-                  const curr = ytPlayerRef.current?.getCurrentTime() || currentTimeRef.current;
-                  const dur = ytPlayerRef.current?.getDuration() || videoDurationRef.current || activeLecture.videoDuration;
-                  saveCurrentWatchProgress(curr, dur);
-                } else {
-                  setIsPlaying(false);
-                  stopProgressTracking();
                 }
               }
             }
@@ -987,11 +1028,11 @@ export default function MicrocredentialWatchPage({
           const isCompleted = curr >= dur;
           const livePct = isCompleted ? 100 : Math.min(99, Math.floor((Math.max(curr, maxWatchedRef.current) / dur) * 100));
           const curLecture = activeLectureRef.current || activeLecture;
-          const vId = curLecture?.ytId || 
-                      getYouTubeVideoId(curLecture?.videoUrl) || 
-                      curLecture?.videoId || 
-                      curLecture?.rawData?.videoId || 
-                      String(curLecture?.id || '');
+          const vId = curLecture?.ytId ||
+            getYouTubeVideoId(curLecture?.videoUrl) ||
+            curLecture?.videoId ||
+            curLecture?.rawData?.videoId ||
+            String(curLecture?.id || '');
           if (vId) {
             setVideoProgressMap(prev => {
               const currentSaved = prev[vId]?.percentageWatched || 0;
@@ -1030,26 +1071,47 @@ export default function MicrocredentialWatchPage({
   };
 
   // Custom Controls Handlers
-  const handleTogglePlay = () => {
+  const handlePlayVideo = () => {
     if (!activeLecture) return;
+    userInitiatedPlayRef.current = true;
+    setIsPlaying(true);
+
     if (activeLecture.isYouTube && ytPlayerRef.current) {
-      if (isPlaying) {
-        if (typeof ytPlayerRef.current.pauseVideo === 'function') ytPlayerRef.current.pauseVideo();
-        setIsPlaying(false);
-      } else {
-        userInitiatedPlayRef.current = true;
-        if (typeof ytPlayerRef.current.playVideo === 'function') ytPlayerRef.current.playVideo();
-        setIsPlaying(true);
+      if (typeof ytPlayerRef.current.playVideo === 'function') {
+        try {
+          ytPlayerRef.current.playVideo();
+        } catch (e) {
+          console.error('Error playing YouTube video:', e);
+        }
       }
     } else if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        userInitiatedPlayRef.current = true;
-        videoRef.current.play();
-        setIsPlaying(true);
+      try {
+        videoRef.current.play().catch(e => console.error('Error playing HTML5 video:', e));
+      } catch (e) { }
+    }
+  };
+
+  const handleTogglePlay = () => {
+    if (!activeLecture) return;
+    if (isPlaying) {
+      handlePauseVideo();
+    } else {
+      handlePlayVideo();
+    }
+  };
+
+  const handlePauseVideo = () => {
+    userInitiatedPlayRef.current = false;
+    setIsPlaying(false);
+    if (currentTime > 0) {
+      saveCurrentWatchProgress(currentTime, videoDuration);
+    }
+    if (activeLecture?.isYouTube && ytPlayerRef.current) {
+      if (typeof ytPlayerRef.current.pauseVideo === 'function') {
+        try { ytPlayerRef.current.pauseVideo(); } catch (e) { }
       }
+    } else if (videoRef.current) {
+      try { videoRef.current.pause(); } catch (e) { }
     }
   };
 
@@ -1122,11 +1184,11 @@ export default function MicrocredentialWatchPage({
       const isCompleted = curr >= dur;
       const livePct = isCompleted ? 100 : Math.min(99, Math.floor((Math.max(curr, maxWatchedRef.current) / dur) * 100));
       const curLecture = activeLectureRef.current || activeLecture;
-      const vId = curLecture?.ytId || 
-                  getYouTubeVideoId(curLecture?.videoUrl) || 
-                  curLecture?.videoId || 
-                  curLecture?.rawData?.videoId || 
-                  String(curLecture?.id || '');
+      const vId = curLecture?.ytId ||
+        getYouTubeVideoId(curLecture?.videoUrl) ||
+        curLecture?.videoId ||
+        curLecture?.rawData?.videoId ||
+        String(curLecture?.id || '');
       if (vId) {
         setVideoProgressMap(prev => {
           const currentSaved = prev[vId]?.percentageWatched || 0;
@@ -1176,6 +1238,179 @@ export default function MicrocredentialWatchPage({
     }
   };
 
+  // ========================================================
+  // VIDEO NOTES FUNCTIONALITY
+  // ========================================================
+  const fetchVideoNotes = async (vId = currentVideoId) => {
+    const rawId = currentCourse?.microcredentialCourseId || currentCourse?.id || course?.microcredentialCourseId || course?.id || 0;
+    const courseId = Number(rawId) || 0;
+    const studentId = getLoggedInStudentId() || 0;
+    if (!vId && !courseId) return;
+
+    setNotesLoading(true);
+    try {
+      const res = await getMicrocredentialVideoNotes({
+        studentId,
+        courseId,
+        videoId: vId || ''
+      });
+      if (res && Array.isArray(res.notes)) {
+        setVideoNotesList(res.notes);
+      } else {
+        setVideoNotesList([]);
+      }
+    } catch (e) {
+      console.error('Error fetching video notes:', e);
+      setVideoNotesList([]);
+    } finally {
+      setNotesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentVideoId) {
+      fetchVideoNotes(currentVideoId);
+    }
+  }, [currentVideoId]);
+
+  const handleOpenNotesTab = () => {
+    setIsNotesOpen(true);
+    if (currentVideoId) {
+      fetchVideoNotes(currentVideoId);
+    }
+  };
+
+  const handleOpenAddNote = () => {
+    // 1. Pause video playback immediately
+    handlePauseVideo();
+
+    // 2. Capture paused timestamp
+    let pausedTime = currentTime;
+    if (activeLecture?.isYouTube && ytPlayerRef.current?.getCurrentTime) {
+      try {
+        const ytTime = ytPlayerRef.current.getCurrentTime();
+        if (typeof ytTime === 'number' && ytTime > 0) pausedTime = ytTime;
+      } catch (e) { }
+    } else if (videoRef.current?.currentTime) {
+      pausedTime = videoRef.current.currentTime;
+    }
+    const roundedTime = Math.max(0, Math.floor(pausedTime || 0));
+
+    setCapturedNoteTime(roundedTime);
+    setEditingNoteId(0);
+    setNoteText('');
+    setShowAddNoteComposer(true);
+    setIsNotesOpen(true);
+  };
+
+  const handleCancelNote = () => {
+    setShowAddNoteComposer(false);
+    setNoteText('');
+    setEditingNoteId(0);
+    setCapturedNoteTime(0);
+  };
+
+  const handleSaveNote = async () => {
+    if (!noteText.trim()) return;
+
+    setSubmittingNote(true);
+    const rawId = currentCourse?.microcredentialCourseId || currentCourse?.id || course?.microcredentialCourseId || course?.id || 0;
+    const courseId = Number(rawId) || 0;
+    const studentId = getLoggedInStudentId() || 0;
+    const vId = currentVideoId || (ytPlayerRef.current?.getVideoData ? ytPlayerRef.current.getVideoData()?.video_id : '') || '';
+
+    try {
+      const res = await addUpdateMicrocredentialVideoNote({
+        noteId: editingNoteId || 0,
+        studentId,
+        courseId,
+        videoId: vId,
+        noteText: noteText.trim(),
+        roundedpausedTime: capturedNoteTime || 0
+      });
+
+      if (res && res.success !== false) {
+        await fetchVideoNotes(vId);
+        handleCancelNote();
+      } else {
+        // Optimistic local update
+        const newNote = {
+          microcredentialVideoNotesId: editingNoteId || Date.now(),
+          studentId,
+          microcredentialCourseId: courseId,
+          videoId: vId,
+          noteDescription: noteText.trim(),
+          noteTimeInSec: capturedNoteTime || 0,
+          createdOn: 'Just now'
+        };
+        setVideoNotesList(prev => {
+          if (editingNoteId) {
+            return prev.map(n => n.microcredentialVideoNotesId === editingNoteId ? newNote : n);
+          }
+          return [...prev, newNote].sort((a, b) => a.noteTimeInSec - b.noteTimeInSec);
+        });
+        handleCancelNote();
+      }
+    } catch (err) {
+      console.error('Error saving note:', err);
+      const newNote = {
+        microcredentialVideoNotesId: editingNoteId || Date.now(),
+        studentId,
+        microcredentialCourseId: courseId,
+        videoId: vId,
+        noteDescription: noteText.trim(),
+        noteTimeInSec: capturedNoteTime || 0,
+        createdOn: 'Just now'
+      };
+      setVideoNotesList(prev => {
+        if (editingNoteId) {
+          return prev.map(n => n.microcredentialVideoNotesId === editingNoteId ? newNote : n);
+        }
+        return [...prev, newNote].sort((a, b) => a.noteTimeInSec - b.noteTimeInSec);
+      });
+      handleCancelNote();
+    } finally {
+      setSubmittingNote(false);
+    }
+  };
+
+  const handleEditNote = (note) => {
+    handlePauseVideo();
+    setEditingNoteId(note.microcredentialVideoNotesId);
+    setNoteText(note.noteDescription);
+    setCapturedNoteTime(note.noteTimeInSec || 0);
+    setShowAddNoteComposer(true);
+    setIsNotesOpen(true);
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    if (!noteId) return;
+    if (!window.confirm('Are you sure you want to delete this note?')) return;
+
+    setDeletingNoteId(noteId);
+    const studentId = getLoggedInStudentId() || 0;
+    try {
+      await deleteMicrocredentialVideoNote({ noteId, studentId });
+      setVideoNotesList(prev => prev.filter(n => n.microcredentialVideoNotesId !== noteId));
+    } catch (e) {
+      console.error('Error deleting note:', e);
+      setVideoNotesList(prev => prev.filter(n => n.microcredentialVideoNotesId !== noteId));
+    } finally {
+      setDeletingNoteId(null);
+    }
+  };
+
+  const handleSeekToNoteTime = (seconds) => {
+    const sec = Number(seconds) || 0;
+    if (activeLecture?.isYouTube && ytPlayerRef.current && typeof ytPlayerRef.current.seekTo === 'function') {
+      ytPlayerRef.current.seekTo(sec, true);
+      setCurrentTime(sec);
+    } else if (videoRef.current) {
+      videoRef.current.currentTime = sec;
+      setCurrentTime(sec);
+    }
+  };
+
   const activeDuration = videoDuration || activeLecture?.videoDuration || 0;
   const currentPct = Math.min(100, Math.max(0, (currentTime / (activeDuration || 1)) * 100));
   const maxWatchedPct = Math.min(100, Math.max(0, (maxWatchedTime / (activeDuration || 1)) * 100));
@@ -1183,7 +1418,7 @@ export default function MicrocredentialWatchPage({
   return (
     <div className="mc-watch-page-container">
       <div className="mc-watch-fluid-layout">
-        
+
         {/* Watch Top Header & Breadcrumbs (Spans across page) */}
         <div className="mc-watch-top-header">
           <div className="mc-watch-breadcrumb-row">
@@ -1211,71 +1446,76 @@ export default function MicrocredentialWatchPage({
 
         {/* Master 2-Column Watch Grid */}
         <div className="mc-watch-main-grid">
-          
+
           {/* ========================================================
               LEFT COLUMN: VIDEO PLAYER + NAV + DISCUSSION
               ======================================================== */}
           <div className="mc-watch-left-column">
-            
+
             {/* 3. Interactive Theater Player Card */}
             <div className="mc-theater-player-card" ref={theaterCardRef}>
-              
-              {/* Theater Player Top Header Overlay */}
-              <div className="theater-header-overlay">
-                <div className="theater-channel-badge">
-                  <div className="theater-avatar-box">
-                    <GraduationCap size={18} />
+
+              {/* Theater Player Top Header Overlay (Hidden when PDF is open to avoid 2 headers) */}
+              {!selectedPdf && (
+                <div className="theater-header-overlay">
+                  <div className="theater-channel-badge">
+                    <div className="theater-avatar-box">
+                      <GraduationCap size={18} />
+                    </div>
+                    <div className="theater-lecture-text">
+                      <h4>{activeLecture ? activeLecture.title : 'Course Lecture'}</h4>
+                      <span className="theater-org-name">{currentCourse.streamName || currentCourse.category || 'Accredited Microcredential'}</span>
+                    </div>
                   </div>
-                  <div className="theater-lecture-text">
-                    <h4>{activeLecture ? activeLecture.title : 'Course Lecture'}</h4>
-                    <span className="theater-org-name">{currentCourse.streamName || currentCourse.category || 'Accredited Microcredential'}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="anti-skip-badge">
+                      <ShieldCheck size={13} />
+                      <span>Anti-Skip Protected</span>
+                    </span>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className="anti-skip-badge">
-                    <ShieldCheck size={13} />
-                    <span>Anti-Skip Protected</span>
-                  </span>
-                </div>
-              </div>
-              
+              )}
+
               {/* Central Video Frame with Custom Shield Layer & Embedded PDF Viewer */}
               <div className="theater-video-frame custom-player-frame" style={selectedPdf ? { aspectRatio: 'auto', minHeight: '520px', display: 'flex', flexDirection: 'column' } : {}}>
-                
+
                 {selectedPdf ? (
-                  <div className="theater-embedded-pdf-wrapper" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#0b1320', flex: 1 }}>
+                  <div
+                    className="theater-embedded-pdf-wrapper"
+                    onContextMenu={(e) => e.preventDefault()}
+                    style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#0b1320', flex: 1 }}
+                  >
                     <div className="theater-embedded-pdf-toolbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px', background: 'linear-gradient(90deg, #00385E 0%, #00223b 100%)', color: '#ffffff', borderBottom: '1.5px solid #0284C7' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem', fontWeight: 800 }}>
                         <FileText size={18} style={{ color: '#38bdf8' }} />
                         <span>Interactive e-Content: <strong style={{ color: '#bae6fd', textTransform: 'uppercase' }}>{selectedPdf.title}</strong></span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAiAssistantOpen(true);
-                            setShowAiHistory(false);
-                          }}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#0284C7', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 2px 6px rgba(2,132,199,0.3)' }}
-                        >
-                          <Sparkles size={14} />
-                          <span>Ask AI Tutor</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedPdf(null);
-                            setIsPlaying(true);
-                          }}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#ffffff', color: '#00385E', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}
-                        >
-                          <Play size={13} fill="#00385E" />
-                          <span>Back to Video</span>
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedPdf(null);
+                          setIsPlaying(true);
+                        }}
+                        title="Close Document"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: 'rgba(255, 255, 255, 0.12)',
+                          color: '#ffffff',
+                          border: 'none',
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <X size={18} />
+                      </button>
                     </div>
                     <iframe
-                      src={`${selectedPdf.url}#toolbar=1&navpanes=0`}
+                      src={`${selectedPdf.url}#toolbar=0&navpanes=0`}
                       title={selectedPdf.title}
                       className="theater-embedded-pdf-iframe"
                       style={{ width: '100%', flex: 1, minHeight: '480px', border: 'none' }}
@@ -1308,18 +1548,18 @@ export default function MicrocredentialWatchPage({
 
                     {/* YouTube API Container */}
                     {activeLecture?.isYouTube && activeLecture?.ytId ? (
-                      <div className="theater-yt-api-wrapper" key={activeLecture?.ytId || activeLecture?.id}>
+                      <div ref={ytContainerRef} className="theater-yt-api-wrapper" key={activeLecture?.ytId || activeLecture?.id}>
                         <div id="yt-custom-player-container" />
                         {/* Transparent Interaction Shield: intercepts clicks so YouTube UI never opens */}
-                        <div 
-                          className="theater-interaction-shield" 
+                        <div
+                          className="theater-interaction-shield"
                           onClick={handleTogglePlay}
                         />
                       </div>
                     ) : activeLecture?.videoUrl ? (
-                      <video 
+                      <video
                         ref={videoRef}
-                        src={activeLecture.videoUrl} 
+                        src={activeLecture.videoUrl}
                         className="theater-html5-video"
                         autoPlay={false}
                         poster={currentCourse.thumbnail || ''}
@@ -1374,7 +1614,13 @@ export default function MicrocredentialWatchPage({
 
                     {/* Big Center Glass Play/Pause Button */}
                     {!isPlaying && activeLecture?.videoUrl && (
-                      <div className="theater-glass-center-play" onClick={handleTogglePlay}>
+                      <div
+                        className="theater-glass-center-play"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePlayVideo();
+                        }}
+                      >
                         <Play size={28} className="play-triangle-fill" />
                       </div>
                     )}
@@ -1385,18 +1631,18 @@ export default function MicrocredentialWatchPage({
               {/* Bottom Custom Playback Bar (Full Custom UI with Anti-Skip Progress Bar) */}
               {!selectedPdf && activeLecture && currentPlaylist.length > 0 && (
                 <div className="theater-bottom-controls-bar">
-                  <button 
-                    type="button" 
-                    className="btn-ctrl-play" 
+                  <button
+                    type="button"
+                    className="btn-ctrl-play"
                     onClick={handleTogglePlay}
                     title={isPlaying ? 'Pause' : 'Play'}
                   >
                     {isPlaying ? <Pause size={18} /> : <Play size={18} />}
                   </button>
 
-                  <button 
-                    type="button" 
-                    className="btn-ctrl-vol" 
+                  <button
+                    type="button"
+                    className="btn-ctrl-vol"
                     onClick={handleToggleMute}
                     title={isMuted ? 'Unmute' : 'Mute'}
                   >
@@ -1404,20 +1650,20 @@ export default function MicrocredentialWatchPage({
                   </button>
 
                   {/* Custom Protected Timeline Progress Bar */}
-                  <div 
+                  <div
                     className="theater-custom-progress-track"
                     onClick={handleSeek}
                     title="Seeking forward is locked to watched time"
                   >
                     {/* Progress unlocked so far */}
-                    <div 
-                      className="theater-progress-unlocked" 
-                      style={{ width: `${maxWatchedPct}%` }} 
+                    <div
+                      className="theater-progress-unlocked"
+                      style={{ width: `${maxWatchedPct}%` }}
                     />
                     {/* Current playback head */}
-                    <div 
-                      className="theater-progress-current" 
-                      style={{ width: `${currentPct}%` }} 
+                    <div
+                      className="theater-progress-current"
+                      style={{ width: `${currentPct}%` }}
                     >
                       <div className="theater-progress-scrubber-dot" />
                     </div>
@@ -1429,9 +1675,9 @@ export default function MicrocredentialWatchPage({
                     </span>
                   </div>
 
-                  <button 
-                    type="button" 
-                    className="btn-ctrl-fullscreen" 
+                  <button
+                    type="button"
+                    className="btn-ctrl-fullscreen"
                     onClick={handleFullscreen}
                     title="Toggle Fullscreen"
                   >
@@ -1440,1001 +1686,1168 @@ export default function MicrocredentialWatchPage({
                 </div>
               )}
 
-          </div>
+            </div>
 
-          {/* 4. Lesson Navigation Toolbar */}
-          <div className="mc-lesson-navigation-bar">
-            <button 
-              type="button" 
-              className="btn-lesson-nav prev"
-              onClick={handlePrevLesson}
-              disabled={!activeLecture || activeLectureIdx === 0}
-            >
-              <ChevronLeft size={16} />
-              <span>Previous Lesson</span>
-            </button>
+            {/* 4. Lesson Navigation Toolbar */}
+            <div className="mc-lesson-navigation-bar">
+              <button
+                type="button"
+                className="btn-lesson-nav prev"
+                onClick={handlePrevLesson}
+                disabled={!activeLecture || activeLectureIdx === 0}
+              >
+                <ChevronLeft size={16} />
+                <span>Previous Lesson</span>
+              </button>
 
-            <button 
-              type="button" 
-              className="btn-ai-tutor-summon"
-              onClick={() => setAiAssistantOpen(!aiAssistantOpen)}
-            >
-              <Sparkles size={16} />
-              <span>Ask AI Tutor</span>
-            </button>
+              <button
+                type="button"
+                className="btn-ai-tutor-summon"
+                onClick={() => {
+                  handlePauseVideo();
+                  setAiAssistantOpen(!aiAssistantOpen);
+                }}
+              >
+                <Sparkles size={16} />
+                <span>Ask AI Tutor</span>
+              </button>
 
-            <button 
-              type="button" 
-              className="btn-lesson-nav next"
-              onClick={handleNextLesson}
-              disabled={!activeLecture || activeLectureIdx >= currentPlaylist.length - 1}
-            >
-              <span>Next Lesson</span>
-              <ChevronRight size={16} />
-            </button>
-          </div>
+              <button
+                type="button"
+                className="btn-lesson-nav next"
+                onClick={handleNextLesson}
+                disabled={!activeLecture || activeLectureIdx >= currentPlaylist.length - 1}
+              >
+                <span>Next Lesson</span>
+                <ChevronRight size={16} />
+              </button>
+            </div>
 
-          {/* AI Assistant Quick Drawer */}
-          {aiAssistantOpen && (
-            <div className="mc-ai-helper-drawer" style={{ background: '#ffffff', border: '1.5px solid #e2e8f0', borderRadius: '16px', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: '0 4px 20px rgba(0, 56, 94, 0.05)' }}>
-              <div className="ai-drawer-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                <div className="ai-bot-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00385E', fontSize: '1rem', fontWeight: 800 }}>
-                  <Sparkles size={18} style={{ color: '#00385E' }} />
-                  <span>IgnitoAssist AI Learning Coach</span>
-                </div>
+            {/* AI Assistant Quick Drawer */}
+            {aiAssistantOpen && (
+              <div className="mc-ai-helper-drawer" style={{ background: '#ffffff', border: '1.5px solid #e2e8f0', borderRadius: '16px', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: '0 4px 20px rgba(0, 56, 94, 0.05)' }}>
+                <div className="ai-drawer-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                  <div className="ai-bot-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00385E', fontSize: '1rem', fontWeight: 800 }}>
+                    <Sparkles size={18} style={{ color: '#00385E' }} />
+                    <span>IgnitoAssist AI Learning Coach</span>
+                  </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  {/* History Toggle Button */}
-                  <button 
-                    type="button" 
-                    className="btn-ai-history-toggle"
-                    onClick={() => {
-                      const nextState = !showAiHistory;
-                      setShowAiHistory(nextState);
-                      if (nextState) {
-                        fetchAiHistory(1);
-                      }
-                    }}
-                    style={{ 
-                      display: 'inline-flex', 
-                      alignItems: 'center', 
-                      gap: '6px', 
-                      background: showAiHistory ? '#00385E' : '#ffffff', 
-                      color: showAiHistory ? '#ffffff' : '#00385E', 
-                      border: '1.5px solid #00385E', 
-                      padding: '6px 14px', 
-                      borderRadius: '8px', 
-                      fontSize: '0.82rem', 
-                      fontWeight: 700, 
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                    title="View past questions & AI answers"
-                  >
-                    <History size={14} />
-                    <span>{showAiHistory ? 'Back to Live AI' : 'History'}</span>
-                  </button>
-
-                  <button 
-                    type="button" 
-                    className="btn-close-ai" 
-                    onClick={() => setAiAssistantOpen(false)} 
-                    style={{ background: 'none', border: 'none', fontSize: '1.3rem', color: '#64748b', cursor: 'pointer', lineHeight: 1 }}
-                    aria-label="Close AI Assistant"
-                  >×</button>
-                </div>
-              </div>
-
-              {/* VIEW 1: Q&A HISTORY LIST */}
-              {showAiHistory ? (
-                <div className="ai-history-panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', fontWeight: 800, color: '#00385E' }}>
-                      <History size={16} style={{ color: '#00385E' }} />
-                      <span>Past Questions & Answers ({aiHistoryList.length})</span>
-                    </div>
-                    <button 
-                      type="button" 
-                      onClick={() => fetchAiHistory(1)}
-                      disabled={aiHistoryLoading}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', color: '#00385E', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {/* History Toggle Button */}
+                    <button
+                      type="button"
+                      className="btn-ai-history-toggle"
+                      onClick={() => {
+                        const nextState = !showAiHistory;
+                        setShowAiHistory(nextState);
+                        if (nextState) {
+                          fetchAiHistory(1);
+                        }
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: showAiHistory ? '#00385E' : '#ffffff',
+                        color: showAiHistory ? '#ffffff' : '#00385E',
+                        border: '1.5px solid #00385E',
+                        padding: '6px 14px',
+                        borderRadius: '8px',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                      title="View past questions & AI answers"
                     >
-                      <RefreshCw size={13} className={aiHistoryLoading ? 'animate-spin' : ''} />
-                      <span>{aiHistoryLoading ? 'Refreshing...' : 'Refresh'}</span>
+                      <History size={14} />
+                      <span>{showAiHistory ? 'Back to Live AI' : 'History'}</span>
                     </button>
+
+                    <button
+                      type="button"
+                      className="btn-close-ai"
+                      onClick={() => setAiAssistantOpen(false)}
+                      style={{ background: 'none', border: 'none', fontSize: '1.3rem', color: '#64748b', cursor: 'pointer', lineHeight: 1 }}
+                      aria-label="Close AI Assistant"
+                    >×</button>
                   </div>
-
-                  {aiHistoryLoading ? (
-                    <div style={{ padding: '24px 0', textAlign: 'center', color: '#00385E', fontSize: '0.86rem', fontWeight: 600 }}>
-                      Loading your questions & answers...
-                    </div>
-                  ) : aiHistoryList.length === 0 ? (
-                    <div style={{ padding: '24px 10px', textAlign: 'center', color: '#64748b', fontSize: '0.86rem' }}>
-                      <p style={{ margin: '0 0 6px 0', fontWeight: 700, color: '#00385E' }}>No questions recorded yet for this topic.</p>
-                      <span>Ask a question below to get started!</span>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '300px', overflowY: 'auto', paddingRight: '4px' }}>
-                      {aiHistoryList.map((item, idx) => (
-                        <div 
-                          key={item.studentMicrocredentialRaiseHandAnswerId || idx} 
-                          style={{ background: '#ffffff', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '10px' }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1 }}>
-                              <span style={{ width: '24px', height: '24px', minWidth: '24px', background: '#00385E', color: '#ffffff', fontSize: '0.74rem', fontWeight: 800, borderRadius: '6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                {idx + 1}
-                              </span>
-                              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#00385E', lineHeight: '24px' }}>
-                                {item.question}
-                              </div>
-                            </div>
-                            {item.createdOn && <span style={{ fontSize: '0.72rem', color: '#94a3b8', flexShrink: 0, lineHeight: '24px' }}>{item.createdOn}</span>}
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                            <span style={{ width: '24px', height: '24px', minWidth: '24px', background: '#00385E', color: '#ffffff', fontSize: '0.64rem', fontWeight: 800, borderRadius: '6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              AI
-                            </span>
-                            <div style={{ fontSize: '0.85rem', color: '#334155', flex: 1, lineHeight: 1.5, borderLeft: '2px solid #00385E', paddingLeft: '10px' }}>
-                              {formatAiAnswer(item.answer)}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
-              ) : (
-                /* VIEW 2: LIVE CHAT MESSAGES */
-                aiChatMessages.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '250px', overflowY: 'auto', padding: '12px', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                    {aiChatMessages.map((msg, mIdx) => (
-                      <div key={mIdx} style={{ alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%', background: msg.sender === 'user' ? '#00385E' : '#ffffff', color: msg.sender === 'user' ? '#ffffff' : '#1e293b', border: msg.sender === 'user' ? 'none' : '1px solid #e2e8f0', borderLeft: msg.sender === 'user' ? 'none' : '3px solid #00385E', padding: '10px 14px', borderRadius: msg.sender === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px', fontSize: '0.84rem', lineHeight: 1.5 }}>
-                        <div>{formatAiAnswer(msg.text)}</div>
-                        {msg.citations && msg.citations.length > 0 && (
-                          <div style={{ fontSize: '0.72rem', color: msg.sender === 'user' ? '#e2e8f0' : '#00385E', marginTop: '6px', fontWeight: 700 }}>
-                            Reference: {msg.citations.join(', ')}
-                          </div>
-                        )}
+
+                {/* VIEW 1: Q&A HISTORY LIST */}
+                {showAiHistory ? (
+                  <div className="ai-history-panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', fontWeight: 800, color: '#00385E' }}>
+                        <History size={16} style={{ color: '#00385E' }} />
+                        <span>Past Questions & Answers ({aiHistoryList.length})</span>
                       </div>
-                    ))}
-                    {aiLoading && (
-                      <div style={{ alignSelf: 'flex-start', fontSize: '0.8rem', color: '#00385E', fontWeight: 700, fontStyle: 'italic' }}>
-                        IgnitoAssist is analyzing {selectedPdf ? 'the PDF text content' : 'the video transcript'}...
-                      </div>
-                    )}
-                  </div>
-                )
-              )}
-
-              {/* Interactive Question Input Wrap */}
-              <div className="ai-input-wrap" style={{ display: 'flex', gap: '8px' }}>
-                <input 
-                  type="text" 
-                  placeholder={`Ask a question about ${selectedPdf ? selectedPdf.title : (activeLecture?.title || 'this topic')}...`}
-                  value={aiQuery}
-                  onChange={e => setAiQuery(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleSendAiQuestion(); }}
-                  style={{ flex: 1, padding: '10px 16px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '0.88rem', outline: 'none', background: '#ffffff', color: '#00385E' }}
-                />
-                <button 
-                  type="button" 
-                  className="btn-ai-send"
-                  onClick={handleSendAiQuestion}
-                  disabled={aiLoading || !aiQuery.trim()}
-                  style={{ background: '#00385E', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '0 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  title="Send question to AI"
-                >
-                  <Send size={15} />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* 5. Discussion & Community Forum */}
-          <div className="mc-discussion-forum-card" style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '18px', padding: '24px 26px', boxShadow: '0 4px 16px rgba(0, 0, 0, 0.02)' }}>
-            
-            {/* Forum Navigation Tabs */}
-            <div className="mc-forum-nav-tabs" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '14px', marginBottom: '22px' }}>
-              <button 
-                type="button" 
-                className="forum-tab-btn active"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#00385E', borderColor: '#00385E', color: '#ffffff', padding: '8px 18px', borderRadius: '8px', fontWeight: '700', fontSize: '0.9rem', cursor: 'pointer' }}
-              >
-                <Users size={16} />
-                <span>Group Discussion</span>
-              </button>
-
-              <button 
-                type="button" 
-                className="btn-ask-question-cta"
-                onClick={() => setShowAskQuestionInput(prev => !prev)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: '#00385E', color: '#ffffff', padding: '8px 18px', borderRadius: '8px', border: 'none', fontWeight: '700', fontSize: '0.88rem', cursor: 'pointer', transition: 'all 0.2s ease' }}
-              >
-                <MessageSquare size={15} />
-                <span>{showAskQuestionInput ? 'Cancel Question' : 'Ask Question'}</span>
-              </button>
-            </div>
-
-            {/* Inline Question Composer Box */}
-            {showAskQuestionInput && (
-              <div style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '14px', padding: '16px 20px', marginBottom: '22px' }}>
-                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.96rem', fontWeight: '800', color: '#00385E' }}>
-                  Post a Question or Topic to the Forum
-                </h4>
-                <textarea 
-                  rows={3}
-                  placeholder="What is your question about this course or topic?..."
-                  value={newQuestionText}
-                  onChange={e => setNewQuestionText(e.target.value)}
-                  style={{ width: '100%', padding: '12px 14px', borderRadius: '10px', border: '1.5px solid #cbd5e1', fontSize: '0.9rem', outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }}
-                />
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
-                  <button 
-                    type="button" 
-                    onClick={() => { setShowAskQuestionInput(false); setNewQuestionText(''); }}
-                    style={{ padding: '8px 18px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#475569', fontWeight: '600', cursor: 'pointer' }}
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={handleCreateQuestion}
-                    disabled={submittingQuestion || !newQuestionText.trim()}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 20px', borderRadius: '8px', border: 'none', background: '#00385E', color: '#ffffff', fontWeight: '700', cursor: 'pointer' }}
-                  >
-                    <Send size={14} />
-                    <span>{submittingQuestion ? 'Posting...' : 'Post Question'}</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Loading indicator for questions */}
-            {loadingQuestions && (
-              <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
-                <RefreshCw size={20} className="spinner" style={{ animation: 'spin 1s linear infinite' }} />
-                <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem' }}>Loading discussions...</p>
-              </div>
-            )}
-
-            {/* Empty questions state */}
-            {!loadingQuestions && activeQuestions.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '36px 20px', background: '#f8fafc', borderRadius: '14px', border: '1.5px dashed #cbd5e1', color: '#64748b' }}>
-                <MessageSquare size={32} style={{ margin: '0 auto 10px', color: '#94a3b8' }} />
-                <h4 style={{ margin: '0 0 6px 0', fontSize: '0.98rem', fontWeight: 700, color: '#00385E' }}>No questions found</h4>
-                <p style={{ margin: 0, fontSize: '0.85rem' }}>No discussions have been started yet. Ask a question above to get started!</p>
-              </div>
-            )}
-
-            {/* Questions List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {activeQuestions.map((q, idx) => {
-                const qId = q.microCourseDiscussionQuestionId || (idx + 1);
-                const isReplyOpen = openReplyBoxForQuestionId === qId;
-                const replies = questionRepliesMap[qId] || [];
-                const isLoadingReplies = loadingRepliesMap[qId];
-                const isSubmittingReply = submittingReplyMap[qId];
-                const currentReplyInput = replyTextMap[qId] || '';
-                const isLiked = Boolean(q.isLiked);
-                const likeCount = Number(q.likeCount || 0);
-
-                return (
-                  <div 
-                    key={qId} 
-                    className="forum-question-item"
-                    style={{ border: '1px solid #e2e8f0', borderRadius: '14px', padding: '20px', background: '#ffffff' }}
-                  >
-                    {/* Author Meta */}
-                    <div className="question-author-meta" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                      <div className="author-avatar-circle" style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid #c7d2fe', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e0f2fe', color: '#00385E', fontWeight: '800', fontSize: '0.92rem' }}>
-                        {q.studentProfileImage ? (
-                          <img 
-                            src={formatImageUrl(q.studentProfileImage)} 
-                            alt={q.studentName || 'Learner'} 
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                          />
-                        ) : (
-                          <span>{(q.studentName || 'U').charAt(0).toUpperCase()}</span>
-                        )}
-                      </div>
-                      <div className="author-name-stamp">
-                        <h4 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#1e293b', margin: '0 0 2px 0' }}>
-                          {q.studentName || 'Learner'}
-                        </h4>
-                        <span className="post-timestamp" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#94a3b8' }}>
-                          <Clock size={12} />
-                          <span>Posted {q.createdOn || 'recently'}</span>
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Question Content */}
-                    <div className="question-body-heading" style={{ margin: '12px 0 16px 0' }}>
-                      <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#00385E', margin: 0, lineHeight: 1.4 }}>
-                        {q.question}
-                      </h3>
-                      {q.description && (
-                        <p style={{ margin: '8px 0 0 0', fontSize: '0.88rem', color: '#475569', lineHeight: 1.5 }}>
-                          {q.description}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Action Bar (Like, Reply, Reply count) */}
-                    <div className="question-actions-row" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      {/* Like button */}
-                      <button 
-                        type="button" 
-                        className={`btn-like-forum ${isLiked ? 'liked' : ''}`}
-                        onClick={() => handleToggleLikeQuestion(qId, isLiked, likeCount)}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          background: isLiked ? '#00385E' : '#ffffff',
-                          border: `1.5px solid ${isLiked ? '#00385E' : '#cbd5e1'}`,
-                          color: isLiked ? '#ffffff' : '#00385E',
-                          fontSize: '0.82rem',
-                          fontWeight: '700',
-                          padding: '6px 14px',
-                          borderRadius: '20px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
+                      <button
+                        type="button"
+                        onClick={() => fetchAiHistory(1)}
+                        disabled={aiHistoryLoading}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', color: '#00385E', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
                       >
-                        <ThumbsUp size={13} fill={isLiked ? '#ffffff' : 'none'} />
-                        <span>{isLiked ? `Liked ${likeCount}` : `Like ${likeCount}`}</span>
+                        <RefreshCw size={13} className={aiHistoryLoading ? 'animate-spin' : ''} />
+                        <span>{aiHistoryLoading ? 'Refreshing...' : 'Refresh'}</span>
                       </button>
-
-                      {/* Reply button */}
-                      <button 
-                        type="button" 
-                        className="btn-reply-forum"
-                        onClick={() => handleToggleReplyBox(qId)}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          background: isReplyOpen ? '#e0f2fe' : '#ffffff',
-                          border: '1.5px solid #00385E',
-                          color: '#00385E',
-                          fontSize: '0.82rem',
-                          fontWeight: '700',
-                          padding: '6px 16px',
-                          borderRadius: '20px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                      >
-                        <MessageSquare size={13} />
-                        <span>Reply</span>
-                      </button>
-
-                      {/* Reply count on right */}
-                      <div 
-                        className="forum-reply-count-badge"
-                        style={{ 
-                          marginLeft: 'auto', 
-                          display: 'inline-flex', 
-                          alignItems: 'center', 
-                          gap: '5px', 
-                          fontSize: '0.82rem', 
-                          color: '#00385E', 
-                          fontWeight: '700', 
-                          background: '#f0f7fc', 
-                          border: '1px solid #c9dfef', 
-                          padding: '4px 12px', 
-                          borderRadius: '12px' 
-                        }}
-                      >
-                        <MessageSquare size={13} />
-                        <span>{q.replyCount || (replies ? replies.length : 0) || 0} {Number(q.replyCount || (replies ? replies.length : 0) || 0) === 1 ? 'reply' : 'replies'}</span>
-                      </div>
                     </div>
 
-                    {/* List of Existing Replies (Always rendered outside) */}
-                    {replies && replies.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-                        {replies.map((r, rIdx) => (
-                          <div 
-                            key={r.microCourseDiscussionQuestionReplyId || rIdx}
-                            className="forum-nested-professor-reply"
-                            style={{ background: '#f8fafc', borderLeft: '3px solid #00385E', borderRadius: '0 12px 12px 0', padding: '14px 18px' }}
+                    {aiHistoryLoading ? (
+                      <div style={{ padding: '24px 0', textAlign: 'center', color: '#00385E', fontSize: '0.86rem', fontWeight: 600 }}>
+                        Loading your questions & answers...
+                      </div>
+                    ) : aiHistoryList.length === 0 ? (
+                      <div style={{ padding: '24px 10px', textAlign: 'center', color: '#64748b', fontSize: '0.86rem' }}>
+                        <p style={{ margin: '0 0 6px 0', fontWeight: 700, color: '#00385E' }}>No questions recorded yet for this topic.</p>
+                        <span>Ask a question below to get started!</span>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '300px', overflowY: 'auto', paddingRight: '4px' }}>
+                        {aiHistoryList.map((item, idx) => (
+                          <div
+                            key={item.studentMicrocredentialRaiseHandAnswerId || idx}
+                            style={{ background: '#ffffff', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '10px' }}
                           >
-                            <div className="prof-author-meta" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <div className="prof-avatar-circle" style={{ width: '34px', height: '34px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#00385E', fontWeight: '800', fontSize: '0.8rem', flexShrink: 0 }}>
-                                  {(r.professorProfileImage || r.studentProfileImage) ? (
-                                    <img 
-                                      src={formatImageUrl(r.professorProfileImage || r.studentProfileImage)} 
-                                      alt={r.professorName || r.studentName || 'Respondent'} 
-                                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                    />
-                                  ) : (
-                                    <span>{(r.professorName || r.studentName || 'U').charAt(0).toUpperCase()}</span>
-                                  )}
-                                </div>
-                                <div className="prof-name-stamp">
-                                  <h4 style={{ fontSize: '0.88rem', fontWeight: '700', color: '#00385E', margin: 0 }}>
-                                    {r.professorName || r.studentName || 'Respondent'}
-                                  </h4>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1 }}>
+                                <span style={{ width: '24px', height: '24px', minWidth: '24px', background: '#00385E', color: '#ffffff', fontSize: '0.74rem', fontWeight: 800, borderRadius: '6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                  {idx + 1}
+                                </span>
+                                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#00385E', lineHeight: '24px' }}>
+                                  {item.question}
                                 </div>
                               </div>
-                              <span className="prof-timestamp" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.74rem', color: '#94a3b8' }}>
-                                <Clock size={11} />
-                                <span>{r.createdOn || 'recently'}</span>
-                              </span>
+                              {item.createdOn && <span style={{ fontSize: '0.72rem', color: '#94a3b8', flexShrink: 0, lineHeight: '24px' }}>{item.createdOn}</span>}
                             </div>
-                            <p className="prof-reply-text" style={{ fontSize: '0.86rem', lineHeight: '1.55', color: '#334155', margin: 0 }}>
-                              {r.reply || r.replyText}
-                            </p>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                              <span style={{ width: '24px', height: '24px', minWidth: '24px', background: '#00385E', color: '#ffffff', fontSize: '0.64rem', fontWeight: 800, borderRadius: '6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                AI
+                              </span>
+                              <div style={{ fontSize: '0.85rem', color: '#334155', flex: 1, lineHeight: 1.5, borderLeft: '2px solid #00385E', paddingLeft: '10px' }}>
+                                {formatAiAnswer(item.answer)}
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
-                    ) : isReplyOpen && !isLoadingReplies && (
-                      <div style={{ marginTop: '12px', padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', color: '#64748b', fontSize: '0.82rem', textAlign: 'center' }}>
-                        No replies yet. Be the first to reply!
-                      </div>
                     )}
-
-                    {/* Inline Reply Input Field (ONLY opened on clicking Reply button) */}
-                    {isReplyOpen && (
-                      <div 
-                        style={{
-                          background: '#f8fafc',
-                          border: '1.5px solid #e2e8f0',
-                          borderRadius: '12px',
-                          padding: '14px 16px',
-                          marginTop: '14px'
-                        }}
-                      >
-                        <textarea 
-                          rows={3}
-                          placeholder="Write your reply here..."
-                          value={currentReplyInput}
-                          onChange={e => setReplyTextMap(prev => ({ ...prev, [qId]: e.target.value }))}
-                          autoFocus
-                          style={{
-                            width: '100%',
-                            padding: '10px 12px',
-                            borderRadius: '8px',
-                            border: '1.5px solid #e2e8f0',
-                            fontSize: '0.88rem',
-                            outline: 'none',
-                            background: '#ffffff',
-                            color: '#1e293b',
-                            fontFamily: 'inherit',
-                            resize: 'vertical',
-                            boxSizing: 'border-box'
-                          }}
-                        />
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-                          <button 
-                            type="button" 
-                            onClick={() => handleToggleReplyBox(qId)}
-                            style={{
-                              padding: '6px 18px',
-                              borderRadius: '20px',
-                              border: '1px solid #cbd5e1',
-                              background: '#ffffff',
-                              color: '#64748b',
-                              fontSize: '0.82rem',
-                              fontWeight: '600',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Cancel
-                          </button>
-                          <button 
-                            type="button" 
-                            onClick={() => handleSubmitReply(qId)}
-                            disabled={isSubmittingReply || !currentReplyInput.trim()}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '6px 20px',
-                              borderRadius: '20px',
-                              border: 'none',
-                              background: '#00385E',
-                              color: '#ffffff',
-                              fontSize: '0.82rem',
-                              fontWeight: '700',
-                              cursor: isSubmittingReply || !currentReplyInput.trim() ? 'not-allowed' : 'pointer',
-                              opacity: isSubmittingReply || !currentReplyInput.trim() ? 0.6 : 1
-                            }}
-                          >
-                            <Send size={13} />
-                            <span>{isSubmittingReply ? 'Posting...' : 'Post Reply'}</span>
-                          </button>
+                  </div>
+                ) : (
+                  /* VIEW 2: LIVE CHAT MESSAGES */
+                  aiChatMessages.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '250px', overflowY: 'auto', padding: '12px', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                      {aiChatMessages.map((msg, mIdx) => (
+                        <div key={mIdx} style={{ alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%', background: msg.sender === 'user' ? '#00385E' : '#ffffff', color: msg.sender === 'user' ? '#ffffff' : '#1e293b', border: msg.sender === 'user' ? 'none' : '1px solid #e2e8f0', borderLeft: msg.sender === 'user' ? 'none' : '3px solid #00385E', padding: '10px 14px', borderRadius: msg.sender === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px', fontSize: '0.84rem', lineHeight: 1.5 }}>
+                          <div>{formatAiAnswer(msg.text)}</div>
+                          {msg.citations && msg.citations.length > 0 && (
+                            <div style={{ fontSize: '0.72rem', color: msg.sender === 'user' ? '#e2e8f0' : '#00385E', marginTop: '6px', fontWeight: 700 }}>
+                              Reference: {msg.citations.join(', ')}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
-
-                  </div>
-                );
-              })}
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* ======================================================
-            RIGHT COLUMN: LEARNING PROGRESS & VIDEO PLAYLIST SIDEBAR
-            ====================================================== */}
-        <div className="mc-watch-right-sidebar">
-          
-          {/* 1. Learning Progress Card */}
-          {(() => {
-            const playlistItems = currentPlaylist.length > 0 ? currentPlaylist : [];
-            const curLecture = activeLecture;
-            const activeVid = curLecture?.ytId || getYouTubeVideoId(curLecture?.videoUrl) || curLecture?.videoId || String(curLecture?.id || '');
-            const activeDur = videoDuration || curLecture?.videoDuration || 1;
-            const liveSec = Math.max(currentTime, maxWatchedTime);
-            const liveActivePct = activeDur > 0
-              ? (liveSec >= activeDur ? 100 : Math.min(99, Math.floor((liveSec / activeDur) * 100)))
-              : 0;
-
-            let sum = 0;
-            let completedCount = 0;
-            playlistItems.forEach(pItem => {
-              const pVid = pItem.ytId || getYouTubeVideoId(pItem.videoUrl) || pItem.id;
-              const rawPct = videoProgressMap[pVid]?.percentageWatched || 0;
-              const finalPct = pVid === activeVid ? Math.max(rawPct, liveActivePct) : rawPct;
-              sum += finalPct;
-              if (finalPct >= 100) completedCount++;
-            });
-            const liveOverallPct = playlistItems.length > 0 ? Math.min(100, Math.max(overallWatchPct || 0, Math.round(sum / playlistItems.length))) : (overallWatchPct || 0);
-
-            return (
-              <div className="mc-watch-progress-box">
-                <div className="progress-box-left">
-                  <h3 className="progress-box-title">Learning Progress</h3>
-                  <div className="progress-stats-visual-row">
-                    
-                    {/* Radial Progress Circle */}
-                    <div className="circular-progress-wrap">
-                      <svg viewBox="0 0 36 36" className="circular-chart blue">
-                        <path 
-                          className="circle-bg" 
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                        />
-                        <path 
-                          className="circle-bar" 
-                          strokeDasharray={`${liveOverallPct}, 100`} 
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                        />
-                        <text x="18" y="20.35" className="percentage-text">{liveOverallPct}%</text>
-                      </svg>
+                      ))}
+                      {aiLoading && (
+                        <div style={{ alignSelf: 'flex-start', fontSize: '0.8rem', color: '#00385E', fontWeight: 700, fontStyle: 'italic' }}>
+                          IgnitoAssist is analyzing {selectedPdf ? 'the PDF text content' : 'the video transcript'}...
+                        </div>
+                      )}
                     </div>
+                  )
+                )}
 
-                    <div className="progress-text-info">
-                      <strong>Overall Progress</strong>
-                      <span>
-                        {playlistItems.length > 0 
-                          ? `${completedCount} of ${playlistItems.length} Topics` 
-                          : 'No topics available'}
-                      </span>
-                    </div>
-
-                  </div>
-                </div>
-
-                {/* 3D Learning Illustration Badge */}
-                <div className="progress-avatar-illustration">
-                  <img 
-                    src={watchNowImg} 
-                    alt="Learning Progress Illustration" 
-                    className="progress-watchnow-img"
+                {/* Interactive Question Input Wrap */}
+                <div className="ai-input-wrap" style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    placeholder={`Ask a question about ${selectedPdf ? selectedPdf.title : (activeLecture?.title || 'this topic')}...`}
+                    value={aiQuery}
+                    onChange={e => setAiQuery(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSendAiQuestion(); }}
+                    style={{ flex: 1, padding: '10px 16px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '0.88rem', outline: 'none', background: '#ffffff', color: '#00385E' }}
                   />
+                  <button
+                    type="button"
+                    className="btn-ai-send"
+                    onClick={handleSendAiQuestion}
+                    disabled={aiLoading || !aiQuery.trim()}
+                    style={{ background: '#00385E', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '0 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    title="Send question to AI"
+                  >
+                    <Send size={15} />
+                  </button>
                 </div>
-              </div>
-            );
-          })()}
-
-          {/* 2. Learning Videos (e-Tutorial) Dynamic Playlist Card */}
-          <div className="mc-watch-playlist-box">
-            <div className="playlist-header-row">
-              <h3 className="playlist-title">Learning Videos ({currentPlaylist.length} Topics)</h3>
-              <span className="playlist-count-label">
-                {currentPlaylist.length > 0 ? `${activeLectureIdx + 1}/${currentPlaylist.length} Topics` : '0 Topics'}
-              </span>
-            </div>
-            {currentPlaylist.length > 0 && (
-              <div className="playlist-progress-bar-line">
-                <div 
-                  className="playlist-progress-bar-fill" 
-                  style={{ width: `${Math.round(((activeLectureIdx + 1) / currentPlaylist.length) * 100)}%` }} 
-                />
               </div>
             )}
 
-            {/* Video Lecture List Items */}
-            <div className="playlist-items-stack">
-              {currentPlaylist.length === 0 ? (
-                <div style={{ padding: '24px 16px', textAlign: 'center', color: '#64748b', fontSize: '0.86rem' }}>
-                  No learning videos found.
+            {/* 5. Discussion & Community Forum */}
+            <div className="mc-discussion-forum-card" style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '18px', padding: '24px 26px', boxShadow: '0 4px 16px rgba(0, 0, 0, 0.02)' }}>
+
+              {/* Forum Navigation Tabs */}
+              <div className="mc-forum-nav-tabs" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '14px', marginBottom: '22px' }}>
+                <button
+                  type="button"
+                  className="forum-tab-btn active"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#00385E', borderColor: '#00385E', color: '#ffffff', padding: '8px 18px', borderRadius: '8px', fontWeight: '700', fontSize: '0.9rem', cursor: 'pointer' }}
+                >
+                  <Users size={16} />
+                  <span>Group Discussion</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-ask-question-cta"
+                  onClick={() => setShowAskQuestionInput(prev => !prev)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: '#00385E', color: '#ffffff', padding: '8px 18px', borderRadius: '8px', border: 'none', fontWeight: '700', fontSize: '0.88rem', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                >
+                  <MessageSquare size={15} />
+                  <span>{showAskQuestionInput ? 'Cancel Question' : 'Ask Question'}</span>
+                </button>
+              </div>
+
+              {/* Inline Question Composer Box */}
+              {showAskQuestionInput && (
+                <div style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '14px', padding: '16px 20px', marginBottom: '22px' }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '0.96rem', fontWeight: '800', color: '#00385E' }}>
+                    Post a Question or Topic to the Forum
+                  </h4>
+                  <textarea
+                    rows={3}
+                    placeholder="What is your question about this course or topic?..."
+                    value={newQuestionText}
+                    onChange={e => setNewQuestionText(e.target.value)}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: '10px', border: '1.5px solid #cbd5e1', fontSize: '0.9rem', outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={() => { setShowAskQuestionInput(false); setNewQuestionText(''); }}
+                      style={{ padding: '8px 18px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#475569', fontWeight: '600', cursor: 'pointer' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCreateQuestion}
+                      disabled={submittingQuestion || !newQuestionText.trim()}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 20px', borderRadius: '8px', border: 'none', background: '#00385E', color: '#ffffff', fontWeight: '700', cursor: 'pointer' }}
+                    >
+                      <Send size={14} />
+                      <span>{submittingQuestion ? 'Posting...' : 'Post Question'}</span>
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                currentPlaylist.map((item, idx) => {
-                  const isActive = idx === activeLectureIdx && !selectedPdf;
-                  const itemVid = item.ytId || getYouTubeVideoId(item.videoUrl) || item.id;
-                  const rawSavedPct = videoProgressMap[itemVid]?.percentageWatched || 0;
-                  
-                  let itemProgress = rawSavedPct;
-                  if (isActive) {
-                    const activeDur = videoDuration || item.videoDuration || 1;
-                    const liveSec = Math.max(currentTime, maxWatchedTime);
-                    const livePct = activeDur > 0
-                      ? (liveSec >= activeDur ? 100 : Math.min(99, Math.floor((liveSec / activeDur) * 100)))
-                      : 0;
-                    itemProgress = Math.max(livePct, rawSavedPct);
-                  }
+              )}
+
+              {/* Loading indicator for questions */}
+              {loadingQuestions && (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+                  <RefreshCw size={20} className="spinner" style={{ animation: 'spin 1s linear infinite' }} />
+                  <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem' }}>Loading discussions...</p>
+                </div>
+              )}
+
+              {/* Empty questions state */}
+              {!loadingQuestions && activeQuestions.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '36px 20px', background: '#f8fafc', borderRadius: '14px', border: '1.5px dashed #cbd5e1', color: '#64748b' }}>
+                  <MessageSquare size={32} style={{ margin: '0 auto 10px', color: '#94a3b8' }} />
+                  <h4 style={{ margin: '0 0 6px 0', fontSize: '0.98rem', fontWeight: 700, color: '#00385E' }}>No questions found</h4>
+                  <p style={{ margin: 0, fontSize: '0.85rem' }}>No discussions have been started yet. Ask a question above to get started!</p>
+                </div>
+              )}
+
+              {/* Questions List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {activeQuestions.map((q, idx) => {
+                  const qId = q.microCourseDiscussionQuestionId || (idx + 1);
+                  const isReplyOpen = openReplyBoxForQuestionId === qId;
+                  const replies = questionRepliesMap[qId] || [];
+                  const isLoadingReplies = loadingRepliesMap[qId];
+                  const isSubmittingReply = submittingReplyMap[qId];
+                  const currentReplyInput = replyTextMap[qId] || '';
+                  const isLiked = Boolean(q.isLiked);
+                  const likeCount = Number(q.likeCount || 0);
 
                   return (
-                    <div 
-                      key={item.id} 
-                      className={`playlist-item-row ${isActive ? 'active' : ''}`}
-                      onClick={() => {
-                        if (currentTime > 0) saveCurrentWatchProgress(currentTime, videoDuration);
-                        setSelectedPdf(null);
-                        userInitiatedPlayRef.current = false;
-                        setActiveLectureIdx(idx);
-                        setIsPlaying(false);
-                      }}
+                    <div
+                      key={qId}
+                      className="forum-question-item"
+                      style={{ border: '1px solid #e2e8f0', borderRadius: '14px', padding: '20px', background: '#ffffff' }}
                     >
-                      <div className="playlist-item-left">
-                        <div className={`playlist-play-icon-circle ${isActive ? 'active' : ''}`}>
-                          <Play size={12} className="play-svg-arrow" />
-                        </div>
-                        <span className="playlist-item-name">{item.title}</span>
-                      </div>
-
-                      <div className="playlist-item-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span className="playlist-item-pct">{item.duration}</span>
-                        
-                        {/* Mini Circular Progress Ring */}
-                        <div 
-                          style={{ 
-                            position: 'relative', 
-                            width: '32px', 
-                            height: '32px', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            flexShrink: 0 
-                          }}
-                          title={`${itemProgress}% completed`}
-                        >
-                          <svg width="32" height="32" style={{ transform: 'rotate(-90deg)' }}>
-                            <circle
-                              cx="16"
-                              cy="16"
-                              r="11"
-                              stroke="#cbd5e1"
-                              strokeWidth="2.8"
-                              fill="transparent"
+                      {/* Author Meta */}
+                      <div className="question-author-meta" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                        <div className="author-avatar-circle" style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid #c7d2fe', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e0f2fe', color: '#00385E', fontWeight: '800', fontSize: '0.92rem' }}>
+                          {q.studentProfileImage ? (
+                            <img
+                              src={formatImageUrl(q.studentProfileImage)}
+                              alt={q.studentName || 'Learner'}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
                             />
-                            {itemProgress > 0 && (
-                              <circle
-                                cx="16"
-                                cy="16"
-                                r="11"
-                                stroke="#005a96"
-                                strokeWidth="2.8"
-                                fill="transparent"
-                                strokeDasharray={2 * Math.PI * 11}
-                                strokeDashoffset={2 * Math.PI * 11 - (itemProgress / 100) * (2 * Math.PI * 11)}
-                                strokeLinecap="round"
-                              />
-                            )}
-                          </svg>
-                          <span style={{ 
-                            position: 'absolute', 
-                            fontSize: '0.62rem', 
-                            fontWeight: 800, 
-                            color: itemProgress > 0 ? '#00385E' : '#005a96',
-                            letterSpacing: '-0.02em'
-                          }}>
-                            {itemProgress}%
+                          ) : (
+                            <span>{(q.studentName || 'U').charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="author-name-stamp">
+                          <h4 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#1e293b', margin: '0 0 2px 0' }}>
+                            {q.studentName || 'Learner'}
+                          </h4>
+                          <span className="post-timestamp" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#94a3b8' }}>
+                            <Clock size={12} />
+                            <span>Posted {q.createdOn || 'recently'}</span>
                           </span>
                         </div>
                       </div>
+
+                      {/* Question Content */}
+                      <div className="question-body-heading" style={{ margin: '12px 0 16px 0' }}>
+                        <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#00385E', margin: 0, lineHeight: 1.4 }}>
+                          {q.question}
+                        </h3>
+                        {q.description && (
+                          <p style={{ margin: '8px 0 0 0', fontSize: '0.88rem', color: '#475569', lineHeight: 1.5 }}>
+                            {q.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Action Bar (Like, Reply, Reply count) */}
+                      <div className="question-actions-row" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {/* Like button */}
+                        <button
+                          type="button"
+                          className={`btn-like-forum ${isLiked ? 'liked' : ''}`}
+                          onClick={() => handleToggleLikeQuestion(qId, isLiked, likeCount)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: isLiked ? '#00385E' : '#ffffff',
+                            border: `1.5px solid ${isLiked ? '#00385E' : '#cbd5e1'}`,
+                            color: isLiked ? '#ffffff' : '#00385E',
+                            fontSize: '0.82rem',
+                            fontWeight: '700',
+                            padding: '6px 14px',
+                            borderRadius: '20px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <ThumbsUp size={13} fill={isLiked ? '#ffffff' : 'none'} />
+                          <span>{isLiked ? `Liked ${likeCount}` : `Like ${likeCount}`}</span>
+                        </button>
+
+                        {/* Reply button */}
+                        <button
+                          type="button"
+                          className="btn-reply-forum"
+                          onClick={() => handleToggleReplyBox(qId)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: isReplyOpen ? '#e0f2fe' : '#ffffff',
+                            border: '1.5px solid #00385E',
+                            color: '#00385E',
+                            fontSize: '0.82rem',
+                            fontWeight: '700',
+                            padding: '6px 16px',
+                            borderRadius: '20px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <MessageSquare size={13} />
+                          <span>Reply</span>
+                        </button>
+
+                        {/* Reply count on right */}
+                        <div
+                          className="forum-reply-count-badge"
+                          style={{
+                            marginLeft: 'auto',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            fontSize: '0.82rem',
+                            color: '#00385E',
+                            fontWeight: '700',
+                            background: '#f0f7fc',
+                            border: '1px solid #c9dfef',
+                            padding: '4px 12px',
+                            borderRadius: '12px'
+                          }}
+                        >
+                          <MessageSquare size={13} />
+                          <span>{q.replyCount || (replies ? replies.length : 0) || 0} {Number(q.replyCount || (replies ? replies.length : 0) || 0) === 1 ? 'reply' : 'replies'}</span>
+                        </div>
+                      </div>
+
+                      {/* List of Existing Replies (Always rendered outside) */}
+                      {replies && replies.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                          {replies.map((r, rIdx) => (
+                            <div
+                              key={r.microCourseDiscussionQuestionReplyId || rIdx}
+                              className="forum-nested-professor-reply"
+                              style={{ background: '#f8fafc', borderLeft: '3px solid #00385E', borderRadius: '0 12px 12px 0', padding: '14px 18px' }}
+                            >
+                              <div className="prof-author-meta" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <div className="prof-avatar-circle" style={{ width: '34px', height: '34px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#00385E', fontWeight: '800', fontSize: '0.8rem', flexShrink: 0 }}>
+                                    {(r.professorProfileImage || r.studentProfileImage) ? (
+                                      <img
+                                        src={formatImageUrl(r.professorProfileImage || r.studentProfileImage)}
+                                        alt={r.professorName || r.studentName || 'Respondent'}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                      />
+                                    ) : (
+                                      <span>{(r.professorName || r.studentName || 'U').charAt(0).toUpperCase()}</span>
+                                    )}
+                                  </div>
+                                  <div className="prof-name-stamp">
+                                    <h4 style={{ fontSize: '0.88rem', fontWeight: '700', color: '#00385E', margin: 0 }}>
+                                      {r.professorName || r.studentName || 'Respondent'}
+                                    </h4>
+                                  </div>
+                                </div>
+                                <span className="prof-timestamp" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.74rem', color: '#94a3b8' }}>
+                                  <Clock size={11} />
+                                  <span>{r.createdOn || 'recently'}</span>
+                                </span>
+                              </div>
+                              <p className="prof-reply-text" style={{ fontSize: '0.86rem', lineHeight: '1.55', color: '#334155', margin: 0 }}>
+                                {r.reply || r.replyText}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : isReplyOpen && !isLoadingReplies && (
+                        <div style={{ marginTop: '12px', padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', color: '#64748b', fontSize: '0.82rem', textAlign: 'center' }}>
+                          No replies yet. Be the first to reply!
+                        </div>
+                      )}
+
+                      {/* Inline Reply Input Field (ONLY opened on clicking Reply button) */}
+                      {isReplyOpen && (
+                        <div
+                          style={{
+                            background: '#f8fafc',
+                            border: '1.5px solid #e2e8f0',
+                            borderRadius: '12px',
+                            padding: '14px 16px',
+                            marginTop: '14px'
+                          }}
+                        >
+                          <textarea
+                            rows={3}
+                            placeholder="Write your reply here..."
+                            value={currentReplyInput}
+                            onChange={e => setReplyTextMap(prev => ({ ...prev, [qId]: e.target.value }))}
+                            autoFocus
+                            style={{
+                              width: '100%',
+                              padding: '10px 12px',
+                              borderRadius: '8px',
+                              border: '1.5px solid #e2e8f0',
+                              fontSize: '0.88rem',
+                              outline: 'none',
+                              background: '#ffffff',
+                              color: '#1e293b',
+                              fontFamily: 'inherit',
+                              resize: 'vertical',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleReplyBox(qId)}
+                              style={{
+                                padding: '6px 18px',
+                                borderRadius: '20px',
+                                border: '1px solid #cbd5e1',
+                                background: '#ffffff',
+                                color: '#64748b',
+                                fontSize: '0.82rem',
+                                fontWeight: '600',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSubmitReply(qId)}
+                              disabled={isSubmittingReply || !currentReplyInput.trim()}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '6px 20px',
+                                borderRadius: '20px',
+                                border: 'none',
+                                background: '#00385E',
+                                color: '#ffffff',
+                                fontSize: '0.82rem',
+                                fontWeight: '700',
+                                cursor: isSubmittingReply || !currentReplyInput.trim() ? 'not-allowed' : 'pointer',
+                                opacity: isSubmittingReply || !currentReplyInput.trim() ? 0.6 : 1
+                              }}
+                            >
+                              <Send size={13} />
+                              <span>{isSubmittingReply ? 'Posting...' : 'Post Reply'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                     </div>
                   );
-                })
-              )}
+                })}
+              </div>
+
             </div>
+
           </div>
 
-          {/* 3. Dynamic Learning Text e-Content Accordion */}
-          {(() => {
-            const textContentList = currentPlaylist.filter(item => Boolean(item.topicPdf));
-            return (
-              <div className="mc-watch-expandable-card">
-                <div 
-                  className="expandable-header"
-                  onClick={() => setIsTextContentOpen(!isTextContentOpen)}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', cursor: 'pointer', background: '#ffffff' }}
-                >
-                  <div className="expandable-left" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00385E', fontWeight: 800 }}>
-                    <BookOpen size={16} style={{ color: '#00385E' }} />
-                    <span>Learning Text e-Content</span>
+          {/* ======================================================
+            RIGHT COLUMN: LEARNING PROGRESS & VIDEO PLAYLIST SIDEBAR
+            ====================================================== */}
+          <div className="mc-watch-right-sidebar">
+
+            {/* 1. Learning Progress Card */}
+            {(() => {
+              const playlistItems = currentPlaylist.length > 0 ? currentPlaylist : [];
+              const curLecture = activeLecture;
+              const activeVid = curLecture?.ytId || getYouTubeVideoId(curLecture?.videoUrl) || curLecture?.videoId || String(curLecture?.id || '');
+              const activeDur = videoDuration || curLecture?.videoDuration || 1;
+              const liveSec = Math.max(currentTime, maxWatchedTime);
+              const liveActivePct = activeDur > 0
+                ? (liveSec >= activeDur ? 100 : Math.min(99, Math.floor((liveSec / activeDur) * 100)))
+                : 0;
+
+              let sum = 0;
+              let completedCount = 0;
+              playlistItems.forEach(pItem => {
+                const pVid = pItem.ytId || getYouTubeVideoId(pItem.videoUrl) || pItem.id;
+                const rawPct = videoProgressMap[pVid]?.percentageWatched || 0;
+                const finalPct = pVid === activeVid ? Math.max(rawPct, liveActivePct) : rawPct;
+                sum += finalPct;
+                if (finalPct >= 100) completedCount++;
+              });
+              const liveOverallPct = playlistItems.length > 0 ? Math.min(100, Math.max(overallWatchPct || 0, Math.round(sum / playlistItems.length))) : (overallWatchPct || 0);
+
+              return (
+                <div className="mc-watch-progress-box">
+                  <div className="progress-box-left">
+                    <h3 className="progress-box-title">Learning Progress</h3>
+                    <div className="progress-stats-visual-row">
+
+                      {/* Radial Progress Circle */}
+                      <div className="circular-progress-wrap">
+                        <svg viewBox="0 0 36 36" className="circular-chart blue">
+                          <path
+                            className="circle-bg"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          />
+                          <path
+                            className="circle-bar"
+                            strokeDasharray={`${liveOverallPct}, 100`}
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          />
+                          <text x="18" y="20.35" className="percentage-text">{liveOverallPct}%</text>
+                        </svg>
+                      </div>
+
+                      <div className="progress-text-info">
+                        <strong>Overall Progress</strong>
+                        <span>
+                          {playlistItems.length > 0
+                            ? `${completedCount} of ${playlistItems.length} Topics`
+                            : 'No topics available'}
+                        </span>
+                      </div>
+
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#00385E', background: '#f0f7fc', padding: '2px 8px', borderRadius: '999px', border: '1px solid #c9dfef' }}>
-                      {textContentList.length} Units
-                    </span>
-                    <ChevronDown size={16} className={`chevron-exp ${isTextContentOpen ? 'open' : ''}`} style={{ color: '#00385E' }} />
+
+                  {/* 3D Learning Illustration Badge */}
+                  <div className="progress-avatar-illustration">
+                    <img
+                      src={watchNowImg}
+                      alt="Learning Progress Illustration"
+                      className="progress-watchnow-img"
+                    />
                   </div>
                 </div>
+              );
+            })()}
+ <div className="mc-watch-expandable-card mc-notes-section-card">
+              <div
+                className="expandable-header mc-notes-header"
+                onClick={() => setIsNotesOpen(!isNotesOpen)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', cursor: 'pointer', background: '#ffffff' }}
+              >
+                <div className="expandable-left" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00385E', fontWeight: 800 }}>
+                  <StickyNote size={16} style={{ color: '#00385E' }} />
+                  <span>Video Notes</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="btn-add-note-inline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsNotesOpen(true);
+                      handleOpenAddNote();
+                    }}
+                    title="Take note at current video time"
+                  >
+                    <Plus size={13} />
+                    <span>Add Note</span>
+                  </button>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#00385E', background: '#f0f7fc', padding: '2px 8px', borderRadius: '999px', border: '1px solid #c9dfef' }}>
+                    {videoNotesList.length} Notes
+                  </span>
+                  <ChevronDown size={16} className={`chevron-exp ${isNotesOpen ? 'open' : ''}`} style={{ color: '#00385E' }} />
+                </div>
+              </div>
 
-                {isTextContentOpen && (
-                  <div className="expandable-content-body" style={{ padding: '12px 14px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
-                    {textContentList.length === 0 ? (
+              {isNotesOpen && (
+                <div className="mc-notes-card-body" style={{ padding: '14px 18px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
+                  {/* Note Composer Form */}
+                  {showAddNoteComposer && (
+                    <div className="mc-note-composer-card">
+                      <textarea
+                        rows={3}
+                        className="mc-note-textarea"
+                        placeholder="Write your note for this video..."
+                        value={noteText}
+                        onChange={(e) => setNoteText(e.target.value)}
+                        autoFocus
+                      />
+                      <div className="mc-note-composer-footer">
+                        <div className="mc-note-composer-time">
+                          <Clock size={13} />
+                          <span>{formatNoteTime(capturedNoteTime)}</span>
+                        </div>
+                        <div className="mc-note-composer-btn-group">
+                          <button
+                            type="button"
+                            className="btn-note-cancel"
+                            onClick={handleCancelNote}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-note-take"
+                            onClick={handleSaveNote}
+                            disabled={submittingNote || !noteText.trim()}
+                          >
+                            {submittingNote ? 'Saving...' : (editingNoteId ? 'Update Note' : 'Take Note')}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes Listing */}
+                  {notesLoading ? (
+                    <div className="notes-loading-state">
+                      <RefreshCw size={20} className="spinner" style={{ animation: 'spin 1s linear infinite', color: '#00385E' }} />
+                      <span>Loading notes...</span>
+                    </div>
+                  ) : videoNotesList.length === 0 ? (
+                    <div className="notes-empty-state">
+                      <img
+                        src={notesImg}
+                        alt="No Notes Available"
+                        className="notes-empty-img"
+                      />
+                      <p className="notes-empty-title">No notes added yet for this video</p>
+                      {!showAddNoteComposer && (
+                        <button
+                          type="button"
+                          className="btn-create-first-note"
+                          onClick={handleOpenAddNote}
+                        >
+                          <Plus size={14} />
+                          <span>Take note at {formatNoteTime(currentTime)}</span>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="notes-list-items">
+                      {videoNotesList.map((note) => {
+                        const noteId = note.microcredentialVideoNotesId;
+                        return (
+                          <div key={noteId} className="note-item-bubble">
+                            <div className="note-item-header">
+                              <button
+                                type="button"
+                                className="note-time-badge"
+                                onClick={() => handleSeekToNoteTime(note.noteTimeInSec)}
+                                title={`Click to jump to ${formatNoteTime(note.noteTimeInSec)}`}
+                              >
+                                <Clock size={13} />
+                                <span>{formatNoteTime(note.noteTimeInSec)}</span>
+                              </button>
+
+                              <div className="note-actions">
+                                <button
+                                  type="button"
+                                  className="btn-note-icon edit"
+                                  onClick={() => handleEditNote(note)}
+                                  title="Edit Note"
+                                >
+                                  <Pencil size={13} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-note-icon delete"
+                                  onClick={() => handleDeleteNote(noteId)}
+                                  disabled={deletingNoteId === noteId}
+                                  title="Delete Note"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="note-item-text">
+                              {note.noteDescription}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            {/* 2. Learning Videos (e-Tutorial) Playlist Card */}
+            <div className="mc-watch-expandable-card">
+              <div
+                className="expandable-header"
+                onClick={() => setIsLearningOpen(!isLearningOpen)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', cursor: 'pointer', background: '#ffffff' }}
+              >
+                <div className="expandable-left" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00385E', fontWeight: 800 }}>
+                  <Video size={16} style={{ color: '#00385E' }} />
+                  <span>Learning</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#00385E', background: '#f0f7fc', padding: '2px 8px', borderRadius: '999px', border: '1px solid #c9dfef' }}>
+                    {currentPlaylist.length} Topics
+                  </span>
+                  <ChevronDown size={16} className={`chevron-exp ${isLearningOpen ? 'open' : ''}`} style={{ color: '#00385E' }} />
+                </div>
+              </div>
+
+              {isLearningOpen && (
+                <div className="expandable-content-body" style={{ padding: '12px 14px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
+                  {/* Video Lecture List Items */}
+                  <div className="playlist-items-stack">
+                    {currentPlaylist.length === 0 ? (
                       <div style={{ padding: '16px 12px', textAlign: 'center', color: '#64748b', fontSize: '0.84rem' }}>
-                        No text e-Content found for this course.
+                        No learning videos found.
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {textContentList.map((topicItem, idx) => {
-                          const isSelected = selectedPdf?.title === topicItem.title;
-                          const pdfUrl = topicItem.topicPdf;
-                          return (
-                            <div 
-                              key={topicItem.id || idx}
-                              onClick={() => {
-                                setSelectedPdf({ url: pdfUrl, title: topicItem.title });
-                                setIsPlaying(false);
-                                if (videoRef.current) videoRef.current.pause();
-                                if (ytPlayerRef.current?.pauseVideo) ytPlayerRef.current.pauseVideo();
-                              }}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px',
-                                padding: '10px 12px',
-                                background: isSelected ? '#e0f2fe' : '#ffffff',
-                                border: isSelected ? '1.5px solid #0284C7' : '1px solid #e2e8f0',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                              }}
-                              className="mc-topic-pdf-item-row"
-                            >
-                              {/* Theme White PDF Document Badge */}
-                              <div 
+                      currentPlaylist.map((item, idx) => {
+                        const isActive = idx === activeLectureIdx && !selectedPdf;
+                        const itemVid = item.ytId || getYouTubeVideoId(item.videoUrl) || item.id;
+                        const rawSavedPct = videoProgressMap[itemVid]?.percentageWatched || 0;
+
+                        let itemProgress = rawSavedPct;
+                        if (isActive) {
+                          const activeDur = videoDuration || item.videoDuration || 1;
+                          const liveSec = Math.max(currentTime, maxWatchedTime);
+                          const livePct = activeDur > 0
+                            ? (liveSec >= activeDur ? 100 : Math.min(99, Math.floor((liveSec / activeDur) * 100)))
+                            : 0;
+                          itemProgress = Math.max(livePct, rawSavedPct);
+                        }
+
+                        return (
+                          <div
+                            key={item.id}
+                            className={`playlist-item-row ${isActive ? 'active' : ''}`}
+                            onClick={() => {
+                              setSelectedPdf(null);
+                              if (idx === activeLectureIdx) {
+                                handleTogglePlay();
+                              } else {
+                                if (currentTime > 0) saveCurrentWatchProgress(currentTime, videoDuration);
+                                userInitiatedPlayRef.current = true;
+                                setActiveLectureIdx(idx);
+                                handlePlayVideo();
+                              }
+                            }}
+                          >
+                            <div className="playlist-item-left">
+                              <div className={`playlist-play-icon-circle ${isActive ? 'active' : ''}`}>
+                                {isActive && isPlaying ? (
+                                  <Pause size={12} className="play-svg-arrow" />
+                                ) : (
+                                  <Play size={12} className="play-svg-arrow" />
+                                )}
+                              </div>
+                              <span className="playlist-item-name">{item.title}</span>
+                            </div>
+
+                            <div className="playlist-item-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="playlist-item-pct">{item.duration}</span>
+
+                              {/* Mini Circular Progress Ring */}
+                              <div
                                 style={{
-                                  width: '32px',
-                                  height: '38px',
-                                  background: '#ffffff',
-                                  borderRadius: '5px',
                                   position: 'relative',
+                                  width: '32px',
+                                  height: '32px',
                                   display: 'flex',
-                                  flexDirection: 'column',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  flexShrink: 0,
-                                  boxShadow: '0 2px 6px rgba(0, 56, 94, 0.08)',
-                                  border: '1.5px solid #00385E',
-                                  overflow: 'hidden'
+                                  flexShrink: 0
                                 }}
+                                title={`${itemProgress}% completed`}
                               >
-                                <div 
-                                  style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    right: 0,
-                                    width: '8px',
-                                    height: '8px',
-                                    background: '#00385E',
-                                    borderBottomLeftRadius: '3px'
-                                  }} 
-                                />
-                                <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#00385E', letterSpacing: '0.04em' }}>PDF</span>
-                              </div>
-
-                              {/* Themed Topic Link */}
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <span 
-                                  style={{ 
-                                    fontSize: '0.8rem', 
-                                    fontWeight: 700, 
-                                    color: isSelected ? '#00385E' : '#334155', 
-                                    textDecoration: 'none',
-                                    textTransform: 'uppercase',
-                                    lineHeight: 1.3,
-                                    display: 'block',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis'
-                                  }}
-                                  className="mc-topic-pdf-link"
-                                >
-                                  {topicItem.title}
-                                </span>
-                                <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block', marginTop: '2px', fontWeight: 600 }}>
-                                  Unit {idx + 1} • Interactive Study Notes
+                                <svg width="32" height="32" style={{ transform: 'rotate(-90deg)' }}>
+                                  <circle
+                                    cx="16"
+                                    cy="16"
+                                    r="11"
+                                    stroke="#cbd5e1"
+                                    strokeWidth="2.8"
+                                    fill="transparent"
+                                  />
+                                  {itemProgress > 0 && (
+                                    <circle
+                                      cx="16"
+                                      cy="16"
+                                      r="11"
+                                      stroke="#005a96"
+                                      strokeWidth="2.8"
+                                      fill="transparent"
+                                      strokeDasharray={2 * Math.PI * 11}
+                                      strokeDashoffset={2 * Math.PI * 11 - (itemProgress / 100) * (2 * Math.PI * 11)}
+                                      strokeLinecap="round"
+                                    />
+                                  )}
+                                </svg>
+                                <span style={{
+                                  position: 'absolute',
+                                  fontSize: '0.62rem',
+                                  fontWeight: 800,
+                                  color: itemProgress > 0 ? '#00385E' : '#005a96',
+                                  letterSpacing: '-0.02em'
+                                }}>
+                                  {itemProgress}%
                                 </span>
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
-                )}
-              </div>
-            );
-          })()}
-
-          {/* 4. Quiz Accordion Section */}
-          <div className="mc-watch-expandable-card">
-            <div 
-              className="expandable-header"
-              onClick={() => setIsQuizAccordionOpen(!isQuizAccordionOpen)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', cursor: 'pointer', background: '#ffffff' }}
-            >
-              <div className="expandable-left" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00385E', fontWeight: 800 }}>
-                <HelpCircle size={16} style={{ color: '#00385E' }} />
-                <span>Quiz Assessment</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#00385E', background: '#f0f7fc', padding: '2px 8px', borderRadius: '999px', border: '1px solid #c9dfef' }}>
-                  Assessment
-                </span>
-                <ChevronDown size={16} className={`chevron-exp ${isQuizAccordionOpen ? 'open' : ''}`} style={{ color: '#00385E' }} />
-              </div>
+                </div>
+              )}
             </div>
 
-            {isQuizAccordionOpen && (
-              <div className="expandable-content-body" style={{ padding: '14px 18px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
-                <p style={{ fontSize: '0.84rem', color: '#475569', margin: '0 0 12px 0', lineHeight: 1.5 }}>
-                  Benchmark your understanding of <strong>{(currentCourse.title || currentCourse.microcredentialCourseName || 'THIS COURSE').toUpperCase()}</strong> across all units. Complete to qualify for final certification.
-                </p>
-                
-                {/* Eligibility Notice Banner */}
-                <div 
-                  style={{
-                    fontSize: '0.82rem',
-                    color: isQuizEligible ? '#0369a1' : '#00385E',
-                    background: isQuizEligible ? '#e0f2fe' : '#f0f7fc',
-                    border: `1.5px solid ${isQuizEligible ? '#bae6fd' : '#c9dfef'}`,
-                    borderRadius: '8px',
-                    padding: '9px 12px',
-                    marginBottom: '12px',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    lineHeight: 1.4
-                  }}
-                >
-                  {isQuizEligible ? (
-                    <CheckCircle2 size={15} style={{ color: '#0284c7', flexShrink: 0 }} />
-                  ) : (
-                    <Lock size={15} style={{ color: '#00385E', flexShrink: 0 }} />
+            {/* 3. Dedicated Video Notes Section Card */}
+           
+
+            {/* 3. Dynamic Learning Text e-Content Accordion */}
+            {(() => {
+              const textContentList = currentPlaylist.filter(item => Boolean(item.topicPdf));
+              return (
+                <div className="mc-watch-expandable-card">
+                  <div
+                    className="expandable-header"
+                    onClick={() => setIsTextContentOpen(!isTextContentOpen)}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', cursor: 'pointer', background: '#ffffff' }}
+                  >
+                    <div className="expandable-left" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00385E', fontWeight: 800 }}>
+                      <BookOpen size={16} style={{ color: '#00385E' }} />
+                      <span>Learning Text e-Content</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#00385E', background: '#f0f7fc', padding: '2px 8px', borderRadius: '999px', border: '1px solid #c9dfef' }}>
+                        {textContentList.length} Units
+                      </span>
+                      <ChevronDown size={16} className={`chevron-exp ${isTextContentOpen ? 'open' : ''}`} style={{ color: '#00385E' }} />
+                    </div>
+                  </div>
+
+                  {isTextContentOpen && (
+                    <div className="expandable-content-body" style={{ padding: '12px 14px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
+                      {textContentList.length === 0 ? (
+                        <div style={{ padding: '16px 12px', textAlign: 'center', color: '#64748b', fontSize: '0.84rem' }}>
+                          No text e-Content found for this course.
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {textContentList.map((topicItem, idx) => {
+                            const isSelected = selectedPdf?.title === topicItem.title;
+                            const pdfUrl = topicItem.topicPdf;
+                            return (
+                              <div
+                                key={topicItem.id || idx}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setSelectedPdf(null);
+                                  } else {
+                                    setSelectedPdf({ url: pdfUrl, title: topicItem.title });
+                                    setIsPlaying(false);
+                                    if (videoRef.current) videoRef.current.pause();
+                                    if (ytPlayerRef.current?.pauseVideo) ytPlayerRef.current.pauseVideo();
+                                  }
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '12px',
+                                  padding: '10px 12px',
+                                  background: isSelected ? '#e0f2fe' : '#ffffff',
+                                  border: isSelected ? '1.5px solid #0284C7' : '1px solid #e2e8f0',
+                                  borderRadius: '8px',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                className="mc-topic-pdf-item-row"
+                              >
+                                {/* Theme White PDF Document Badge */}
+                                <div
+                                  style={{
+                                    width: '32px',
+                                    height: '38px',
+                                    background: '#ffffff',
+                                    borderRadius: '5px',
+                                    position: 'relative',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0,
+                                    boxShadow: '0 2px 6px rgba(0, 56, 94, 0.08)',
+                                    border: '1.5px solid #00385E',
+                                    overflow: 'hidden'
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      position: 'absolute',
+                                      top: 0,
+                                      right: 0,
+                                      width: '8px',
+                                      height: '8px',
+                                      background: '#00385E',
+                                      borderBottomLeftRadius: '3px'
+                                    }}
+                                  />
+                                  <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#00385E', letterSpacing: '0.04em' }}>PDF</span>
+                                </div>
+
+                                {/* Themed Topic Link */}
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <span
+                                    style={{
+                                      fontSize: '0.8rem',
+                                      fontWeight: 700,
+                                      color: isSelected ? '#00385E' : '#334155',
+                                      textDecoration: 'none',
+                                      textTransform: 'uppercase',
+                                      lineHeight: 1.3,
+                                      display: 'block',
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }}
+                                    className="mc-topic-pdf-link"
+                                  >
+                                    {topicItem.title}
+                                  </span>
+                                  <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block', marginTop: '2px', fontWeight: 600 }}>
+                                    Unit {idx + 1} • Interactive Study Notes
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   )}
-                  <span>
-                    {quizStatusMessage || (isQuizEligible 
-                      ? 'You are eligible to attempt this quiz.' 
-                      : 'Please watch at least 90% of the video to unlock the quiz.')}
+                </div>
+              );
+            })()}
+
+            {/* 4. Quiz Accordion Section */}
+            <div className="mc-watch-expandable-card">
+              <div
+                className="expandable-header"
+                onClick={() => setIsQuizAccordionOpen(!isQuizAccordionOpen)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', cursor: 'pointer', background: '#ffffff' }}
+              >
+                <div className="expandable-left" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00385E', fontWeight: 800 }}>
+                  <HelpCircle size={16} style={{ color: '#00385E' }} />
+                  <span>Quiz Assessment</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#00385E', background: '#f0f7fc', padding: '2px 8px', borderRadius: '999px', border: '1px solid #c9dfef' }}>
+                    Assessment
+                  </span>
+                  <ChevronDown size={16} className={`chevron-exp ${isQuizAccordionOpen ? 'open' : ''}`} style={{ color: '#00385E' }} />
+                </div>
+              </div>
+
+              {isQuizAccordionOpen && (
+                <div className="expandable-content-body" style={{ padding: '14px 18px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
+                  <p style={{ fontSize: '0.84rem', color: '#475569', margin: '0 0 12px 0', lineHeight: 1.5 }}>
+                    Benchmark your understanding of <strong>{(currentCourse.title || currentCourse.microcredentialCourseName || 'THIS COURSE').toUpperCase()}</strong> across all units. Complete to qualify for final certification.
+                  </p>
+
+                  {/* Eligibility Notice Banner */}
+                  <div
+                    style={{
+                      fontSize: '0.82rem',
+                      color: isQuizEligible ? '#0369a1' : '#00385E',
+                      background: isQuizEligible ? '#e0f2fe' : '#f0f7fc',
+                      border: `1.5px solid ${isQuizEligible ? '#bae6fd' : '#c9dfef'}`,
+                      borderRadius: '8px',
+                      padding: '9px 12px',
+                      marginBottom: '12px',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      lineHeight: 1.4
+                    }}
+                  >
+                    {isQuizEligible ? (
+                      <CheckCircle2 size={15} style={{ color: '#0284c7', flexShrink: 0 }} />
+                    ) : (
+                      <Lock size={15} style={{ color: '#00385E', flexShrink: 0 }} />
+                    )}
+                    <span>
+                      {quizStatusMessage || (isQuizEligible
+                        ? 'You are eligible to attempt this quiz.'
+                        : 'Please watch at least 90% of the video to unlock the quiz.')}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      background: 'linear-gradient(135deg, #00385E 0%, #005a96 100%)',
+                      color: '#ffffff',
+                      fontWeight: 800,
+                      fontSize: '0.88rem',
+                      padding: '11px 16px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 14px rgba(0,56,94,0.22)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={handleOpenQuizModal}
+                  >
+                    <HelpCircle size={15} />
+                    <span>Start Assessment Quiz</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 5. Download Notes & Documents Card */}
+            <div className="mc-watch-action-card download-card">
+              <div className="action-card-top">
+                <div className="action-icon-circle purple">
+                  <Download size={16} />
+                </div>
+                <div className="action-title-block">
+                  <h4>Download Resources</h4>
+                  <span className="action-sub-text">
+                    {downloadDocuments.length} {downloadDocuments.length === 1 ? 'Document Available' : 'Documents Available'}
                   </span>
                 </div>
+              </div>
 
-                <button 
-                  type="button" 
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    background: 'linear-gradient(135deg, #00385E 0%, #005a96 100%)',
-                    color: '#ffffff',
-                    fontWeight: 800,
-                    fontSize: '0.88rem',
-                    padding: '11px 16px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(0,56,94,0.22)',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onClick={handleOpenQuizModal}
+              {/* Dynamic Document Links from microcredentialStudentDownloadDocumentList */}
+              {downloadDocuments.length > 0 ? (
+                <div className="download-docs-list-tray">
+                  {downloadDocuments.map((doc) => (
+                    <a
+                      key={doc.id}
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="download-doc-item-link"
+                      download
+                    >
+                      <FileText size={14} className="doc-icon-blue" />
+                      <span className="doc-item-filename">{doc.fileName}</span>
+                      <Download size={13} className="doc-dl-icon" />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: '8px 4px', fontSize: '0.8rem', color: '#64748B' }}>
+                  No documents available for download.
+                </div>
+              )}
+            </div>
+
+
+          </div>
+
+        </div>
+
+        {/* Ask Question Popup Modal */}
+        {showAskModal && (
+          <div className="mc-modal-overlay" onClick={() => setShowAskModal(false)}>
+            <div className="mc-modal-card" onClick={e => e.stopPropagation()}>
+              <h3>Ask a Question in Discussion Forum</h3>
+              <p>Post your query to course instructors and fellow verified learners.</p>
+              <textarea
+                rows={4}
+                placeholder="Type your question or clarification here..."
+                value={newQuestionText}
+                onChange={e => setNewQuestionText(e.target.value)}
+              />
+              <div className="modal-actions-row">
+                <button type="button" className="btn-modal-cancel" onClick={() => setShowAskModal(false)}>Cancel</button>
+                <button
+                  type="button"
+                  className="btn-modal-submit"
+                  onClick={handleCreateQuestion}
+                  disabled={submittingQuestion || !newQuestionText.trim()}
                 >
-                  <HelpCircle size={15} />
-                  <span>Start Assessment Quiz</span>
+                  {submittingQuestion ? 'Submitting...' : 'Submit Question'}
                 </button>
               </div>
-            )}
-          </div>
-
-          {/* 5. Download Notes & Documents Card */}
-          <div className="mc-watch-action-card download-card">
-            <div className="action-card-top">
-              <div className="action-icon-circle purple">
-                <Download size={16} />
-              </div>
-              <div className="action-title-block">
-                <h4>Download Resources</h4>
-                <span className="action-sub-text">
-                  {downloadDocuments.length} {downloadDocuments.length === 1 ? 'Document Available' : 'Documents Available'}
-                </span>
-              </div>
-            </div>
-
-            {/* Dynamic Document Links from microcredentialStudentDownloadDocumentList */}
-            {downloadDocuments.length > 0 ? (
-              <div className="download-docs-list-tray">
-                {downloadDocuments.map((doc) => (
-                  <a
-                    key={doc.id}
-                    href={doc.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="download-doc-item-link"
-                    download
-                  >
-                    <FileText size={14} className="doc-icon-blue" />
-                    <span className="doc-item-filename">{doc.fileName}</span>
-                    <Download size={13} className="doc-dl-icon" />
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <div style={{ padding: '8px 4px', fontSize: '0.8rem', color: '#64748B' }}>
-                No documents available for download.
-              </div>
-            )}
-          </div>
-
-
-        </div>
-
-      </div>
-
-      {/* Ask Question Popup Modal */}
-      {showAskModal && (
-        <div className="mc-modal-overlay" onClick={() => setShowAskModal(false)}>
-          <div className="mc-modal-card" onClick={e => e.stopPropagation()}>
-            <h3>Ask a Question in Discussion Forum</h3>
-            <p>Post your query to course instructors and fellow verified learners.</p>
-            <textarea 
-              rows={4} 
-              placeholder="Type your question or clarification here..."
-              value={newQuestionText}
-              onChange={e => setNewQuestionText(e.target.value)}
-            />
-            <div className="modal-actions-row">
-              <button type="button" className="btn-modal-cancel" onClick={() => setShowAskModal(false)}>Cancel</button>
-              <button 
-                type="button" 
-                className="btn-modal-submit"
-                onClick={handleCreateQuestion}
-                disabled={submittingQuestion || !newQuestionText.trim()}
-              >
-                {submittingQuestion ? 'Submitting...' : 'Submit Question'}
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Quiz Attempt Details & History Modal */}
-      <QuizAttemptDetailsModal
-        isOpen={showQuizModal}
-        onClose={() => setShowQuizModal(false)}
-        onStartQuiz={handleStartQuiz}
-        loading={quizAttemptLoading}
-        error={quizAttemptError}
-        courseTitle={currentCourse.title || currentCourse.microcredentialCourseName || 'Microcredential Course'}
-        attemptData={quizAttemptData}
-      />
+        {/* Quiz Attempt Details & History Modal */}
+        <QuizAttemptDetailsModal
+          isOpen={showQuizModal}
+          onClose={() => setShowQuizModal(false)}
+          onStartQuiz={handleStartQuiz}
+          loading={quizAttemptLoading}
+          error={quizAttemptError}
+          courseTitle={currentCourse.title || currentCourse.microcredentialCourseName || 'Microcredential Course'}
+          attemptData={quizAttemptData}
+        />
 
       </div>
     </div>

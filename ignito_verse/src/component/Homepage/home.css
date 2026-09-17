@@ -47,17 +47,16 @@
 .b2b-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.45rem 1.15rem;    
-  border-radius: 9999px;
-  background: rgba(37, 99, 235, 0.08);
-  border: 1px solid rgba(37, 99, 235, 0.22);
+  padding: 0;
+  background: transparent;
+  border: none;
   margin-bottom: 1.45rem;
 }
 
 .b2b-badge span {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #1d4ed8 ;
+  color: #af4bb8;
   letter-spacing: 0.8px;
   text-transform: uppercase;
 }
@@ -69,12 +68,12 @@
   font-weight: 800;
   line-height: 1.12;
   letter-spacing: -1.5px;
-  color: #0a1128;
+  color: #052765;
   margin-bottom: 1.35rem;
 }
 
 .b2b-blue-text {
-  color: #00385E;
+  color: #052765;
   display: inline-block;
 }
 
@@ -113,23 +112,23 @@
 }
 
 .btn-demo {
-  background: #00385E;
+  background: linear-gradient(135deg, #3a2c8c 0%, #7f489f 100%);
   color: #ffffff;
-  border: 1.5px solid #00385E;
-  box-shadow: 0 4px 14px rgba(0, 56, 94, 0.2);
+  border: 1.5px solid transparent;
+  box-shadow: 0 4px 14px rgba(58, 44, 140, 0.28);
 }
 
 .btn-demo:hover {
-  background: transparent;
-  color: #00385E;
-  border-color: #00385E;
+  background: linear-gradient(135deg, #4434a3 0%, #9154b5 100%);
+  color: #ffffff;
+  border-color: transparent;
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(0, 56, 94, 0.15);
+  box-shadow: 0 6px 18px rgba(58, 44, 140, 0.38);
 }
 
 .btn-demo:hover .btn-arrow {
   transform: translateX(4px);
-  color: #00385E;
+  color: #ffffff;
 }
 
 .btn-solutions {
@@ -456,7 +455,7 @@
   font-weight: 800;
   line-height: 1.14;
   letter-spacing: -1.5px;
-  color: #0a1128;
+  color: #052765;
   margin-bottom: 1.15rem;
 }
 
@@ -594,7 +593,7 @@
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
   font-size: clamp(1.5rem, 2.4vw, 2rem);
   font-weight: 800;
-  color: #08233D;
+  color: #052765;
   line-height: 1.25;
   margin: 0;
 }

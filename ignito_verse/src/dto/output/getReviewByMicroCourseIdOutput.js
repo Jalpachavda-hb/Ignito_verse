@@ -23,7 +23,9 @@ export function parseGetReviewByMicroCourseIdOutput(rawJson = {}, status = 200) 
             studentProfileImage: item?.studentProfileImage || item?.StudentProfileImage || '',
             createdOnText: item?.createdOnText || item?.CreatedOnText || '',
             createdOn: item?.createdOn || item?.CreatedOn || '',
-            isReviewLikedByStudent: Boolean(item?.isReviewLikedByStudent ?? item?.IsReviewLikedByStudent ?? false),
+            isLike: Boolean(item?.isLike ?? item?.IsLike ?? item?.isLiked ?? item?.IsLiked ?? item?.isReviewLikedByStudent ?? item?.IsReviewLikedByStudent ?? false),
+            isLiked: Boolean(item?.isLike ?? item?.IsLike ?? item?.isLiked ?? item?.IsLiked ?? item?.isReviewLikedByStudent ?? item?.IsReviewLikedByStudent ?? false),
+            isReviewLikedByStudent: Boolean(item?.isLike ?? item?.IsLike ?? item?.isLiked ?? item?.IsLiked ?? item?.isReviewLikedByStudent ?? item?.IsReviewLikedByStudent ?? false),
             reviewLikeCount: item?.reviewLikeCount ?? item?.ReviewLikeCount ?? 0
         }))
         : [];

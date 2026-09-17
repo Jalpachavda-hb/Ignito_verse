@@ -41,6 +41,12 @@ import { buildGetMicroCourseLearnDataInput } from '../dto/input/getMicroCourseLe
 import { parseGetMicroCourseLearnDataOutput, parseGetMicroCourseLearnDataErrorOutput } from '../dto/output/getMicroCourseLearnDataOutput';
 import { buildGetMicrocredentialModuleByCourseIdInput } from '../dto/input/getMicrocredentialModuleByCourseIdInput';
 import { parseGetMicrocredentialModuleByCourseIdOutput, parseGetMicrocredentialModuleByCourseIdErrorOutput } from '../dto/output/getMicrocredentialModuleByCourseIdOutput';
+import { buildAddUpdateMicrocredentialVideoNoteInput } from '../dto/input/addUpdateMicrocredentialVideoNoteInput';
+import { parseAddUpdateMicrocredentialVideoNoteOutput, parseAddUpdateMicrocredentialVideoNoteErrorOutput } from '../dto/output/addUpdateMicrocredentialVideoNoteOutput';
+import { buildGetMicrocredentialVideoNotesInput } from '../dto/input/getMicrocredentialVideoNotesInput';
+import { parseGetMicrocredentialVideoNotesOutput, parseGetMicrocredentialVideoNotesErrorOutput } from '../dto/output/getMicrocredentialVideoNotesOutput';
+import { buildDeleteMicrocredentialVideoNoteInput } from '../dto/input/deleteMicrocredentialVideoNoteInput';
+import { parseDeleteMicrocredentialVideoNoteOutput, parseDeleteMicrocredentialVideoNoteErrorOutput } from '../dto/output/deleteMicrocredentialVideoNoteOutput';
 
 /**
  * Fetches list of modules for a microcredential course by course ID.
@@ -923,6 +929,145 @@ function generateLocalAiTopicAnswer(topicName, question, pageContent) {
     }
     return `Based on the accredited course syllabus for ${topicName}, practicing structured daily reviews and completing the assessment benchmarks will help you master this domain.`;
 }
+
+/**
+ * Adds or updates a microcredential video note for a student.
+ * API: POST /api/VideoNoteAPI/AddUpdateMicrocredentialVideoNote
+ * 
+ * @param {object} params
+ * @param {number|string} [params.noteId=0] - Note identifier (0 for new)
+ * @param {number|string} [params.studentId=0] - Student ID
+ * @param {number|string} [params.courseId=0] - Microcredential course ID
+ * @param {string} [params.videoId=''] - YouTube or video ID
+ * @param {string} [params.noteText=''] - Note description
+ * @param {number|string} [params.roundedpausedTime=0] - Video pause time in seconds
+ * @returns {Promise<object>} Parsed output response
+ */
+export async function addUpdateMicrocredentialVideoNote({
+    noteId = 0,
+    studentId = 0,
+    courseId = 0,
+    videoId = '',
+    noteText = '',
+    roundedpausedTime = 0
+} = {}) {
+    try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId) {
+            finalStudentId = getLoggedInStudentId() || 0;
+        }
+
+        const inputDto = buildAddUpdateMicrocredentialVideoNoteInput({
+            noteId,
+            studentId: finalStudentId,
+            courseId,
+            videoId,
+            noteText,
+            roundedpausedTime
+        });
+
+        const response = await apiClient('api/VideoNoteAPI/AddUpdateMicrocredentialVideoNote', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseAddUpdateMicrocredentialVideoNoteErrorOutput(response.data, response.status);
+        }
+
+        return parseAddUpdateMicrocredentialVideoNoteOutput(response.data, response.status);
+    } catch (error) {
+        console.error('Error in addUpdateMicrocredentialVideoNote:', error);
+        return parseAddUpdateMicrocredentialVideoNoteErrorOutput({ message: error.message }, 500);
+    }
+}
+
+/**
+ * Fetches all microcredential video notes for a course, video, and student.
+ * API: POST /api/VideoNoteAPI/GetMicrocredentialVideoNotes
+ * 
+ * @param {object} params
+ * @param {number|string} [params.studentId=0] - Student ID
+ * @param {number|string} [params.courseId=0] - Microcredential Course ID
+ * @param {string} [params.videoId=''] - Video ID
+ * @returns {Promise<object>} Parsed output containing notes list
+ */
+export async function getMicrocredentialVideoNotes({
+    studentId = 0,
+    courseId = 0,
+    videoId = ''
+} = {}) {
+    try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId) {
+            finalStudentId = getLoggedInStudentId() || 0;
+        }
+
+        const inputDto = buildGetMicrocredentialVideoNotesInput({
+            studentId: finalStudentId,
+            courseId,
+            videoId
+        });
+
+        const response = await apiClient('api/VideoNoteAPI/GetMicrocredentialVideoNotes', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseGetMicrocredentialVideoNotesErrorOutput(response.data, response.status);
+        }
+
+        return parseGetMicrocredentialVideoNotesOutput(response.data, response.status);
+    } catch (error) {
+        console.error('Error in getMicrocredentialVideoNotes:', error);
+        return parseGetMicrocredentialVideoNotesErrorOutput({ message: error.message }, 500);
+    }
+}
+
+/**
+ * Deletes a microcredential video note.
+ * API: POST /api/VideoNoteAPI/DeleteMicrocredentialVideoNote
+ * 
+ * @param {object} params
+ * @param {number|string} params.noteId - Video note ID
+ * @param {number|string} [params.studentId=0] - Student ID
+ * @returns {Promise<object>} Parsed output response
+ */
+export async function deleteMicrocredentialVideoNote({
+    noteId = 0,
+    studentId = 0
+} = {}) {
+    try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId) {
+            finalStudentId = getLoggedInStudentId() || 0;
+        }
+
+        const inputDto = buildDeleteMicrocredentialVideoNoteInput({
+            noteId,
+            studentId: finalStudentId
+        });
+
+        const response = await apiClient('api/VideoNoteAPI/DeleteMicrocredentialVideoNote', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseDeleteMicrocredentialVideoNoteErrorOutput(response.data, response.status);
+        }
+
+        return parseDeleteMicrocredentialVideoNoteOutput(response.data, response.status);
+    } catch (error) {
+        console.error('Error in deleteMicrocredentialVideoNote:', error);
+        return parseDeleteMicrocredentialVideoNoteErrorOutput({ message: error.message }, 500);
+    }
+}
+
 
 
 

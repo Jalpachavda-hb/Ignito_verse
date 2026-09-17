@@ -209,7 +209,8 @@ export default function MicrocredentialDetail({
             rRes.getReviewByMicroCourseList.forEach((rev) => {
               const rId = rev.microcredentialCourseReviewId || rev.id;
               initialLikes[rId] = rev.reviewLikeCount || 0;
-              initialHasLiked[rId] = Boolean(rev.isReviewLikedByStudent);
+              const likeVal = rev.isLike !== undefined ? rev.isLike : (rev.isLiked !== undefined ? rev.isLiked : rev.isReviewLikedByStudent);
+              initialHasLiked[rId] = likeVal === true || likeVal === 1 || likeVal === 'true' || likeVal === '1';
               const revStudentId = Number(rev.studentId ?? rev.StudentId ?? 0);
               const revStudentName = (rev.studentName || rev.StudentName || '').trim().toLowerCase();
               if ((currentStudentId > 0 && revStudentId === currentStudentId) || (currentStudentName && revStudentName === currentStudentName)) {
@@ -777,19 +778,6 @@ export default function MicrocredentialDetail({
             {activeTab === 'content' && (
               <div className="mc-content-luxury-pane">
 
-                {/* Content Header Banner Card */}
-                <div className="mc-content-banner-card">
-                  <div className="banner-left-brand">
-                    <div className="banner-squircle-icon">
-                      <BookOpen size={28} />
-                    </div>
-                    <div className="banner-title-text">
-                      <h2 className="banner-main-heading">Microcredential Content</h2>
-                      <p className="banner-sub-desc">Access all learning modules and practical topics included in this microcredential.</p>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Detailed Module Topics List */}
                 {topicsList.length > 0 ? (
                   <div className="mc-luxury-modules-list" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -1056,8 +1044,8 @@ export default function MicrocredentialDetail({
                           className={`btn-like-pill ${hasLiked[revId] ? 'liked' : ''}`}
                           onClick={() => handleToggleLike(revId)}
                         >
-                          <ThumbsUp size={13} />
-                          <span>Like ({likedReviews[revId] || 2})</span>
+                          <ThumbsUp size={13} fill={hasLiked[revId] ? 'currentColor' : 'none'} />
+                          <span>Like ({likedReviews[revId] !== undefined ? likedReviews[revId] : (rev.reviewLikeCount || 0)})</span>
                         </button>
                       </div>
                     </div>
@@ -1092,11 +1080,11 @@ export default function MicrocredentialDetail({
                   <div className="student-review-action-row">
                     <button
                       type="button"
-                      className="btn-like-pill"
+                      className={`btn-like-pill ${hasLiked['sample-1'] ? 'liked' : ''}`}
                       onClick={() => handleToggleLike('sample-1')}
                     >
-                      <ThumbsUp size={13} />
-                      <span>Like (2)</span>
+                      <ThumbsUp size={13} fill={hasLiked['sample-1'] ? 'currentColor' : 'none'} />
+                      <span>Like ({likedReviews['sample-1'] !== undefined ? likedReviews['sample-1'] : 2})</span>
                     </button>
                   </div>
                 </div>
