@@ -32,7 +32,9 @@ import {
   Video,
   Download,
   MoreVertical,
-  BarChart2
+  BarChart2,
+  Radio,
+  ExternalLink
 } from 'lucide-react';
 import AuthRequiredModal from '../modals/AuthRequiredModal';
 import {
@@ -45,7 +47,8 @@ import {
   getMicroCourseMaterialIncludeData,
   ignitoMicroStudentReviewInsert,
   microcredentialStudentReviewLikeInsert,
-  getLoggedInStudentId
+  getLoggedInStudentId,
+  getMicrocredentialLiveMeetingsByCourse
 } from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
 
@@ -64,6 +67,8 @@ export default function MicrocredentialDetail({
   const [reviewsList, setReviewsList] = useState([]);
   const [learnList, setLearnList] = useState([]);
   const [materialList, setMaterialList] = useState([]);
+  const [liveMeetingsList, setLiveMeetingsList] = useState([]);
+  const [liveMeetingsLoading, setLiveMeetingsLoading] = useState(false);
   const [likedReviews, setLikedReviews] = useState({});
   const [hasLiked, setHasLiked] = useState({});
   const [failedModuleImages, setFailedModuleImages] = useState({});
@@ -102,6 +107,8 @@ export default function MicrocredentialDetail({
         : [];
 
       const courseTitle = merged.microcredentialCourseName || merged.title || 'Microcredential Course';
+      const rawIntroVideo = merged.microcredentialCourseIntroURL || merged.microcredentialCourseIntroUrl || merged.introVideoUrl || merged.videoUrl || '';
+      const formattedIntroVideo = rawIntroVideo ? (rawIntroVideo.startsWith('http') || rawIntroVideo.startsWith('blob:') ? rawIntroVideo : formatImageUrl(rawIntroVideo)) : '';
 
       if (directLearn.length > 0) {
         setLearnList(directLearn);
@@ -127,6 +134,10 @@ export default function MicrocredentialDetail({
         rating: merged.microcredentialCourseRating || 0,
         duration: merged.microcredentialCourseDuration || '',
         thumbnail: formattedThumb,
+        introImage: formattedThumb,
+        microcredentialCourseIntroImage: formattedThumb,
+        microcredentialCourseIntroURL: formattedIntroVideo || rawIntroVideo,
+        introVideoUrl: formattedIntroVideo || rawIntroVideo,
         certificateImage: formattedCert,
         language: merged.language || 'ENGLISH',
         updatedOn: merged.updatedOn || '',
@@ -248,6 +259,25 @@ export default function MicrocredentialDetail({
           }
         })
         .catch(() => {});
+
+      // 5. Fetch course live meetings (Tab 3: Live Masterclasses)
+      setLiveMeetingsLoading(true);
+      getMicrocredentialLiveMeetingsByCourse(courseIdNum, currentStudentId)
+        .then((lmRes) => {
+          if (!isMounted) return;
+          if (lmRes && lmRes.success && Array.isArray(lmRes.liveMeetings)) {
+            setLiveMeetingsList(lmRes.liveMeetings);
+          } else {
+            setLiveMeetingsList([]);
+          }
+        })
+        .catch((err) => {
+          console.error('Error fetching course live meetings:', err);
+          if (isMounted) setLiveMeetingsList([]);
+        })
+        .finally(() => {
+          if (isMounted) setLiveMeetingsLoading(false);
+        });
     };
 
     // 1. If numeric course ID is provided (> 0)
@@ -603,6 +633,22 @@ export default function MicrocredentialDetail({
     }
   };
 
+  const handlePlayIntroVideo = () => {
+    const videoSrc = courseData.microcredentialCourseIntroURL || courseData.introVideoUrl || course.microcredentialCourseIntroURL || course.introVideoUrl || '';
+    const courseTitle = courseData.title || courseData.microcredentialCourseName || course.title || 'Microcredential Course';
+    if (typeof onPreviewVideo === 'function') {
+      onPreviewVideo({
+        ...courseData,
+        videoUrl: videoSrc,
+        lectureTitle: `${courseTitle} - Introduction`,
+        courseTitle: courseTitle,
+        duration: courseData.duration || 'Introduction',
+        poster: courseData.thumbnail || course.thumbnail || '',
+        thumbnail: courseData.thumbnail || course.thumbnail || ''
+      });
+    }
+  };
+
   return (
     <div className="mc-detail-page-wrapper">
       <div className="mc-fluid-container mc-main-two-col-grid">
@@ -646,7 +692,7 @@ export default function MicrocredentialDetail({
             </p>
           </div>
 
-          {/* 3. INTEGRATED TOP BAR (5 EQUAL VISUAL ITEMS DIVIDED BY VERTICAL LINES) */}
+          {/* 3. INTEGRATED TOP BAR (NAVIGATION TABS) */}
           <div className="mc-integrated-topbar">
             {/* Item 1: Microcredential Information Tab */}
             <button
@@ -659,8 +705,6 @@ export default function MicrocredentialDetail({
               </div>
               <span className="mc-item-btn-text">Microcredential Information</span>
             </button>
-
-            <div className="mc-topbar-sep-line" />
 
             {/* Item 2: Microcredentials Content Tab */}
             <button
@@ -675,44 +719,29 @@ export default function MicrocredentialDetail({
               <span className="mc-item-count-badge">{topicsList.length}</span>
             </button>
 
-            <div className="mc-topbar-sep-line" />
-
-            {/* Item 3: Duration Meta */}
-            <div className="mc-topbar-item-cell">
-              <div className="mc-item-icon-circle blue-soft">
-                <Clock size={17} />
-              </div>
-              <div className="mc-item-stacked-text">
-                <span className="item-label-bold">Duration</span>
-                <span className="item-value-bold">{course.duration || course.microcredentialCourseDuration || '2 Hours'}</span>
-              </div>
-            </div>
-
-            <div className="mc-topbar-sep-line" />
-
-            {/* Item 4: Level Meta */}
-            <div className="mc-topbar-item-cell">
+            {/* Item 3: Live Masterclasses Tab */}
+            <button
+              type="button"
+              className={`mc-topbar-item-btn ${activeTab === 'meetings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('meetings')}
+            >
               <div className="mc-item-icon-circle purple-soft">
-                <BarChart2 size={17} />
+                <Radio size={17} style={{ color: liveMeetingsList.some(m => (m.liveStatus || '').toLowerCase().includes('live')) ? '#ef4444' : '#4338ca' }} />
               </div>
-              <div className="mc-item-stacked-text">
-                <span className="item-label-bold">Level</span>
-                <span className="item-value-bold">{course.level || course.courseLevel?.split('(')[0]?.trim() || 'Beginner'}</span>
-              </div>
-            </div>
-
-            <div className="mc-topbar-sep-line" />
-
-            {/* Item 5: Language Meta */}
-            <div className="mc-topbar-item-cell">
-              <div className="mc-item-icon-circle blue-soft">
-                <Globe size={17} />
-              </div>
-              <div className="mc-item-stacked-text">
-                <span className="item-label-bold">Language</span>
-                <span className="item-value-bold">{course.language || 'English'}</span>
-              </div>
-            </div>
+              <span className="mc-item-btn-text">Live Masterclasses</span>
+              {liveMeetingsList.length > 0 && (
+                <span
+                  className="mc-item-count-badge"
+                  style={{
+                    background: liveMeetingsList.some(m => (m.liveStatus || '').toLowerCase().includes('live')) ? '#fee2e2' : '#eef2ff',
+                    color: liveMeetingsList.some(m => (m.liveStatus || '').toLowerCase().includes('live')) ? '#dc2626' : '#4338ca',
+                    fontWeight: 800
+                  }}
+                >
+                  {liveMeetingsList.length}
+                </span>
+              )}
+            </button>
           </div>
 
           {/* 4. ACTIVE TAB CONTENT PANES */}
@@ -939,6 +968,179 @@ export default function MicrocredentialDetail({
               </div>
             )}
 
+            {/* TAB 3: LIVE MASTERCLASSES / MEETINGS */}
+            {activeTab === 'meetings' && (
+              <div className="mc-content-luxury-pane">
+                <div className="mc-card-section-box" style={{ marginBottom: 0 }}>
+                  <div className="mc-card-header-row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div className="mc-card-header-icon blue-squircle">
+                        <Radio size={18} style={{ color: '#0284c7' }} />
+                      </div>
+                      <div>
+                        <h2 className="mc-card-header-title">Live Masterclasses & Interactive Sessions</h2>
+                        <p className="mc-card-header-subtitle">Live interactive sessions, expert masterclasses, and Q&A scheduled for this course</p>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#00385E', background: '#f0f7fc', padding: '4px 12px', borderRadius: '999px', border: '1px solid #c9dfef' }}>
+                        {liveMeetingsList.length} {liveMeetingsList.length === 1 ? 'Live Session' : 'Live Sessions'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {liveMeetingsLoading ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '50px 20px', color: '#64748b', fontSize: '0.92rem' }}>
+                      <RefreshCw size={20} className="spinner" style={{ animation: 'spin 1s linear infinite', color: '#00385E' }} />
+                      <span>Loading live sessions...</span>
+                    </div>
+                  ) : liveMeetingsList.length === 0 ? (
+                    <div style={{
+                      padding: '48px 24px',
+                      textAlign: 'center',
+                      background: '#f8fafc',
+                      borderRadius: '14px',
+                      border: '1.5px dashed #cbd5e1',
+                      color: '#64748b',
+                      marginTop: '12px'
+                    }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#e0f2fe', color: '#0284c7', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                        <Radio size={24} />
+                      </div>
+                      <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#00385E', margin: '0 0 6px 0' }}>
+                        No Live Sessions Scheduled Yet
+                      </h4>
+                      <p style={{ margin: 0, fontSize: '0.88rem', color: '#64748b', maxWidth: '440px', marginLeft: 'auto', marginRight: 'auto' }}>
+                        There are currently no live masterclasses or expert sessions scheduled for this course. Scheduled live meetings will appear here once announced.
+                      </p>
+                    </div>
+                  ) : (
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                      gap: '18px',
+                      marginTop: '16px'
+                    }}>
+                      {liveMeetingsList.map((meeting) => {
+                        const isLiveNow = (meeting.liveStatus || '').toLowerCase().includes('live');
+                        const isUpcoming = (meeting.liveStatus || '').toLowerCase().includes('upcoming');
+                        const isCompleted = (meeting.liveStatus || '').toLowerCase().includes('completed');
+                        const isGoogle = meeting.sourceType === 'GOOGLE_MEET';
+                        const isZoom = meeting.sourceType === 'ZOOM';
+
+                        return (
+                          <div
+                            key={meeting.meetingId || meeting.id}
+                            style={{
+                              background: '#ffffff',
+                              border: isLiveNow ? '1.5px solid #ef4444' : '1.5px solid #e2e8f0',
+                              borderRadius: '16px',
+                              padding: '18px 20px',
+                              boxShadow: isLiveNow ? '0 4px 18px rgba(239, 68, 68, 0.14)' : '0 2px 10px rgba(0, 56, 94, 0.04)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'space-between',
+                              gap: '14px',
+                              transition: 'all 0.25s ease'
+                            }}
+                          >
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                {/* Source Type Tag */}
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 800,
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  background: isGoogle ? '#fef3c7' : '#eff6ff',
+                                  color: isGoogle ? '#b45309' : '#1d4ed8',
+                                  border: isGoogle ? '1px solid #fde68a' : '1px solid #bfdbfe'
+                                }}>
+                                  <Video size={12} />
+                                  {isGoogle ? 'Google Meet' : (isZoom ? 'Zoom' : (meeting.sourceType || 'Live Meeting'))}
+                                </span>
+
+                                {/* Status Tag */}
+                                <span style={{
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  padding: '3px 10px',
+                                  borderRadius: '999px',
+                                  background: isLiveNow ? '#fee2e2' : (isUpcoming ? '#e0f2fe' : '#f1f5f9'),
+                                  color: isLiveNow ? '#dc2626' : (isUpcoming ? '#0369a1' : '#64748b'),
+                                  border: isLiveNow ? '1px solid #fca5a5' : (isUpcoming ? '1px solid #bae6fd' : '1px solid #e2e8f0'),
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '5px'
+                                }}>
+                                  {isLiveNow && (
+                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} />
+                                  )}
+                                  {meeting.liveStatus || (isLiveNow ? 'LIVE NOW' : 'Scheduled')}
+                                </span>
+                              </div>
+
+                              {/* Meeting Title */}
+                              <h4 style={{ margin: '0 0 6px 0', fontSize: '0.98rem', fontWeight: 800, color: '#00385E', lineHeight: 1.38 }}>
+                                {meeting.title || meeting.meetingTitle || 'Live Expert Masterclass'}
+                              </h4>
+
+                              {/* Description */}
+                              {(meeting.description || meeting.meetingDescription) && (
+                                <p style={{ margin: '0 0 10px 0', fontSize: '0.84rem', color: '#64748b', lineHeight: 1.48 }}>
+                                  {meeting.description || meeting.meetingDescription}
+                                </p>
+                              )}
+
+                              {/* Date / Time Schedule */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#475569', fontWeight: 600 }}>
+                                <Clock size={14} style={{ color: '#0284C7', flexShrink: 0 }} />
+                                <span>{meeting.startDateTime || meeting.startDate || 'Schedule TBA'}</span>
+                              </div>
+                            </div>
+
+                            {/* Join Link Button */}
+                            {meeting.joinLink && !isCompleted && (
+                              <a
+                                href={meeting.joinLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '8px',
+                                  width: '100%',
+                                  padding: '9px 14px',
+                                  fontSize: '0.86rem',
+                                  fontWeight: 800,
+                                  color: '#ffffff',
+                                  background: isLiveNow
+                                    ? 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'
+                                    : 'linear-gradient(135deg, #00385E 0%, #005a96 100%)',
+                                  borderRadius: '8px',
+                                  textDecoration: 'none',
+                                  boxShadow: isLiveNow ? '0 3px 10px rgba(220, 38, 38, 0.25)' : '0 3px 10px rgba(0, 56, 94, 0.15)',
+                                  transition: 'all 0.2s ease',
+                                  boxSizing: 'border-box'
+                                }}
+                              >
+                                <span>{isLiveNow ? 'Join Live Now' : 'Join Live Session'}</span>
+                                <ExternalLink size={14} />
+                              </a>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* EMPLOYEE REVIEWS SECTION (ALWAYS VISIBLE UNDER COURSE OVERVIEW) */}
             <div className="mc-card-section-box mc-reviews-creative-card">
               <div className="mc-card-header-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -1031,7 +1233,6 @@ export default function MicrocredentialDetail({
                             </div>
                           </div>
                         </div>
-                        <MoreVertical size={18} className="review-more-icon" />
                       </div>
 
                       <p className="student-review-body-text">
@@ -1070,7 +1271,6 @@ export default function MicrocredentialDetail({
                         </div>
                       </div>
                     </div>
-                    <MoreVertical size={18} className="review-more-icon" />
                   </div>
 
                   <p className="student-review-body-text">
@@ -1102,18 +1302,17 @@ export default function MicrocredentialDetail({
 
           {/* 1. Video Player Preview Cover Card */}
           <div className="mc-sidebar-video-box">
-            <div className="mc-video-cover-container">
+            <div
+              className="mc-video-cover-container"
+              onClick={handlePlayIntroVideo}
+              title="Click to preview course introduction video"
+            >
               <img
                 src={courseData.thumbnail || initialCourse?.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80'}
                 alt={courseData.title || initialCourse?.title}
                 className="mc-video-cover-img"
               />
               <div className="mc-video-overlay-tint">
-                <div className="mc-video-brand-tag">{(courseData.streamName || courseData.category || 'MANAGEMENT').toUpperCase()}</div>
-                <div className="mc-video-headline-text">
-                  <h3>{(courseData.title || courseData.microcredentialCourseName || 'STRESS MANAGEMENT').toUpperCase()}</h3>
-                  <p className="mc-video-sub-tagline">A Healthier Mind A Brighter You</p>
-                </div>
                 <div className="mc-glass-play-button">
                   <Play size={24} className="play-icon-triangle" />
                 </div>

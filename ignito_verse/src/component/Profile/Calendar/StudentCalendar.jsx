@@ -28,7 +28,7 @@ export default function StudentCalendar({
   enrolledCourses = null,
   onEventsCountChange = () => { }
 }) {
-  // Main Tab: 'calendar' (Calendar View) | 'list' (Calendar Events List)
+  // Main Tab: 'calendar' (Calendar View) | 'recordings' (Session Recordings & Downloads)
   const [mainTab, setMainTab] = useState('calendar');
 
   // Active view date state (Default to September 2026 or current date)
@@ -36,14 +36,15 @@ export default function StudentCalendar({
   const [currentMonth, setCurrentMonth] = useState(8); // 8 = September (0-indexed)
   const [filterYear, setFilterYear] = useState(2026);
   const [filterMonth, setFilterMonth] = useState(8);
+  const [filterEventType, setFilterEventType] = useState('ALL');
 
   // Calendar Sub-view: 'month' | 'week' | 'day' | 'list'
   const [calViewMode, setCalViewMode] = useState('month');
 
-  // Search query for List view
+  // Search query for events
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Pagination for List view
+  // Pagination for List sub-view
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
 
@@ -62,6 +63,16 @@ export default function StudentCalendar({
 
   // State for .ics calendar export download
   const [downloadingIcsId, setDownloadingIcsId] = useState(null);
+
+  // Helper to determine if an event is already over / completed
+  const isEventOver = (ev) => {
+    if (!ev) return false;
+    if (ev.liveStatus === 'Ended' || ev.liveStatus === 'Completed') return true;
+    const targetDate = ev.endDate || ev.startDate;
+    if (!targetDate) return false;
+    const dateObj = new Date(targetDate);
+    return !isNaN(dateObj.getTime()) && dateObj < new Date();
+  };
 
   const handleDownloadEventIcs = async (ev) => {
     if (!ev) return;
@@ -130,6 +141,29 @@ export default function StudentCalendar({
     fetchCalendarData();
   }, [user, enrolledCourses]);
 
+  // Filtered Events for Calendar & List
+  const filteredEvents = useMemo(() => {
+    return events.filter(ev => {
+      // 1. Event Type filter
+      if (filterEventType !== 'ALL') {
+        const type = (ev.sourceType || '').toLowerCase();
+        if (filterEventType === 'zoom' && !type.includes('zoom')) return false;
+        if (filterEventType === 'google_meet' && !type.includes('meet')) return false;
+        if (filterEventType === 'google_calendar' && !type.includes('calendar')) return false;
+      }
+      // 2. Search Query filter
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = (ev.title || '').toLowerCase().includes(q);
+        const matchLabel = (ev.sourceLabel || '').toLowerCase().includes(q);
+        const matchProg = (ev.programName || '').toLowerCase().includes(q);
+        const matchSub = (ev.programSub || '').toLowerCase().includes(q);
+        if (!matchTitle && !matchLabel && !matchProg && !matchSub) return false;
+      }
+      return true;
+    });
+  }, [events, filterEventType, searchQuery]);
+
   // Filtered Recordings List
   const filteredRecordings = useMemo(() => {
     return recordingsList.filter(rec => {
@@ -155,6 +189,8 @@ export default function StudentCalendar({
   const handleClearFilter = () => {
     setFilterMonth(8);
     setFilterYear(2026);
+    setFilterEventType('ALL');
+    setSearchQuery('');
     setCurrentMonth(8);
     setCurrentYear(2026);
   };
@@ -185,33 +221,18 @@ export default function StudentCalendar({
   };
 
   const handleGoToday = () => {
-    // Navigate to default September 2026
     setCurrentMonth(8);
     setCurrentYear(2026);
     setFilterMonth(8);
     setFilterYear(2026);
   };
 
-  // Filtered Events for Table List
-  const filteredEventsForList = useMemo(() => {
-    return events.filter(ev => {
-      if (!searchQuery) return true;
-      const q = searchQuery.toLowerCase();
-      return (
-        ev.title.toLowerCase().includes(q) ||
-        ev.sourceLabel.toLowerCase().includes(q) ||
-        (ev.programName && ev.programName.toLowerCase().includes(q)) ||
-        (ev.programSub && ev.programSub.toLowerCase().includes(q))
-      );
-    });
-  }, [events, searchQuery]);
-
-  // Paginated Events
-  const totalPages = Math.max(1, Math.ceil(filteredEventsForList.length / pageSize));
+  // Paginated Events for List view mode
+  const totalPages = Math.max(1, Math.ceil(filteredEvents.length / pageSize));
   const paginatedEvents = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
-    return filteredEventsForList.slice(start, start + pageSize);
-  }, [filteredEventsForList, currentPage, pageSize]);
+    return filteredEvents.slice(start, start + pageSize);
+  }, [filteredEvents, currentPage, pageSize]);
 
   // Calendar Grid Days Calculation
   const calendarGridCells = useMemo(() => {
@@ -239,12 +260,12 @@ export default function StudentCalendar({
       const dateStr = `${currentYear}-${monthStr}-${dayStr}`;
 
       // Events for this day
-      const dayEvents = events.filter(ev => ev.startDate.startsWith(dateStr));
+      const dayEvents = filteredEvents.filter(ev => ev.startDate.startsWith(dateStr));
 
       cells.push({
         dayNumber: dayNum,
         isOtherMonth: false,
-        isToday: dayNum === 15 && currentMonth === 8 && currentYear === 2026, // Highlight 15th matching screenshot
+        isToday: dayNum === 15 && currentMonth === 8 && currentYear === 2026,
         monthOffset: 0,
         dateStr,
         events: dayEvents
@@ -264,7 +285,7 @@ export default function StudentCalendar({
     }
 
     return cells;
-  }, [currentYear, currentMonth, events]);
+  }, [currentYear, currentMonth, filteredEvents]);
 
   // Helper for source icon
   const renderSourceIcon = (sourceType) => {
@@ -284,7 +305,7 @@ export default function StudentCalendar({
   return (
     <div className="student-calendar-container">
       {/* ------------------------------------------------------------------
-          1. TOP TAB SWITCHER (Calendar View vs Calendar Events List)
+          1. TOP TAB SWITCHER (Consolidated: Calendar View & Recordings)
           ------------------------------------------------------------------ */}
       <div className="calendar-top-tabs-bar">
         <button
@@ -294,15 +315,6 @@ export default function StudentCalendar({
         >
           <CalendarIcon size={15} />
           <span>Calendar View</span>
-        </button>
-
-        <button
-          type="button"
-          className={`calendar-tab-pill-btn ${mainTab === 'list' ? 'active' : ''}`}
-          onClick={() => setMainTab('list')}
-        >
-          <BookOpen size={15} />
-          <span>Calendar Events List</span>
         </button>
 
         <button
@@ -381,7 +393,7 @@ export default function StudentCalendar({
           ------------------------------------------------------------------ */}
       {mainTab === 'calendar' && (
         <div className="calendar-view-card">
-          {/* Filters Row */}
+          {/* Enhanced Filters Row with Event Type & Search */}
           <div className="calendar-filters-row">
             <div className="filter-field-group">
               <label className="filter-field-label">MONTH</label>
@@ -408,6 +420,35 @@ export default function StudentCalendar({
               />
             </div>
 
+            <div className="filter-field-group">
+              <label className="filter-field-label">EVENT TYPE</label>
+              <select
+                className="filter-select"
+                value={filterEventType}
+                onChange={(e) => setFilterEventType(e.target.value)}
+              >
+                <option value="ALL">All Event Types</option>
+                <option value="google_meet">Google Meets</option>
+                <option value="zoom">Zoom Meetings</option>
+                <option value="google_calendar">Google Calendar</option>
+              </select>
+            </div>
+
+            <div className="filter-field-group" style={{ flex: 1, minWidth: '180px' }}>
+              <label className="filter-field-label">SEARCH</label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  className="filter-input"
+                  placeholder="Search meeting or topic..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{ width: '100%', paddingRight: '28px' }}
+                />
+                <Search size={14} style={{ position: 'absolute', right: '10px', color: '#94a3b8' }} />
+              </div>
+            </div>
+
             <div className="filter-btn-group">
               <button
                 type="button"
@@ -415,7 +456,7 @@ export default function StudentCalendar({
                 onClick={handleApplyFilter}
               >
                 <Filter size={15} />
-                <span>Filter</span>
+                <span>Filter Events</span>
               </button>
 
               <button
@@ -454,10 +495,6 @@ export default function StudentCalendar({
             <div className="legend-item">
               <span className="legend-dot" style={{ background: '#10b981' }} />
               <span>Out Of Office</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-dot" style={{ background: '#059669' }} />
-              <span>Working Location</span>
             </div>
           </div>
 
@@ -518,281 +555,290 @@ export default function StudentCalendar({
               <button
                 type="button"
                 className={`btn-view-mode ${calViewMode === 'list' ? 'active' : ''}`}
-                onClick={() => setMainTab('list')}
+                onClick={() => setCalViewMode('list')}
               >
-                List
+                List Table
               </button>
             </div>
           </div>
 
-          {/* Month Calendar Grid */}
-          <div className="calendar-grid-wrapper" style={{ position: 'relative' }}>
-            {loadingEvents && (
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'rgba(255, 255, 255, 0.75)',
-                zIndex: 10,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                color: '#00385E',
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                borderRadius: '8px',
-                backdropFilter: 'blur(2px)'
-              }}>
-                <RefreshCw size={20} className="spinner" style={{ animation: 'spin 1s linear infinite' }} />
-                <span>Loading live meetings...</span>
-              </div>
-            )}
-            <div className="calendar-weekdays-row">
-              {WEEK_DAYS.map((day) => (
-                <div key={day} className="calendar-weekday-cell">
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            <div className="calendar-days-grid">
-              {calendarGridCells.map((cell, idx) => (
-                <div
-                  key={idx}
-                  className={`calendar-day-cell ${cell.isOtherMonth ? 'other-month' : ''} ${cell.isToday ? 'is-today' : ''}`}
-                >
-                  <div className="day-header-line">
-                    <span className="day-num">{cell.dayNumber}</span>
-                  </div>
-
-                  {cell.events && cell.events.length > 0 && (
-                    <div className="day-events-list">
-                      {cell.events.map((ev) => (
-                        <div
-                          key={ev.id}
-                          className="calendar-event-pill"
-                          style={{
-                            background: ev.category === 'focus_time' ? '#0f766e' : '#334155'
-                          }}
-                          onClick={() => setSelectedEvent(ev)}
-                          title={`${ev.title} (${ev.displayStart})`}
-                        >
-                          <span className="pill-time">
-                            {ev.startDate.split('T')[1]?.slice(0, 5)}
-                          </span>
-                          <span className="pill-title">{ev.title}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ------------------------------------------------------------------
-          3B. TAB CONTENT: CALENDAR EVENTS LIST
-          ------------------------------------------------------------------ */}
-      {mainTab === 'list' && (
-        <div className="events-list-card">
-          {/* Search bar */}
-          <div className="events-list-toolbar">
-            <div className="event-search-wrapper">
-              <input
-                type="text"
-                className="event-search-input"
-                placeholder="Search events..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-              <button
-                type="button"
-                className="event-search-btn"
-                aria-label="Search"
-              >
-                <Search size={15} />
-              </button>
-            </div>
-          </div>
-
-          {/* Events Table */}
-          <div className="events-table-wrapper">
-            <table className="events-table">
-              <thead>
-                <tr>
-                  <th>EVENT SOURCE TYPE</th>
-                  <th>EVENT TITLE</th>
-                  <th>DATE & TIME</th>
-                  <th>PROGRAMME INFO</th>
-                  <th>ACTIONS</th>
-                  <th>CREATED DATE</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loadingEvents ? (
+          {/* Sub-view: Month Grid vs List Table */}
+          {calViewMode === 'list' ? (
+            /* Inline List Table with Status-Aware Join / Watch Actions */
+            <div className="events-table-wrapper" style={{ marginTop: '1rem' }}>
+              <table className="events-table">
+                <thead>
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#00385E', fontWeight: 600 }}>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                        <RefreshCw size={18} className="spinner" style={{ animation: 'spin 1s linear infinite', color: '#00385E' }} />
-                        <span>Loading live meetings & calendar events...</span>
-                      </div>
-                    </td>
+                    <th>EVENT SOURCE TYPE</th>
+                    <th>EVENT TITLE</th>
+                    <th>DATE & TIME</th>
+                    <th>PROGRAMME INFO</th>
+                    <th>ACTIONS</th>
+                    <th>CREATED DATE</th>
                   </tr>
-                ) : paginatedEvents.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748b' }}>
-                      No events found matching your search.
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedEvents.map((ev) => (
-                    <tr key={ev.id}>
-                      {/* Event Source Type */}
-                      <td>
-                        <div className="source-type-cell">
-                          <div className="source-badge">
-                            {renderSourceIcon(ev.sourceType)}
-                            <span>{ev.sourceLabel}</span>
-                          </div>
-                          {ev.subType && (
-                            <span className="source-subtag">{ev.subType}</span>
-                          )}
+                </thead>
+                <tbody>
+                  {loadingEvents ? (
+                    <tr>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#00385E', fontWeight: 600 }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                          <RefreshCw size={18} className="spinner" style={{ animation: 'spin 1s linear infinite', color: '#00385E' }} />
+                          <span>Loading live meetings & events...</span>
                         </div>
-                      </td>
-
-                      {/* Event Title */}
-                      <td className="event-title-cell">
-                        {ev.title}
-                      </td>
-
-                      {/* Date & Time */}
-                      <td className="event-datetime-cell">
-                        <div>Start: {ev.displayStart}</div>
-                        <div>End: {ev.displayEnd}</div>
-                      </td>
-
-                      {/* Programme Info */}
-                      <td className="event-programme-cell">
-                        <div className="programme-title">{ev.programName}</div>
-                        <div className="programme-sub">{ev.programSub}</div>
-                      </td>
-
-                      {/* Actions */}
-                      <td>
-                        <div className="event-actions-cell">
-                          <a
-                            href={ev.joinUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn-event-join"
-                          >
-                            <Video size={14} />
-                            <span>Join</span>
-                          </a>
-
-                          <button
-                            type="button"
-                            className="btn-event-cal-sync"
-                            onClick={() => handleDownloadEventIcs(ev)}
-                            title="Export & Add to Calendar (.ics)"
-                            disabled={downloadingIcsId === (ev.eventId || ev.id || ev.meetingId)}
-                          >
-                            {downloadingIcsId === (ev.eventId || ev.id || ev.meetingId) ? (
-                              <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} />
-                            ) : (
-                              <CalendarIcon size={13} />
-                            )}
-                            <span>Sync .ics</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            className="btn-view-desc-link"
-                            onClick={() => setSelectedEvent(ev)}
-                          >
-                            View Description
-                          </button>
-                        </div>
-                      </td>
-
-                      {/* Created Date */}
-                      <td className="event-created-cell">
-                        {ev.createdDate}
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : paginatedEvents.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748b' }}>
+                        No events found matching your filter criteria.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedEvents.map((ev) => {
+                      const over = isEventOver(ev);
+                      return (
+                        <tr key={ev.id}>
+                          {/* Event Source Type */}
+                          <td>
+                            <div className="source-type-cell">
+                              <div className="source-badge">
+                                {renderSourceIcon(ev.sourceType)}
+                                <span>{ev.sourceLabel}</span>
+                              </div>
+                              {ev.subType && (
+                                <span className="source-subtag">{ev.subType}</span>
+                              )}
+                            </div>
+                          </td>
 
-          {/* Pagination Bar */}
-          <div className="events-pagination-bar">
-            <span className="page-indicator-text">
-              Page {currentPage} of {totalPages}
-            </span>
+                          {/* Event Title */}
+                          <td className="event-title-cell">
+                            {ev.title}
+                          </td>
 
-            <div className="pagination-controls">
-              <button
-                type="button"
-                className="btn-page-nav"
-                disabled={currentPage <= 1}
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                aria-label="Previous Page"
-              >
-                <ChevronLeft size={16} />
-              </button>
+                          {/* Date & Time */}
+                          <td className="event-datetime-cell">
+                            <div>Start: {ev.displayStart}</div>
+                            <div>End: {ev.displayEnd}</div>
+                          </td>
 
-              <button
-                type="button"
-                className="btn-page-nav"
-                disabled={currentPage >= totalPages}
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                aria-label="Next Page"
-              >
-                <ChevronRight size={16} />
-              </button>
+                          {/* Programme Info */}
+                          <td className="event-programme-cell">
+                            <div className="programme-title">{ev.programName}</div>
+                            <div className="programme-sub">{ev.programSub}</div>
+                          </td>
+
+                          {/* Actions: Join if Active / Upcoming, Watch/Ended if Over */}
+                          <td>
+                            <div className="event-actions-cell">
+                              {!over ? (
+                                <a
+                                  href={ev.joinUrl || '#'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn-event-join"
+                                >
+                                  <Video size={14} />
+                                  <span>Join</span>
+                                </a>
+                              ) : ev.recordingUrl || ev.watchUrl ? (
+                                <a
+                                  href={ev.recordingUrl || ev.watchUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn-event-join"
+                                  style={{ background: '#0284c7', borderColor: '#0284c7', color: '#ffffff' }}
+                                >
+                                  <PlayCircle size={14} />
+                                  <span>Watch</span>
+                                </a>
+                              ) : (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  padding: '5px 12px',
+                                  borderRadius: '6px',
+                                  background: '#f1f5f9',
+                                  color: '#64748b',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 700
+                                }}>
+                                  <CheckCircle size={13} style={{ color: '#10b981' }} />
+                                  <span>Ended</span>
+                                </span>
+                              )}
+
+                              <button
+                                type="button"
+                                className="btn-event-cal-sync"
+                                onClick={() => handleDownloadEventIcs(ev)}
+                                title="Export & Add to Calendar (.ics)"
+                                disabled={downloadingIcsId === (ev.eventId || ev.id || ev.meetingId)}
+                              >
+                                {downloadingIcsId === (ev.eventId || ev.id || ev.meetingId) ? (
+                                  <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                                ) : (
+                                  <CalendarIcon size={13} />
+                                )}
+                                <span>Sync .ics</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn-view-desc-link"
+                                onClick={() => setSelectedEvent(ev)}
+                              >
+                                View Description
+                              </button>
+                            </div>
+                          </td>
+
+                          {/* Created Date */}
+                          <td className="event-created-cell">
+                            {ev.createdDate}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+
+              {/* Pagination Bar */}
+              <div className="events-pagination-bar">
+                <span className="page-indicator-text">
+                  Page {currentPage} of {totalPages} ({filteredEvents.length} total events)
+                </span>
+
+                <div className="pagination-controls">
+                  <button
+                    type="button"
+                    className="btn-page-nav"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    aria-label="Previous Page"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-page-nav"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    aria-label="Next Page"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Month / Week / Day Grid */
+            <div className="calendar-grid-wrapper" style={{ position: 'relative' }}>
+              {loadingEvents && (
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(255, 255, 255, 0.75)',
+                  zIndex: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  color: '#00385E',
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
+                  borderRadius: '8px',
+                  backdropFilter: 'blur(2px)'
+                }}>
+                  <RefreshCw size={20} className="spinner" style={{ animation: 'spin 1s linear infinite' }} />
+                  <span>Loading live meetings...</span>
+                </div>
+              )}
+              <div className="calendar-weekdays-row">
+                {WEEK_DAYS.map((day) => (
+                  <div key={day} className="calendar-weekday-cell">
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              <div className="calendar-days-grid">
+                {calendarGridCells.map((cell, idx) => (
+                  <div
+                    key={idx}
+                    className={`calendar-day-cell ${cell.isOtherMonth ? 'other-month' : ''} ${cell.isToday ? 'is-today' : ''}`}
+                  >
+                    <div className="day-header-line">
+                      <span className="day-num">{cell.dayNumber}</span>
+                    </div>
+
+                    {cell.events && cell.events.length > 0 && (
+                      <div className="day-events-list">
+                        {cell.events.map((ev) => {
+                          const over = isEventOver(ev);
+                          return (
+                            <div
+                              key={ev.id}
+                              className="calendar-event-pill"
+                              style={{
+                                background: ev.category === 'focus_time' ? '#0f766e' : (over ? '#475569' : '#00385E'),
+                                opacity: over ? 0.8 : 1
+                              }}
+                              onClick={() => setSelectedEvent(ev)}
+                              title={`${ev.title} (${ev.displayStart}) - ${over ? 'Completed' : 'Active'}`}
+                            >
+                              <span className="pill-time">
+                                {ev.startDate.split('T')[1]?.slice(0, 5)}
+                              </span>
+                              <span className="pill-title">{ev.title}</span>
+                              {over && <span style={{ fontSize: '0.65rem', opacity: 0.8, marginLeft: '3px' }}>✓</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* ------------------------------------------------------------------
-          3C. TAB CONTENT: SESSION RECORDINGS & DOWNLOADS
+          3B. TAB CONTENT: SESSION RECORDINGS & DOWNLOADS
           ------------------------------------------------------------------ */}
       {mainTab === 'recordings' && (
-        <div className="events-list-card">
-          {/* Search & Platform Filter Bar */}
-          <div className="events-list-toolbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-            <div className="event-search-wrapper" style={{ flex: 1, minWidth: '260px', maxWidth: '420px' }}>
+        <div className="recordings-view-card">
+          {/* Recordings Toolbar & Filters */}
+          <div className="recordings-toolbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #e2e8f0' }}>
+            <div style={{ position: 'relative', minWidth: '260px', flex: 1 }}>
               <input
                 type="text"
-                className="event-search-input"
-                placeholder="Search recordings by title, course, or topic..."
+                className="filter-input"
+                placeholder="Search recorded lectures or courses..."
                 value={recordingSearchQuery}
                 onChange={(e) => setRecordingSearchQuery(e.target.value)}
+                style={{ width: '100%', paddingRight: '32px' }}
               />
-              <button type="button" className="event-search-btn" aria-label="Search">
-                <Search size={15} />
-              </button>
+              <Search size={15} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569' }}>Platform:</span>
               <button
                 type="button"
                 className={`btn-view-mode ${recordingSourceFilter === 'ALL' ? 'active' : ''}`}
                 onClick={() => setRecordingSourceFilter('ALL')}
                 style={{ padding: '6px 14px', fontSize: '0.82rem', fontWeight: 700 }}
               >
-                All ({recordingsList.length})
+                All Platforms
               </button>
               <button
                 type="button"
@@ -983,8 +1029,8 @@ export default function StudentCalendar({
                             boxShadow: '0 2px 6px rgba(0, 56, 94, 0.18)'
                           }}
                         >
-                          <Download size={14} />
-                          <span>Access Session Recording</span>
+                          <PlayCircle size={14} />
+                          <span>Watch / Access Recording</span>
                           <ExternalLink size={13} />
                         </a>
                       ) : (
@@ -1089,16 +1135,45 @@ export default function StudentCalendar({
                 <span>Add to Calendar (.ics)</span>
               </button>
 
-              <a
-                href={selectedEvent.joinUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-modal-join-direct"
-              >
-                <Video size={16} />
-                <span>Join Session</span>
-                <ExternalLink size={14} />
-              </a>
+              {!isEventOver(selectedEvent) ? (
+                <a
+                  href={selectedEvent.joinUrl || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-modal-join-direct"
+                >
+                  <Video size={16} />
+                  <span>Join Session</span>
+                  <ExternalLink size={14} />
+                </a>
+              ) : selectedEvent.recordingUrl || selectedEvent.watchUrl ? (
+                <a
+                  href={selectedEvent.recordingUrl || selectedEvent.watchUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-modal-join-direct"
+                  style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' }}
+                >
+                  <PlayCircle size={16} />
+                  <span>Watch Recording</span>
+                  <ExternalLink size={14} />
+                </a>
+              ) : (
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  background: '#f1f5f9',
+                  color: '#64748b',
+                  fontWeight: 700,
+                  fontSize: '0.86rem'
+                }}>
+                  <CheckCircle size={15} style={{ color: '#10b981' }} />
+                  <span>Meeting Ended</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -63,8 +63,7 @@ import {
   getMicrocredentialCourseDetail,
   addUpdateMicrocredentialVideoNote,
   getMicrocredentialVideoNotes,
-  deleteMicrocredentialVideoNote,
-  getMicrocredentialLiveMeetingsByCourse
+  deleteMicrocredentialVideoNote
 } from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
 import QuizAttemptDetailsModal from '../modals/QuizAttemptDetailsModal';
@@ -116,23 +115,6 @@ export default function MicrocredentialWatchPage({
         })
         .catch(() => { });
     }
-
-    if (courseId > 0) {
-      setLiveMeetingsLoading(true);
-      getMicrocredentialLiveMeetingsByCourse(courseId)
-        .then(res => {
-          if (res?.success && Array.isArray(res?.liveMeetings)) {
-            setLiveMeetingsList(res.liveMeetings);
-          } else {
-            setLiveMeetingsList([]);
-          }
-        })
-        .catch(err => {
-          console.error('Error fetching course live meetings:', err);
-          setLiveMeetingsList([]);
-        })
-        .finally(() => setLiveMeetingsLoading(false));
-    }
   }, [course]);
 
   const currentCourse = {
@@ -174,9 +156,6 @@ export default function MicrocredentialWatchPage({
 
   const [isLearningOpen, setIsLearningOpen] = useState(false);
   const [isTextContentOpen, setIsTextContentOpen] = useState(true);
-  const [isLiveMeetingsOpen, setIsLiveMeetingsOpen] = useState(false);
-  const [liveMeetingsList, setLiveMeetingsList] = useState([]);
-  const [liveMeetingsLoading, setLiveMeetingsLoading] = useState(false);
   const [isQuizAccordionOpen, setIsQuizAccordionOpen] = useState(false);
 
   // Student Watch Video Progress states (POST /api/MicroCredencialStudentWatchVideoAPI/GetMicrocredentialStudentWatchVideoData)
@@ -2707,163 +2686,7 @@ export default function MicrocredentialWatchPage({
               );
             })()}
 
-            {/* 3. Live Masterclasses & Meetings Accordion */}
-            <div className="mc-watch-expandable-card">
-              <div
-                className="expandable-header"
-                onClick={() => setIsLiveMeetingsOpen(!isLiveMeetingsOpen)}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', cursor: 'pointer', background: '#ffffff' }}
-              >
-                <div className="expandable-left" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00385E', fontWeight: 800 }}>
-                  <Radio size={16} style={{ color: liveMeetingsList.some(m => (m.liveStatus || '').toLowerCase().includes('live')) ? '#ef4444' : '#00385E' }} />
-                  <span>Live Masterclasses</span>
-                  {liveMeetingsList.some(m => (m.liveStatus || '').toLowerCase().includes('live')) && (
-                    <span style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      background: '#fee2e2',
-                      color: '#dc2626',
-                      fontSize: '0.66rem',
-                      fontWeight: 800,
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      textTransform: 'uppercase'
-                    }}>
-                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} />
-                      LIVE NOW
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#00385E', background: '#f0f7fc', padding: '2px 8px', borderRadius: '999px', border: '1px solid #c9dfef' }}>
-                    {liveMeetingsList.length} {liveMeetingsList.length === 1 ? 'Session' : 'Sessions'}
-                  </span>
-                  <ChevronDown size={16} className={`chevron-exp ${isLiveMeetingsOpen ? 'open' : ''}`} style={{ color: '#00385E' }} />
-                </div>
-              </div>
-
-              {isLiveMeetingsOpen && (
-                <div className="expandable-content-body" style={{ padding: '12px 14px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
-                  {liveMeetingsLoading ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '20px 10px', color: '#64748b', fontSize: '0.84rem' }}>
-                      <RefreshCw size={16} className="spinner" style={{ animation: 'spin 1s linear infinite', color: '#00385E' }} />
-                      <span>Loading live sessions...</span>
-                    </div>
-                  ) : liveMeetingsList.length === 0 ? (
-                    <div style={{ padding: '16px 12px', textAlign: 'center', color: '#64748b', fontSize: '0.84rem' }}>
-                      No live meetings scheduled for this course yet.
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {liveMeetingsList.map((meeting) => {
-                        const isLiveNow = (meeting.liveStatus || '').toLowerCase().includes('live');
-                        const isUpcoming = (meeting.liveStatus || '').toLowerCase().includes('upcoming');
-                        const isCompleted = (meeting.liveStatus || '').toLowerCase().includes('completed');
-                        const isGoogle = meeting.sourceType === 'GOOGLE_MEET';
-                        const isZoom = meeting.sourceType === 'ZOOM';
-
-                        return (
-                          <div
-                            key={meeting.meetingId}
-                            style={{
-                              background: '#ffffff',
-                              border: isLiveNow ? '1.5px solid #ef4444' : '1px solid #e2e8f0',
-                              borderRadius: '10px',
-                              padding: '12px 14px',
-                              boxShadow: isLiveNow ? '0 3px 12px rgba(239, 68, 68, 0.12)' : '0 1px 4px rgba(0,0,0,0.02)',
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                              {/* Source Type Tag */}
-                              <span style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                fontSize: '0.72rem',
-                                fontWeight: 800,
-                                padding: '2px 7px',
-                                borderRadius: '5px',
-                                background: isGoogle ? '#fef3c7' : '#eff6ff',
-                                color: isGoogle ? '#b45309' : '#1d4ed8',
-                                border: isGoogle ? '1px solid #fde68a' : '1px solid #bfdbfe'
-                              }}>
-                                <Video size={11} />
-                                {isGoogle ? 'Google Meet' : (isZoom ? 'Zoom' : meeting.sourceType)}
-                              </span>
-
-                              {/* Status Tag */}
-                              <span style={{
-                                fontSize: '0.7rem',
-                                fontWeight: 800,
-                                padding: '2px 8px',
-                                borderRadius: '999px',
-                                background: isLiveNow ? '#fee2e2' : (isUpcoming ? '#e0f2fe' : '#f1f5f9'),
-                                color: isLiveNow ? '#dc2626' : (isUpcoming ? '#0369a1' : '#64748b'),
-                                border: isLiveNow ? '1px solid #fca5a5' : (isUpcoming ? '1px solid #bae6fd' : '1px solid #e2e8f0')
-                              }}>
-                                {meeting.liveStatus}
-                              </span>
-                            </div>
-
-                            {/* Meeting Title */}
-                            <h5 style={{ margin: '0 0 4px 0', fontSize: '0.86rem', fontWeight: 800, color: '#00385E', lineHeight: 1.35 }}>
-                              {meeting.title}
-                            </h5>
-
-                            {/* Description */}
-                            {meeting.description && (
-                              <p style={{ margin: '0 0 8px 0', fontSize: '0.76rem', color: '#64748b', lineHeight: 1.4 }}>
-                                {meeting.description}
-                              </p>
-                            )}
-
-                            {/* Date / Time Schedule */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.73rem', color: '#475569', fontWeight: 600, marginBottom: meeting.joinLink && !isCompleted ? '10px' : '0' }}>
-                              <Clock size={12} style={{ color: '#0284C7', flexShrink: 0 }} />
-                              <span>{meeting.startDateTime || 'Schedule TBA'}</span>
-                            </div>
-
-                            {/* Join Link Button */}
-                            {meeting.joinLink && !isCompleted && (
-                              <a
-                                href={meeting.joinLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '6px',
-                                  width: '100%',
-                                  padding: '7px 12px',
-                                  fontSize: '0.78rem',
-                                  fontWeight: 800,
-                                  color: '#ffffff',
-                                  background: isLiveNow
-                                    ? 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'
-                                    : 'linear-gradient(135deg, #00385E 0%, #005a96 100%)',
-                                  borderRadius: '6px',
-                                  textDecoration: 'none',
-                                  boxShadow: isLiveNow ? '0 2px 8px rgba(220, 38, 38, 0.25)' : '0 2px 8px rgba(0, 56, 94, 0.15)',
-                                  transition: 'all 0.2s ease'
-                                }}
-                              >
-                                <span>{isLiveNow ? 'Join Live Now' : 'Join Live Session'}</span>
-                                <ExternalLink size={12} />
-                              </a>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* 4. Quiz Accordion Section */}
+            {/* 3. Quiz Accordion Section */}
             <div className="mc-watch-expandable-card">
               <div
                 className="expandable-header"

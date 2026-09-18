@@ -305,27 +305,19 @@ export default function App() {
 
 
   const handleOpenVideoPreview = (videoPayload) => {
-    if (videoPayload.thumbnail && !videoPayload.lectureTitle) {
-      setVideoModal({
-        isOpen: true,
-        lectureTitle: videoPayload.modules?.[0]?.lectures?.[0]?.title || `${videoPayload.title} - Module 1`,
-        courseTitle: videoPayload.title,
-        duration: videoPayload.modules?.[0]?.lectures?.[0]?.duration || '15 mins',
-        videoUrl: videoPayload.modules?.[0]?.lectures?.[0]?.videoUrl || 'https://www.w3schools.com/html/mov_bbb.mp4'
-      });
-    } else {
-      setVideoModal({
-        isOpen: true,
-        lectureTitle: videoPayload.lectureTitle,
-        courseTitle: videoPayload.courseTitle,
-        duration: videoPayload.duration,
-        videoUrl: videoPayload.videoUrl
-      });
-    }
+    if (!videoPayload) return;
+    setVideoModal({
+      isOpen: true,
+      lectureTitle: videoPayload.lectureTitle || `${videoPayload.title || videoPayload.courseTitle || 'Microcredential'} - Introduction`,
+      courseTitle: videoPayload.courseTitle || videoPayload.title || 'Microcredential Course',
+      duration: videoPayload.duration || 'Introduction',
+      videoUrl: videoPayload.videoUrl || 'https://www.w3schools.com/html/mov_bbb.mp4',
+      poster: videoPayload.poster || videoPayload.thumbnail || ''
+    });
   };
 
   const handleCloseVideo = () => {
-    setVideoModal((prev) => ({ ...prev, isOpen: false }));
+    setVideoModal({ isOpen: false, lectureTitle: '', courseTitle: '', duration: '', videoUrl: '', poster: '' });
   };
 
   return (
@@ -424,6 +416,7 @@ export default function App() {
         courseTitle={videoModal.courseTitle}
         duration={videoModal.duration}
         videoUrl={videoModal.videoUrl}
+        poster={videoModal.poster}
       />
 
       <AuthRequiredModal

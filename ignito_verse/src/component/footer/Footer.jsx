@@ -2,14 +2,10 @@
 import React from 'react';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import logoImg from '../../assets/Ignitoverse Logof.png';
-import cardWatermark from '../../assets/home/card.png';
 
 export default function Footer() {
   return (
     <footer className="enterprise-footer-section">
-      {/* Right Corner Ambient Constellation Watermark */}
-      <img src={cardWatermark} alt="" className="footer-ambient-watermark" aria-hidden="true" />
-
       <div className="footer-main-container">
         {/* Top 2-Column Content Row */}
         <div className="footer-two-col-grid">
@@ -27,7 +23,7 @@ export default function Footer() {
             </div>
 
             <p className="footer-mission-text">
-              Helping enterprises build future-ready teams with verified microcredentials and measurable learning outcomes.
+              Ignitolearn is a Saas-based Artificial Intelligence enabled Online Learning Management System with AI-powered personalization, analytics, and automated assessments. Aligned with SWAYAM's Four-Quadrant approach, it offers video lectures, study materials, discussions, and Virtual Labs for seamless, interactive, and accessible learning.
             </p>
 
             <div className="footer-social-row">
@@ -69,14 +65,14 @@ export default function Footer() {
                 <span>enterprise@ignitoverse.com</span>
               </a>
 
-              <a href="tel:+917940620200" className="footer-contact-item">
+              <a href="tel:+919099633536" className="footer-contact-item">
                 <Phone size={17} className="contact-item-icon" />
-                <span>+91 79 4062 0200</span>
+                <span>+(91) 9099 63 35 36</span>
               </a>
 
-              <div className="footer-contact-item">
-                <MapPin size={17} className="contact-item-icon" />
-                <span>Ahmedabad, Gujarat, India</span>
+              <div className="footer-contact-item" style={{ alignItems: 'flex-start' }}>
+                <MapPin size={17} className="contact-item-icon" style={{ marginTop: '2px' }} />
+                <span>E-527, Ganesh Glory 11, S G Highway, Jagatpur, Ahmedabad - 382 470, Gujarat, India</span>
               </div>
             </div>
           </div>
@@ -85,7 +81,7 @@ export default function Footer() {
         {/* Center Copyright */}
         <div className="footer-copyright-row">
           <p className="footer-copyright-text">
-            © 2025 Ignitoverse. All rights reserved.
+            Copyright © 2026 Hackberry Softech Private Limited
           </p>
         </div>
       </div>

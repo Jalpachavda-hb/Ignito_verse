@@ -1,48 +1,102 @@
-// ignitoverse: Video Player Preview Modal
-import React from 'react';
-import { X, Play, Volume2, ShieldCheck, Clock } from 'lucide-react';
+// ignitoverse: Video Player Preview Modal with Auto-Open & Backdrop Transitions
+import React, { useEffect } from 'react';
+import { X, ShieldCheck, Clock } from 'lucide-react';
 
-export default function VideoModal({ isOpen, onClose, lectureTitle, courseTitle, duration, videoUrl }) {
+function getYouTubeEmbedUrl(url) {
+  if (!url) return '';
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  return match ? `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0&enablejsapi=1` : '';
+}
+
+export default function VideoModal({ 
+  isOpen, 
+  onClose, 
+  lectureTitle, 
+  courseTitle, 
+  duration, 
+  videoUrl, 
+  poster 
+}) {
+  // Lock body scroll when modal is open and handle ESC key
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (onClose) onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
+  const ytEmbedUrl = getYouTubeEmbedUrl(videoUrl);
+
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true">
-      <div className="modal-backdrop" onClick={onClose} />
+    <div className="modal-overlay" role="dialog" aria-modal="true" style={{ animation: 'fadeInModal 0.25s ease forwards' }}>
+      <div 
+        className="modal-backdrop" 
+        onClick={onClose} 
+        title="Click to close video preview"
+      />
       <div className="modal-container video-modal-box">
         <div className="video-modal-header">
           <div className="video-modal-titles">
-            <span className="course-tag-pill">{courseTitle || 'Microcredential Lecture'}</span>
-            <h3 className="video-lecture-name">{lectureTitle || 'Preview Lecture'}</h3>
+            <span className="course-tag-pill">{courseTitle || 'Microcredential Course'}</span>
+            <h3 className="video-lecture-name">{lectureTitle || `${courseTitle || 'Microcredential'} - Introduction`}</h3>
           </div>
           <button 
             type="button" 
             className="modal-close-btn light-close" 
             onClick={onClose}
-            aria-label="Close video"
+            aria-label="Close video preview"
+            title="Close video"
           >
             <X size={20} />
           </button>
         </div>
 
-        <div className="video-player-frame">
-          <video 
-            controls 
-            autoPlay 
-            className="active-video-element"
-            poster="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80"
-          >
-            <source src={videoUrl || 'https://www.w3schools.com/html/mov_bbb.mp4'} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+        <div className="video-player-frame" style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: '#000000' }}>
+          {ytEmbedUrl ? (
+            <iframe
+              src={ytEmbedUrl}
+              title={lectureTitle || 'Course Introduction Video'}
+              style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          ) : (
+            <video 
+              controls 
+              autoPlay 
+              playsInline
+              className="active-video-element"
+              poster={poster || ''}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+            >
+              <source src={videoUrl || 'https://www.w3schools.com/html/mov_bbb.mp4'} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          )}
         </div>
 
         <div className="video-modal-footer">
           <div className="video-meta-left">
-            <span className="meta-badge"><Clock size={13} /> {duration || '15 mins'}</span>
+            <span className="meta-badge"><Clock size={13} /> {duration || 'Preview'}</span>
             <span className="meta-badge"><ShieldCheck size={13} /> HD Enterprise Audio/Video</span>
           </div>
           <div className="video-meta-right">
-            <span className="video-note">Sample enterprise preview module. Full syllabus unlocked upon enrollment.</span>
+            <span className="video-note">Course introduction preview. Full syllabus unlocked upon enrollment.</span>
           </div>
         </div>
       </div>
