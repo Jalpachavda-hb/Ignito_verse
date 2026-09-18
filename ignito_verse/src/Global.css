@@ -381,97 +381,7 @@ a {
   align-self: center;
 }
 
-/* Mobile Drawer */
-.navbar-mobile-drawer {
-  display: none;
-  position: fixed;
-  top: 80px;
-  left: 0;
-  width: 100%;
-  height: calc(100vh - 80px);
-  background: #ffffff;
-  z-index: 999;
-  overflow-y: auto;
-  padding: 24px;
-  border-top: 1px solid var(--border-light);
-}
-
-.navbar-mobile-drawer.open {
-  display: block;
-}
-
-.mobile-drawer-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.mobile-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--accent-blue);
-  text-transform: uppercase;
-}
-
-.mobile-drawer-links {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.mobile-drawer-link {
-  display: block;
-  padding: 12px 16px;
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--text-dark);
-  border-radius: var(--radius-md);
-}
-
-.mobile-drawer-link.active {
-  background: var(--primary-blue-subtle);
-  color: var(--primary-blue);
-  font-weight: 700;
-}
-
-.mobile-blue-card {
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 20px;
-  background: var(--primary-blue);
-  border-radius: var(--radius-lg);
-}
-
-.mobile-btn-login {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 12px;
-  border-radius: var(--radius-full);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.mobile-btn-signup {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: #ffffff;
-  color: var(--primary-blue);
-  border: none;
-  padding: 13px;
-  border-radius: var(--radius-full);
-  font-weight: 700;
-  cursor: pointer;
-}
-
+/* Mobile Drawer styles moved to component/navbar/navbar.css */
 
 /* ==========================================================================
    SECTION 3: TRUSTED BY LEADING ORGANIZATIONS
@@ -6650,9 +6560,36 @@ a {
   font-family: var(--font-family, 'Hind Vadodara', sans-serif);
 }
 
+/* Toast Notification for Share */
+.mc-toast-copied-notification {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #00385E;
+  color: #ffffff;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(0, 56, 94, 0.25);
+  z-index: 1000;
+  animation: mcFadeInDown 0.3s ease;
+}
+
+@keyframes mcFadeInDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
 .mc-fluid-container {
   width: 100%;
-
   margin: 0 auto;
   padding: 24px clamp(36px, 5.5vw, 96px) 60px;
   box-sizing: border-box;
@@ -6670,106 +6607,167 @@ a {
 .mc-main-left-column {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   min-width: 0;
 }
 
-/* 1. Breadcrumbs */
+/* 1. Navigation Header & Back link */
 .mc-breadcrumb-section {
   padding: 0 0 4px;
 }
 
-.mc-breadcrumb-trail {
+.mc-nav-header-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.mc-btn-back-link {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
-  font-size: 0.86rem;
-  color: #64748b;
-  flex-wrap: wrap;
-}
-
-.breadcrumb-item.linkable {
-  color: #64748b;
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.breadcrumb-item.linkable:hover {
-  color: #00385E;
-  text-decoration: underline;
-}
-
-.breadcrumb-divider {
-  color: #cbd5e1;
+  background: none;
+  border: none;
+  padding: 6px 0;
   font-size: 0.95rem;
+  font-weight: 700;
+  color: #00385E;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
 }
 
-.breadcrumb-item.active {
+.mc-btn-back-link:hover {
+  color: #0284c7;
+  transform: translateX(-2px);
+}
+
+.mc-back-link-text {
+  font-size: 0.95rem;
+  font-weight: 700;
   color: #00385E;
-  font-weight: 600;
+}
+
+.mc-nav-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mc-nav-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.mc-nav-icon-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.mc-nav-icon-btn.active-favorite {
+  background: #fef2f2;
+  border-color: #fecaca;
 }
 
 /* 2. Hero Header Block */
-.mc-hero-header-block,
-.mc-hero-split-card {
+.mc-hero-header-block {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding-bottom: 8px;
+  padding-bottom: 6px;
 }
 
-.mc-hero-text-content {
+.mc-hero-flex-layout {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+}
+
+.mc-hero-text-column {
   flex: 1;
   min-width: 0;
 }
 
-.mc-category-pill-wrapper {
+.mc-hero-video-column {
+  flex-shrink: 0;
+  display: none;
+}
+
+.mc-hero-video-card {
+  position: relative;
+  width: 135px;
+  height: 98px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 56, 94, 0.12);
+  border: 1.5px solid #e2e8f0;
+  cursor: pointer;
+  background: #0f172a;
+}
+
+.mc-hero-video-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.mc-hero-video-card:hover .mc-hero-video-thumbnail {
+  transform: scale(1.05);
+}
+
+.mc-hero-video-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.2);
   display: flex;
-  margin-bottom: 12px;
-}
-
-.mc-category-capsule-tag {
-  display: inline-flex;
   align-items: center;
-  gap: 7px;
-  background: #f0f7fc;
-  border: 1.5px solid #d4e7f5;
-  color: #00385E;
-  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
-  font-size: 0.76rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  box-shadow: 0 2px 6px rgba(0, 56, 94, 0.04);
+  justify-content: center;
+  transition: background 0.2s ease;
 }
 
-.mc-cat-indicator-dot {
-  width: 6px;
-  height: 6px;
+.mc-hero-video-card:hover .mc-hero-video-overlay {
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.mc-hero-play-circle {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: #00385E;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00385E;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.mc-meta-level-pill {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: #0369a1;
-  background: #e0f2fe;
-  padding: 4px 10px;
-  border-radius: 6px;
-  letter-spacing: 0.02em;
+.play-triangle-icon {
+  fill: #00385E;
+  margin-left: 2px;
 }
 
 .mc-hero-title {
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
-  font-size: clamp(1.9rem, 2.8vw, 2.6rem);
+  font-size: clamp(1.8rem, 2.6vw, 2.4rem);
   font-weight: 800;
-  line-height: 1.18;
+  line-height: 1.2;
   color: #00385E;
-  margin: 0 0 14px 0;
+  margin: 0 0 10px 0;
   letter-spacing: -0.01em;
 }
 
@@ -6778,211 +6776,37 @@ a {
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
-.mc-hero-meta-chip {
+.mc-hero-rating-clean {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  padding: 5px 12px;
-  border-radius: 8px;
-  font-size: 0.84rem;
-  font-weight: 600;
-  color: #334155;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  font-size: 0.9rem;
 }
 
-.mc-rating-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #ffffff;
-  border: 1px solid #fde68a;
-  padding: 4px 10px;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
-}
-
-.star-icon-filled {
-  color: #f59e0b;
-  fill: #f59e0b;
-}
-
-.rating-score {
-  font-size: 0.88rem;
+.rating-bold-score {
   font-weight: 800;
   color: #0f172a;
 }
 
-.mc-stat-divider {
-  width: 1px;
-  height: 14px;
-  background: #e2e8f0;
-}
-
-.mc-stat-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.88rem;
+.rating-review-count {
   color: #64748b;
   font-weight: 500;
+  font-size: 0.86rem;
 }
 
-.mc-stat-icon {
-  color: #64748b;
-}
-
-.mc-hero-tagline {
-  font-size: 0.96rem;
+.mc-hero-tagline-text {
+  font-size: 0.92rem;
   line-height: 1.6;
   color: #475569;
-  margin-bottom: 18px;
-  max-width: 680px;
-}
-
-/* Instructor Row */
-.mc-instructor-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 22px;
-  flex-wrap: wrap;
-}
-
-.mc-inst-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 1.5px solid #c9dfef;
-}
-
-.mc-inst-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.mc-inst-info {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.9rem;
-}
-
-.mc-inst-by {
-  color: #64748b;
-}
-
-.mc-inst-name {
-  font-weight: 700;
-  color: #00385E;
-}
-
-.mc-inst-cat-pipe {
-  color: #cbd5e1;
-  margin: 0 4px;
-}
-
-.mc-inst-categories {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.9rem;
-  color: #64748b;
-}
-
-.mc-cat-link {
-  color: #00385E;
-  font-weight: 700;
-}
-
-/* Hero CTA Buttons */
-.mc-hero-cta-group {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.mc-btn-primary-apply {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #00385E;
-  color: #ffffff;
-  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
-  font-size: 0.98rem;
-  font-weight: 700;
-  padding: 12px 28px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 6px 18px rgba(0, 56, 94, 0.3);
-  transition: all 0.25s ease;
-}
-
-.mc-btn-primary-apply:hover {
-  background: #002844;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(0, 56, 94, 0.45);
-}
-
-.mc-btn-secondary-preview {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #ffffff;
-  color: #00385E;
-  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
-  font-size: 0.98rem;
-  font-weight: 700;
-  padding: 11px 24px;
-  border-radius: 9999px;
-  border: 1.5px solid #00385E;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.mc-btn-secondary-preview:hover {
-  border-color: #00385E;
-  background: #f0f7fc;
-  color: #00385E;
-}
-
-.play-icon-fill {
-  color: #00385E;
-  fill: #00385E;
-}
-
-/* Hero Right Visual Side */
-.mc-hero-visual-side {
-  flex-shrink: 0;
-  width: clamp(280px, 32vw, 360px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.mc-hero-meditation-photo {
-  width: 100%;
-  height: auto;
-  max-height: 320px;
-  object-fit: contain;
-  filter: drop-shadow(0 14px 32px rgba(88, 80, 236, 0.18));
-  transition: transform 0.3s ease;
-}
-
-.mc-hero-meditation-photo:hover {
-  transform: translateY(-4px) scale(1.03);
+  margin: 0;
+  max-width: 720px;
 }
 
 /* ========================================================
-   INTEGRATED LUXURY TOP BAR (5 EQUAL VISUAL ITEMS DIVIDED BY VERTICAL LINES)
+   INTEGRATED LUXURY TOP BAR (NAVIGATION TABS)
    ======================================================== */
 .mc-integrated-topbar {
   display: grid;
@@ -6991,15 +6815,9 @@ a {
   border: 1.5px solid #e2e8f0;
   border-radius: 16px;
   padding: 6px;
-  margin-bottom: 26px;
+  margin-bottom: 12px;
   box-shadow: 0 2px 10px rgba(0, 56, 94, 0.03);
   gap: 8px;
-}
-
-@media (max-width: 860px) {
-  .mc-integrated-topbar {
-    grid-template-columns: 1fr;
-  }
 }
 
 .mc-topbar-item-btn {
@@ -7072,41 +6890,6 @@ a {
   font-weight: 800;
   padding: 2px 8px;
   border-radius: 999px;
-}
-
-.mc-topbar-item-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  white-space: nowrap;
-  padding: 4px 8px;
-}
-
-.mc-item-stacked-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.mc-item-stacked-text .item-label-bold {
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #00385E;
-  line-height: 1.2;
-}
-
-.mc-item-stacked-text .item-value-bold {
-  font-size: 0.86rem;
-  font-weight: 600;
-  color: #00385E;
-  line-height: 1.2;
-}
-
-.mc-topbar-sep-line {
-  width: 1.5px;
-  height: 32px;
-  background: #eef2f6;
-  flex-shrink: 0;
-  margin: 0 4px;
 }
 
 /* ========================================================
@@ -8622,12 +8405,383 @@ a {
   transform: translateY(-2px);
 }
 
-.link-copied-feedback {
-  display: block;
-  font-size: 0.78rem;
-  color: #10b981;
+/* ========================================================
+   ACCORDIONS, READ-MORE, AND MOBILE INTERACTION STYLES
+   ======================================================== */
+.mc-accordion-card {
+  transition: all 0.25s ease;
+  overflow: hidden;
+}
+
+.mc-accordion-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 0;
+}
+
+.mc-accordion-title-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mc-accordion-chevron {
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.mc-accordion-chevron.collapsed {
+  transform: rotate(-90deg);
+}
+
+.mc-accordion-content-body {
+  margin-top: 14px;
+  animation: mcAccordionFadeIn 0.25s ease;
+}
+
+@keyframes mcAccordionFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Read More Button for Reviews */
+.mc-read-more-btn {
+  background: none;
+  border: none;
+  color: #0284c7;
   font-weight: 700;
-  margin-top: 8px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  padding: 0 4px;
+  font-family: inherit;
+  display: inline;
+}
+
+.mc-read-more-btn:hover {
+  text-decoration: underline;
+  color: #0369a1;
+}
+
+/* Mobile Course Details Accordion & Inline Certificate */
+.mc-mobile-course-details-accordion {
+  display: none;
+}
+
+.mc-inline-cert-box {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Module Luxury Cards Responsive Details */
+.mc-module-card-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mc-module-img-thumb {
+  width: 68px;
+  height: 50px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.mc-module-img-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mc-module-index-num {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(0, 56, 94, 0.08) 0%, rgba(2, 132, 199, 0.12) 100%);
+  color: #00385E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(0, 56, 94, 0.15);
+}
+
+.mc-module-text-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mc-module-name-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #00385E;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.mc-module-desc-sub {
+  font-size: 0.85rem;
+  color: #64748B;
+  margin: 0;
+  line-height: 1.45;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.mc-module-action-col {
+  flex-shrink: 0;
+}
+
+.mc-btn-module-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #00385E;
+  font-weight: 700;
+  font-size: 0.84rem;
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mc-btn-module-action:hover {
+  background: #00385E;
+  border-color: #00385E;
+  color: #ffffff;
+}
+
+/* Empty State */
+.mc-empty-state-box {
+  padding: 40px 20px;
+  text-align: center;
+  background: #f8fafc;
+  border-radius: 14px;
+  border: 1.5px dashed #cbd5e1;
+  color: #64748b;
+}
+
+/* Live Meetings */
+.mc-live-meetings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.mc-live-meeting-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 10px rgba(0, 56, 94, 0.04);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  transition: all 0.25s ease;
+}
+
+.mc-live-meeting-card.is-live-now {
+  border-color: #ef4444;
+  box-shadow: 0 4px 18px rgba(239, 68, 68, 0.14);
+}
+
+.mc-btn-join-meeting {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 14px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #ffffff;
+  background: linear-gradient(135deg, #00385E 0%, #005a96 100%);
+  border-radius: 8px;
+  text-decoration: none;
+  box-shadow: 0 3px 10px rgba(0, 56, 94, 0.15);
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.mc-btn-join-meeting.live {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 3px 10px rgba(220, 38, 38, 0.25);
+}
+
+/* Sticky Bottom Action Bar (Mobile Only) */
+.mc-sticky-bottom-bar {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .mc-detail-page-wrapper {
+    padding-bottom: 110px;
+  }
+
+  .mc-fluid-container {
+    padding: 14px 14px 40px;
+  }
+
+  .mc-main-two-col-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .mc-main-right-sidebar {
+    display: none !important;
+  }
+
+  .mc-hero-video-column {
+    display: block;
+  }
+
+  .mc-mobile-course-details-accordion {
+    display: block;
+  }
+
+  .mc-hero-title {
+    font-size: 1.45rem;
+    line-height: 1.25;
+    margin-bottom: 6px;
+  }
+
+  .mc-hero-tagline-text {
+    font-size: 0.82rem;
+    line-height: 1.48;
+    color: #475569;
+    margin: 0;
+  }
+
+  .mc-hero-stats-row {
+    margin-bottom: 6px;
+  }
+
+  .mc-integrated-topbar {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    padding: 4px;
+    border-radius: 12px;
+  }
+
+  .mc-integrated-topbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mc-topbar-item-btn {
+    flex-shrink: 0;
+    width: auto;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    border-radius: 10px;
+  }
+
+  .mc-topbar-item-btn .mc-item-icon-circle {
+    width: 26px;
+    height: 26px;
+  }
+
+  .mc-card-section-box {
+    padding: 18px 16px;
+    border-radius: 14px;
+    margin-bottom: 14px;
+  }
+
+  .mc-card-header-title {
+    font-size: 1.05rem;
+  }
+
+  .mc-reviews-breakdown-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 16px;
+  }
+
+  .mc-big-score-box {
+    border-right: none;
+    border-bottom: 1.5px solid #e2e8f0;
+    padding-right: 0;
+    padding-bottom: 16px;
+  }
+
+  .score-number-display {
+    font-size: 2.8rem;
+  }
+
+  .mc-student-review-item {
+    padding: 16px;
+  }
+
+  .mc-sticky-bottom-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    padding: 12px 16px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    border-top: 1px solid #e2e8f0;
+    z-index: 999;
+    box-sizing: border-box;
+  }
+
+  .mc-btn-enroll-mobile {
+    width: 100%;
+    background: #00385E;
+    color: #ffffff;
+    font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+    font-size: 0.98rem;
+    font-weight: 800;
+    padding: 14px 20px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 56, 94, 0.25);
+    transition: all 0.2s ease;
+    text-align: center;
+  }
+
+  .mc-btn-enroll-mobile:hover,
+  .mc-btn-enroll-mobile:active {
+    background: #002844;
+    transform: scale(0.99);
+  }
 }
 
 /* ==========================================================================

@@ -34,7 +34,9 @@ import {
   MoreVertical,
   BarChart2,
   Radio,
-  ExternalLink
+  ExternalLink,
+  Heart,
+  Users
 } from 'lucide-react';
 import AuthRequiredModal from '../modals/AuthRequiredModal';
 import {
@@ -72,6 +74,47 @@ export default function MicrocredentialDetail({
   const [likedReviews, setLikedReviews] = useState({});
   const [hasLiked, setHasLiked] = useState({});
   const [failedModuleImages, setFailedModuleImages] = useState({});
+
+  // Mobile UI & Accordion state
+  const [collapsedSections, setCollapsedSections] = useState({
+    about: false,
+    reviews: false,
+    details: false
+  });
+  const [expandedReviews, setExpandedReviews] = useState({});
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [shareToast, setShareToast] = useState(false);
+
+  const toggleSection = (sectionKey) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }));
+  };
+
+  const toggleReviewExpand = (reviewId) => {
+    setExpandedReviews(prev => ({
+      ...prev,
+      [reviewId]: !prev[reviewId]
+    }));
+  };
+
+  const handleShareClick = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: courseData.title || 'Microcredential Course',
+        url: window.location.href
+      }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(window.location.href);
+      setShareToast(true);
+      setTimeout(() => setShareToast(false), 2500);
+    }
+  };
+
+  const toggleFavorite = () => {
+    setIsFavorite(prev => !prev);
+  };
 
   // Authentication Required Modal state
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -651,45 +694,101 @@ export default function MicrocredentialDetail({
 
   return (
     <div className="mc-detail-page-wrapper">
+      {/* Toast Notification for Share */}
+      {shareToast && (
+        <div className="mc-toast-copied-notification">
+          <span>Link copied to clipboard!</span>
+        </div>
+      )}
+
       <div className="mc-fluid-container mc-main-two-col-grid">
 
         {/* ========================================================
-            LEFT COLUMN (TABS NAVIGATION & CONTENT)
+            LEFT COLUMN (HEADER, HERO, TABS NAVIGATION & ACCORDIONS)
             ======================================================== */}
         <div className="mc-main-left-column">
 
-          {/* 1. Breadcrumbs */}
+          {/* 1. Top Navigation Bar (Mobile & Desktop) */}
           <div className="mc-breadcrumb-section">
-            <div className="mc-breadcrumb-trail">
-              <span className="breadcrumb-item linkable" onClick={onBack}>My Learning</span>
-              <span className="breadcrumb-divider">›</span>
-              <span className="breadcrumb-item active">{course.title || course.microcredentialCourseName}</span>
+            <div className="mc-nav-header-row">
+              <button type="button" className="mc-btn-back-link" onClick={onBack}>
+                <ArrowLeft size={18} />
+                <span className="mc-back-link-text">My Learning</span>
+              </button>
+
+              <div className="mc-nav-right-actions">
+                <button
+                  type="button"
+                  className={`mc-nav-icon-btn ${isFavorite ? 'active-favorite' : ''}`}
+                  onClick={toggleFavorite}
+                  title={isFavorite ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                  aria-label="Wishlist"
+                >
+                  <Heart size={19} fill={isFavorite ? '#ef4444' : 'none'} color={isFavorite ? '#ef4444' : '#475569'} />
+                </button>
+                <button
+                  type="button"
+                  className="mc-nav-icon-btn"
+                  onClick={handleShareClick}
+                  title="Share Course"
+                  aria-label="Share Course"
+                >
+                  <Share2 size={19} color="#475569" />
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* 2. Hero Header Block */}
+          {/* 2. Hero Header Block (Title, Stats, Tagline + Side-by-Side Video Card) */}
           <div className="mc-hero-header-block">
-            <h1 className="mc-hero-title">{course.title || course.microcredentialCourseName}</h1>
+            <div className="mc-hero-flex-layout">
+              {/* Left text column */}
+              <div className="mc-hero-text-column">
+                <h1 className="mc-hero-title">
+                  {course.title || course.microcredentialCourseName || 'Microcredential Course'}
+                </h1>
 
-            {/* Quick Rating Row */}
-            <div className="mc-hero-stats-row">
-              <div className="mc-hero-rating-clean">
-                <Star size={16} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
-                <span className="rating-bold-score">
-                  {reviewsList.length > 0 
-                    ? (reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)
-                    : '5.0'}
-                </span>
-                <span className="rating-review-count">
-                  ({reviewsList.length > 0 ? reviewsList.length : 1} Verified {reviewsList.length === 1 || reviewsList.length === 0 ? 'Review' : 'Reviews'})
-                </span>
+                {/* Quick Rating Row */}
+                <div className="mc-hero-stats-row">
+                  <div className="mc-hero-rating-clean">
+                    <Star size={16} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+                    <span className="rating-bold-score">
+                      {reviewsList.length > 0
+                        ? (reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)
+                        : '5.0'}
+                    </span>
+                    <span className="rating-review-count">
+                      ({reviewsList.length > 0 ? reviewsList.length : 1} Verified {reviewsList.length === 1 || reviewsList.length === 0 ? 'Review' : 'Reviews'})
+                    </span>
+                  </div>
+                </div>
+
+                {/* Course Subtitle / Tagline */}
+                <p className="mc-hero-tagline-text">
+                  {course.description || course.about || 'Learn practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life.'}
+                </p>
+              </div>
+
+              {/* Right Video Thumbnail Card (Side-by-side on mobile / header) */}
+              <div className="mc-hero-video-column">
+                <div
+                  className="mc-hero-video-card"
+                  onClick={handlePlayIntroVideo}
+                  title="Click to preview course introduction"
+                >
+                  <img
+                    src={courseData.thumbnail || initialCourse?.thumbnail || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80'}
+                    alt={courseData.title || initialCourse?.title}
+                    className="mc-hero-video-thumbnail"
+                  />
+                  <div className="mc-hero-video-overlay">
+                    <div className="mc-hero-play-circle">
+                      <Play size={20} className="play-triangle-icon" />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Course Subtitle / Tagline */}
-            <p className="mc-hero-tagline-text">
-              {course.description || course.about || 'Learn practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life.'}
-            </p>
           </div>
 
           {/* 3. INTEGRATED TOP BAR (NAVIGATION TABS) */}
@@ -700,8 +799,8 @@ export default function MicrocredentialDetail({
               className={`mc-topbar-item-btn ${activeTab === 'info' ? 'active' : ''}`}
               onClick={() => setActiveTab('info')}
             >
-              <div className="mc-item-icon-circle purple-soft">
-                <Building2 size={17} />
+              <div className="mc-item-icon-circle blue-soft">
+                <FileText size={17} />
               </div>
               <span className="mc-item-btn-text">Microcredential Information</span>
             </button>
@@ -747,67 +846,360 @@ export default function MicrocredentialDetail({
           {/* 4. ACTIVE TAB CONTENT PANES */}
           <div className="mc-single-page-sections-stack">
 
-            {/* TAB 1: MICROCREDENTIAL INFORMATION */}
+            {/* TAB 1: MICROCREDENTIAL INFORMATION (COLLAPSIBLE ACCORDIONS) */}
             {activeTab === 'info' && (
               <>
-                {/* About This Course */}
-                {(course.about || course.aboutMicrocredentialCourse || (!course.description && !course.microcredentialCourseDescription)) && (
-                  <div className="mc-card-section-box">
-                    <div className="mc-card-header-row">
+                {/* 1. About This Course Accordion Card */}
+                <div className="mc-card-section-box mc-accordion-card">
+                  <div
+                    className="mc-card-header-row mc-accordion-header-row"
+                    onClick={() => toggleSection('about')}
+                  >
+                    <div className="mc-accordion-title-group">
                       <div className="mc-card-header-icon blue-squircle">
                         <FileText size={18} />
                       </div>
                       <h2 className="mc-card-header-title">About This Course</h2>
                     </div>
-                    <div className="mc-card-body-paragraph">
-                      {renderFormattedContent(
-                        course.about || course.aboutMicrocredentialCourse,
-                        "This course provides a comprehensive understanding of stress, its causes, and its effects on mental and physical health. You will learn practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life. With interactive lessons and real-world examples, this course will help you build healthier habits and a more balanced lifestyle."
+                    <div className={`mc-accordion-chevron ${collapsedSections.about ? 'collapsed' : ''}`}>
+                      <ChevronDown size={20} />
+                    </div>
+                  </div>
+
+                  {!collapsedSections.about && (
+                    <div className="mc-accordion-content-body">
+                      <div className="mc-card-body-paragraph">
+                        {renderFormattedContent(
+                          course.about || course.aboutMicrocredentialCourse || course.description || course.microcredentialCourseDescription,
+                          "This microcredential helps learners understand social issues, diversity, inclusion, community responsibility, digital citizenship, and sustainable social development. Learners develop the awareness and practical skills needed to become responsible and active members of society."
+                        )}
+                      </div>
+
+                      {/* What Will You Learn? (if present) */}
+                      {learnList.length > 0 && (
+                        <div className="mc-learn-box-card" style={{ marginTop: '18px' }}>
+                          <h3 className="mc-learn-box-heading">What Will You Learn?</h3>
+                          <div className="mc-learn-grid-2col">
+                            {learnList.map((outcome, idx) => (
+                              <div key={idx} className="mc-learn-item-row">
+                                <div className="mc-learn-blue-check">
+                                  <Check size={12} strokeWidth={3.5} />
+                                </div>
+                                <span className="mc-learn-item-text">{outcome}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
-                {/* Course Description */}
-                {(course.description || course.microcredentialCourseDescription) &&
-                  (String(course.description || course.microcredentialCourseDescription).trim() !== String(course.about || course.aboutMicrocredentialCourse).trim()) && (
-                  <div className="mc-card-section-box">
-                    <div className="mc-card-header-row">
+                {/* 2. Employee Reviews Accordion Card */}
+                <div className="mc-card-section-box mc-accordion-card mc-reviews-creative-card">
+                  <div
+                    className="mc-card-header-row mc-accordion-header-row"
+                    onClick={() => toggleSection('reviews')}
+                  >
+                    <div className="mc-accordion-title-group">
                       <div className="mc-card-header-icon blue-squircle">
-                        <FileCheck size={18} />
+                        <Star size={18} />
                       </div>
-                      <h2 className="mc-card-header-title">Course Description</h2>
+                      <div>
+                        <h2 className="mc-card-header-title">Employee Reviews</h2>
+                        <p className="mc-card-header-subtitle">Verified employee feedback and rating breakdown</p>
+                      </div>
                     </div>
-                    <div className="mc-card-body-paragraph">
-                      {renderFormattedContent(course.description || course.microcredentialCourseDescription)}
+                    <div className={`mc-accordion-chevron ${collapsedSections.reviews ? 'collapsed' : ''}`}>
+                      <ChevronDown size={20} />
                     </div>
                   </div>
-                )}
 
-                {/* What Will You Learn? Box (if present) */}
-                {learnList.length > 0 && (
-                  <div className="mc-learn-box-card">
-                    <h3 className="mc-learn-box-heading">What Will You Learn?</h3>
-                    <div className="mc-learn-grid-2col">
-                      {learnList.map((outcome, idx) => (
-                        <div key={idx} className="mc-learn-item-row">
-                          <div className="mc-learn-blue-check">
-                            <Check size={12} strokeWidth={3.5} />
+                  {!collapsedSections.reviews && (
+                    <div className="mc-accordion-content-body">
+                      {/* Rating Summary & Star Breakdown Grid */}
+                      <div className="mc-reviews-breakdown-grid">
+                        {/* Big Score Box */}
+                        <div className="mc-big-score-box">
+                          <div className="score-number-display">
+                            {reviewsList.length > 0
+                              ? (reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)
+                              : '5.0'}
                           </div>
-                          <span className="mc-learn-item-text">{outcome}</span>
+                          <div className="score-stars-row">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                size={17}
+                                className="star-icon-filled"
+                                style={{ color: '#f59e0b', fill: '#f59e0b' }}
+                              />
+                            ))}
+                          </div>
+                          <span className="score-total-count">
+                            Total {reviewsList.length > 0 ? reviewsList.length : 1} Verified {reviewsList.length === 1 || reviewsList.length === 0 ? 'Rating' : 'Ratings'}
+                          </span>
                         </div>
-                      ))}
+
+                        {/* 5-Star Distribution Bars */}
+                        <div className="mc-rating-bars-stack">
+                          {(() => {
+                            const totalC = reviewsList.length > 0 ? reviewsList.length : 1;
+                            const c5 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 5).length : 1;
+                            const c4 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 4).length : 0;
+                            const c3 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 3).length : 0;
+                            const c2 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 2).length : 0;
+                            const c1 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 1).length : 0;
+
+                            return [
+                              { stars: 5, pct: Math.round((c5 / totalC) * 100), count: `${c5} Ratings` },
+                              { stars: 4, pct: Math.round((c4 / totalC) * 100), count: `${c4} Ratings` },
+                              { stars: 3, pct: Math.round((c3 / totalC) * 100), count: `${c3} Ratings` },
+                              { stars: 2, pct: Math.round((c2 / totalC) * 100), count: `${c2} Ratings` },
+                              { stars: 1, pct: Math.round((c1 / totalC) * 100), count: `${c1} Ratings` }
+                            ].map((bar, bIdx) => (
+                              <div key={bIdx} className="mc-rating-bar-row">
+                                <span className="bar-star-label">★ {bar.stars}</span>
+                                <div className="bar-track-line">
+                                  <div className="bar-fill-line" style={{ width: `${bar.pct}%` }} />
+                                </div>
+                                <span className="bar-count-label">{bar.count}</span>
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      </div>
+
+                      {/* Verified Student Testimonial List */}
+                      {reviewsList.length > 0 ? (
+                        reviewsList.map((rev, rIdx) => {
+                          const revId = rev.microcredentialCourseReviewId || rev.id || rIdx;
+                          const revName = rev.studentName || 'Verified Employee';
+                          const initials = revName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'AS';
+                          const fullReviewText = rev.reviewDescription || "I am currently pursuing the Stress Management course on this LMS, and my learning experience has been excellent so far. The course content is well-structured, engaging, and easy to follow, with interactive lessons and assessments that enhance my understanding. I am learning practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life.";
+                          const isExpanded = Boolean(expandedReviews[revId]);
+                          const isLong = fullReviewText.length > 160;
+
+                          return (
+                            <div key={revId} className="mc-student-review-item">
+                              <div className="student-review-author-row">
+                                <div className="author-identity-group">
+                                  <div className="student-avatar-wrap">
+                                    <span className="student-avatar-initials">{initials}</span>
+                                  </div>
+                                  <div className="student-author-info">
+                                    <h4 className="student-name-heading">{revName}</h4>
+                                    <div className="student-stars-and-date">
+                                      <div className="student-mini-stars">
+                                        {[...Array(Number(rev.reviewInStar) || 5)].map((_, i) => (
+                                          <Star key={i} size={13} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+                                        ))}
+                                      </div>
+                                      <span className="review-timestamp">• {rev.createdOnText || '2 months ago'}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <p className="student-review-body-text">
+                                {isLong && !isExpanded ? `${fullReviewText.substring(0, 160)}...` : fullReviewText}
+                                {isLong && (
+                                  <button
+                                    type="button"
+                                    className="mc-read-more-btn"
+                                    onClick={() => toggleReviewExpand(revId)}
+                                  >
+                                    {isExpanded ? ' Read less' : ' Read more'}
+                                  </button>
+                                )}
+                              </p>
+
+                              <div className="student-review-action-row">
+                                <button
+                                  type="button"
+                                  className={`btn-like-pill ${hasLiked[revId] ? 'liked' : ''}`}
+                                  onClick={() => handleToggleLike(revId)}
+                                >
+                                  <ThumbsUp size={13} fill={hasLiked[revId] ? 'currentColor' : 'none'} />
+                                  <span>Like ({likedReviews[revId] !== undefined ? likedReviews[revId] : (rev.reviewLikeCount || 0)})</span>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="mc-student-review-item">
+                          <div className="student-review-author-row">
+                            <div className="author-identity-group">
+                              <div className="student-avatar-wrap">
+                                <span className="student-avatar-initials">AS</span>
+                              </div>
+                              <div className="student-author-info">
+                                <h4 className="student-name-heading">Anjali Sharma</h4>
+                                <div className="student-stars-and-date">
+                                  <div className="student-mini-stars">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star key={i} size={13} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+                                    ))}
+                                  </div>
+                                  <span className="review-timestamp">• 2 months ago</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <p className="student-review-body-text">
+                            {expandedReviews['sample-1']
+                              ? "I am currently pursuing the Stress Management course on this LMS, and my learning experience has been excellent so far. The course content is well-structured, engaging, and easy to follow, with interactive lessons and assessments that enhance my understanding. I am learning practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life. Overall, this course is helping me build valuable skills that I can apply in my daily life."
+                              : "I am currently pursuing the Stress Management course on this LMS, and my learning experience has been excellent so far. The course content is well-structured, engaging, and easy to follow..."}
+                            <button
+                              type="button"
+                              className="mc-read-more-btn"
+                              onClick={() => toggleReviewExpand('sample-1')}
+                            >
+                              {expandedReviews['sample-1'] ? ' Read less' : ' Read more'}
+                            </button>
+                          </p>
+
+                          <div className="student-review-action-row">
+                            <button
+                              type="button"
+                              className={`btn-like-pill ${hasLiked['sample-1'] ? 'liked' : ''}`}
+                              onClick={() => handleToggleLike('sample-1')}
+                            >
+                              <ThumbsUp size={13} fill={hasLiked['sample-1'] ? 'currentColor' : 'none'} />
+                              <span>Like ({likedReviews['sample-1'] !== undefined ? likedReviews['sample-1'] : 2})</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Course Details Accordion Card (Mobile & Responsive) */}
+                <div className="mc-card-section-box mc-accordion-card mc-mobile-course-details-accordion">
+                  <div
+                    className="mc-card-header-row mc-accordion-header-row"
+                    onClick={() => toggleSection('details')}
+                  >
+                    <div className="mc-accordion-title-group">
+                      <div className="mc-card-header-icon blue-squircle">
+                        <FileText size={18} />
+                      </div>
+                      <h2 className="mc-card-header-title">Course Details</h2>
+                    </div>
+                    <div className={`mc-accordion-chevron ${collapsedSections.details ? 'collapsed' : ''}`}>
+                      <ChevronDown size={20} />
                     </div>
                   </div>
-                )}
+
+                  {!collapsedSections.details && (
+                    <div className="mc-accordion-content-body">
+                      <div className="mc-includes-table">
+                        {/* Row 1: Level */}
+                        <div className="mc-include-row">
+                          <div className="include-key-cell">
+                            <Users size={15} className="inc-icon" />
+                            <span>Level</span>
+                          </div>
+                          <div className="include-val-cell">
+                            {courseData.courseLevel || courseData.fullLevel || courseData.level || 'Beginner (Level 1)'}
+                          </div>
+                        </div>
+
+                        {/* Row 2: Duration */}
+                        <div className="mc-include-row">
+                          <div className="include-key-cell">
+                            <Clock size={15} className="inc-icon" />
+                            <span>Duration</span>
+                          </div>
+                          <div className="include-val-cell">
+                            {courseData.duration || courseData.microcredentialCourseDuration || '3 Month(s)'}
+                          </div>
+                        </div>
+
+                        {/* Row 3: Fees */}
+                        <div className="mc-include-row">
+                          <div className="include-key-cell">
+                            <Zap size={15} className="inc-icon" />
+                            <span>Microcredential Fees</span>
+                          </div>
+                          <div className="include-val-cell bold-price">
+                            {courseData.price !== undefined && courseData.price !== null && Number(courseData.price) > 0
+                              ? `₹ ${Number(courseData.price).toLocaleString()}/-`
+                              : (courseData.price === 0 || courseData.price === '0' ? 'Free' : '₹ 7,000/-')}
+                          </div>
+                        </div>
+
+                        {/* Row 4: Format */}
+                        <div className="mc-include-row">
+                          <div className="include-key-cell">
+                            <FileText size={15} className="inc-icon" />
+                            <span>Format</span>
+                          </div>
+                          <div className="include-val-cell">
+                            {courseData.format || 'Online'}
+                          </div>
+                        </div>
+
+                        {/* Row 5: Language */}
+                        <div className="mc-include-row">
+                          <div className="include-key-cell">
+                            <Globe size={15} className="inc-icon" />
+                            <span>Language</span>
+                          </div>
+                          <div className="include-val-cell" style={{ textTransform: 'uppercase' }}>
+                            {courseData.language || 'ENGLISH'}
+                          </div>
+                        </div>
+
+                        {/* Row 6: Prerequisites */}
+                        <div className="mc-include-row">
+                          <div className="include-key-cell">
+                            <ShieldCheck size={15} className="inc-icon" />
+                            <span>Prerequisites</span>
+                          </div>
+                          <div className="include-val-cell">
+                            {courseData.prerequisites || 'None'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Certificate Showcase Card Inside Details */}
+                      <div className="mc-inline-cert-box">
+                        <div className="mc-sidebar-cert-header">
+                          <div className="mc-header-icon-box blue-tint">
+                            <Award size={18} />
+                          </div>
+                          <div>
+                            <h4 className="mc-sidebar-cert-title">Certificate</h4>
+                            <p className="mc-sidebar-cert-subtitle">Earn a verifiable certificate upon successful completion of this course.</p>
+                          </div>
+                        </div>
+
+                        <div className="mc-official-cert-box">
+                          <div className="official-cert-left">
+                            <div className="official-check-circle">
+                              <Check size={13} strokeWidth={3.5} />
+                            </div>
+                            <div>
+                              <div className="official-cert-name">Official Certificate</div>
+                              <div className="official-cert-tag">Get certified and showcase your skills</div>
+                            </div>
+                          </div>
+                          <ChevronRight size={18} className="official-arrow-icon" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             )}
 
             {/* TAB 2: MICROCREDENTIALS CONTENT */}
             {activeTab === 'content' && (
               <div className="mc-content-luxury-pane">
-
-                {/* Detailed Module Topics List */}
                 {topicsList.length > 0 ? (
                   <div className="mc-luxury-modules-list" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     {topicsList.map((item, idx) => {
@@ -828,122 +1220,38 @@ export default function MicrocredentialDetail({
                             selectedModule: item,
                             ...item
                           })}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '20px',
-                            padding: '18px 24px',
-                            background: '#ffffff',
-                            borderRadius: '16px',
-                            border: '1.5px solid #e2e8f0',
-                            cursor: 'pointer',
-                            transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-                            boxShadow: '0 2px 10px rgba(0, 56, 94, 0.03)'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.borderColor = '#00385E';
-                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 56, 94, 0.08)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.borderColor = '#e2e8f0';
-                            e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 56, 94, 0.03)';
-                          }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '18px', flex: 1, minWidth: 0 }}>
-                            {/* Module Index or Banner Photo */}
+                          <div className="mc-module-card-left">
                             {showImage ? (
-                              <div style={{
-                                width: '72px',
-                                height: '52px',
-                                borderRadius: '10px',
-                                overflow: 'hidden',
-                                flexShrink: 0,
-                                background: '#f1f5f9',
-                                border: '1px solid #e2e8f0'
-                              }}>
+                              <div className="mc-module-img-thumb">
                                 <img
                                   src={moduleImg}
                                   alt={item.moduleName || item.topicName || `Module ${idx + 1}`}
                                   onError={() => {
                                     setFailedModuleImages(prev => ({ ...prev, [itemKey]: true }));
                                   }}
-                                  style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover'
-                                  }}
                                 />
                               </div>
                             ) : (
-                              <div style={{
-                                width: '48px',
-                                height: '48px',
-                                borderRadius: '12px',
-                                background: 'linear-gradient(135deg, rgba(0, 56, 94, 0.08) 0%, rgba(2, 132, 199, 0.12) 100%)',
-                                color: '#00385E',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 800,
-                                fontSize: '1.05rem',
-                                flexShrink: 0,
-                                border: '1.5px solid rgba(0, 56, 94, 0.15)'
-                              }}>
+                              <div className="mc-module-index-num">
                                 {String(idx + 1).padStart(2, '0')}
                               </div>
                             )}
 
-                            {/* Module Text Info */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0, flex: 1 }}>
-                              <h4 style={{
-                                fontSize: '1.02rem',
-                                fontWeight: 700,
-                                color: '#00385E',
-                                margin: 0,
-                                lineHeight: 1.35
-                              }}>
+                            <div className="mc-module-text-info">
+                              <h4 className="mc-module-name-title">
                                 {item.moduleName || item.topicName || item.title || `Module ${idx + 1}`}
                               </h4>
                               {(item.moduleDescription || item.description) && (
-                                <p style={{
-                                  fontSize: '0.86rem',
-                                  color: '#64748B',
-                                  margin: 0,
-                                  lineHeight: 1.45,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: 'vertical'
-                                }}>
+                                <p className="mc-module-desc-sub">
                                   {item.moduleDescription || item.description}
                                 </p>
                               )}
                             </div>
                           </div>
 
-                          {/* Action Button */}
-                          <div style={{ flexShrink: 0 }}>
-                            <button
-                              type="button"
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                background: '#f8fafc',
-                                border: '1px solid #cbd5e1',
-                                color: '#00385E',
-                                fontWeight: 700,
-                                fontSize: '0.84rem',
-                                padding: '8px 18px',
-                                borderRadius: '10px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                              }}
-                            >
+                          <div className="mc-module-action-col">
+                            <button type="button" className="mc-btn-module-action">
                               <PlayCircle size={15} />
                               <span>Explore Module</span>
                             </button>
@@ -953,22 +1261,14 @@ export default function MicrocredentialDetail({
                     })}
                   </div>
                 ) : (
-                  <div style={{
-                    padding: '40px 20px',
-                    textAlign: 'center',
-                    background: '#f8fafc',
-                    borderRadius: '14px',
-                    border: '1.5px dashed #cbd5e1',
-                    color: '#64748b'
-                  }}>
-                    <p style={{ margin: 0, fontSize: '0.92rem' }}>No modules available for this course yet.</p>
+                  <div className="mc-empty-state-box">
+                    <p>No modules available for this course yet.</p>
                   </div>
                 )}
-
               </div>
             )}
 
-            {/* TAB 3: LIVE MASTERCLASSES / MEETINGS */}
+            {/* TAB 3: LIVE MASTERCLASSES */}
             {activeTab === 'meetings' && (
               <div className="mc-content-luxury-pane">
                 <div className="mc-card-section-box" style={{ marginBottom: 0 }}>
@@ -995,15 +1295,7 @@ export default function MicrocredentialDetail({
                       <span>Loading live sessions...</span>
                     </div>
                   ) : liveMeetingsList.length === 0 ? (
-                    <div style={{
-                      padding: '48px 24px',
-                      textAlign: 'center',
-                      background: '#f8fafc',
-                      borderRadius: '14px',
-                      border: '1.5px dashed #cbd5e1',
-                      color: '#64748b',
-                      marginTop: '12px'
-                    }}>
+                    <div className="mc-empty-state-box">
                       <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#e0f2fe', color: '#0284c7', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
                         <Radio size={24} />
                       </div>
@@ -1015,12 +1307,7 @@ export default function MicrocredentialDetail({
                       </p>
                     </div>
                   ) : (
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                      gap: '18px',
-                      marginTop: '16px'
-                    }}>
+                    <div className="mc-live-meetings-grid">
                       {liveMeetingsList.map((meeting) => {
                         const isLiveNow = (meeting.liveStatus || '').toLowerCase().includes('live');
                         const isUpcoming = (meeting.liveStatus || '').toLowerCase().includes('upcoming');
@@ -1031,22 +1318,10 @@ export default function MicrocredentialDetail({
                         return (
                           <div
                             key={meeting.meetingId || meeting.id}
-                            style={{
-                              background: '#ffffff',
-                              border: isLiveNow ? '1.5px solid #ef4444' : '1.5px solid #e2e8f0',
-                              borderRadius: '16px',
-                              padding: '18px 20px',
-                              boxShadow: isLiveNow ? '0 4px 18px rgba(239, 68, 68, 0.14)' : '0 2px 10px rgba(0, 56, 94, 0.04)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              justifyContent: 'space-between',
-                              gap: '14px',
-                              transition: 'all 0.25s ease'
-                            }}
+                            className={`mc-live-meeting-card ${isLiveNow ? 'is-live-now' : ''}`}
                           >
                             <div>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                {/* Source Type Tag */}
                                 <span style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
@@ -1063,7 +1338,6 @@ export default function MicrocredentialDetail({
                                   {isGoogle ? 'Google Meet' : (isZoom ? 'Zoom' : (meeting.sourceType || 'Live Meeting'))}
                                 </span>
 
-                                {/* Status Tag */}
                                 <span style={{
                                   fontSize: '0.72rem',
                                   fontWeight: 800,
@@ -1083,50 +1357,28 @@ export default function MicrocredentialDetail({
                                 </span>
                               </div>
 
-                              {/* Meeting Title */}
                               <h4 style={{ margin: '0 0 6px 0', fontSize: '0.98rem', fontWeight: 800, color: '#00385E', lineHeight: 1.38 }}>
                                 {meeting.title || meeting.meetingTitle || 'Live Expert Masterclass'}
                               </h4>
 
-                              {/* Description */}
                               {(meeting.description || meeting.meetingDescription) && (
                                 <p style={{ margin: '0 0 10px 0', fontSize: '0.84rem', color: '#64748b', lineHeight: 1.48 }}>
                                   {meeting.description || meeting.meetingDescription}
                                 </p>
                               )}
 
-                              {/* Date / Time Schedule */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#475569', fontWeight: 600 }}>
                                 <Clock size={14} style={{ color: '#0284C7', flexShrink: 0 }} />
                                 <span>{meeting.startDateTime || meeting.startDate || 'Schedule TBA'}</span>
                               </div>
                             </div>
 
-                            {/* Join Link Button */}
                             {meeting.joinLink && !isCompleted && (
                               <a
                                 href={meeting.joinLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '8px',
-                                  width: '100%',
-                                  padding: '9px 14px',
-                                  fontSize: '0.86rem',
-                                  fontWeight: 800,
-                                  color: '#ffffff',
-                                  background: isLiveNow
-                                    ? 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'
-                                    : 'linear-gradient(135deg, #00385E 0%, #005a96 100%)',
-                                  borderRadius: '8px',
-                                  textDecoration: 'none',
-                                  boxShadow: isLiveNow ? '0 3px 10px rgba(220, 38, 38, 0.25)' : '0 3px 10px rgba(0, 56, 94, 0.15)',
-                                  transition: 'all 0.2s ease',
-                                  boxSizing: 'border-box'
-                                }}
+                                className={`mc-btn-join-meeting ${isLiveNow ? 'live' : ''}`}
                               >
                                 <span>{isLiveNow ? 'Join Live Now' : 'Join Live Session'}</span>
                                 <ExternalLink size={14} />
@@ -1141,162 +1393,12 @@ export default function MicrocredentialDetail({
               </div>
             )}
 
-            {/* EMPLOYEE REVIEWS SECTION (ALWAYS VISIBLE UNDER COURSE OVERVIEW) */}
-            <div className="mc-card-section-box mc-reviews-creative-card">
-              <div className="mc-card-header-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div className="mc-card-header-icon blue-squircle">
-                    <Star size={18} />
-                  </div>
-                  <div>
-                    <h2 className="mc-card-header-title">Employee Reviews</h2>
-                    <p className="mc-card-header-subtitle">Verified employee feedback and rating breakdown</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Rating Summary & Star Breakdown Grid */}
-              <div className="mc-reviews-breakdown-grid">
-                {/* Big Score Box */}
-                <div className="mc-big-score-box">
-                  <div className="score-number-display">
-                    {reviewsList.length > 0 
-                      ? (reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)
-                      : '5.0'}
-                  </div>
-                  <div className="score-stars-row">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        size={17}
-                        className="star-icon-filled"
-                        style={{ color: '#f59e0b', fill: '#f59e0b' }}
-                      />
-                    ))}
-                  </div>
-                  <span className="score-total-count">
-                    Total {reviewsList.length > 0 ? reviewsList.length : 1} Verified {reviewsList.length === 1 || reviewsList.length === 0 ? 'Rating' : 'Ratings'}
-                  </span>
-                </div>
-
-                {/* 5-Star Distribution Bars */}
-                <div className="mc-rating-bars-stack">
-                  {(() => {
-                    const totalC = reviewsList.length > 0 ? reviewsList.length : 1;
-                    const c5 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 5).length : 1;
-                    const c4 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 4).length : 0;
-                    const c3 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 3).length : 0;
-                    const c2 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 2).length : 0;
-                    const c1 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 1).length : 0;
-
-                    return [
-                      { stars: 5, pct: Math.round((c5 / totalC) * 100), count: `${c5} Ratings` },
-                      { stars: 4, pct: Math.round((c4 / totalC) * 100), count: `${c4} Ratings` },
-                      { stars: 3, pct: Math.round((c3 / totalC) * 100), count: `${c3} Ratings` },
-                      { stars: 2, pct: Math.round((c2 / totalC) * 100), count: `${c2} Ratings` },
-                      { stars: 1, pct: Math.round((c1 / totalC) * 100), count: `${c1} Ratings` }
-                    ].map((bar, bIdx) => (
-                      <div key={bIdx} className="mc-rating-bar-row">
-                        <span className="bar-star-label">★ {bar.stars}</span>
-                        <div className="bar-track-line">
-                          <div className="bar-fill-line" style={{ width: `${bar.pct}%` }} />
-                        </div>
-                        <span className="bar-count-label">{bar.count}</span>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </div>
-
-              {/* Verified Student Testimonial List */}
-              {reviewsList.length > 0 ? (
-                reviewsList.map((rev, rIdx) => {
-                  const revId = rev.microcredentialCourseReviewId || rev.id || rIdx;
-                  const revName = rev.studentName || 'Verified Employee';
-                  const initials = revName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'AS';
-                  return (
-                    <div key={revId} className="mc-student-review-item">
-                      <div className="student-review-author-row">
-                        <div className="author-identity-group">
-                          <div className="student-avatar-wrap">
-                            <span className="student-avatar-initials">{initials}</span>
-                          </div>
-                          <div className="student-author-info">
-                            <h4 className="student-name-heading">{revName}</h4>
-                            <div className="student-stars-and-date">
-                              <div className="student-mini-stars">
-                                {[...Array(Number(rev.reviewInStar) || 5)].map((_, i) => (
-                                  <Star key={i} size={13} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
-                                ))}
-                              </div>
-                              <span className="review-timestamp">• {rev.createdOnText || '3 months ago'}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <p className="student-review-body-text">
-                        {rev.reviewDescription || "I am currently pursuing the Stress Management course on this LMS, and my learning experience has been excellent so far. The course content is well-structured, engaging, and easy to follow, with interactive lessons and assessments that enhance my understanding. I am learning practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life. Overall, this course is helping me build valuable skills that I can apply in my daily life."}
-                      </p>
-
-                      <div className="student-review-action-row">
-                        <button
-                          type="button"
-                          className={`btn-like-pill ${hasLiked[revId] ? 'liked' : ''}`}
-                          onClick={() => handleToggleLike(revId)}
-                        >
-                          <ThumbsUp size={13} fill={hasLiked[revId] ? 'currentColor' : 'none'} />
-                          <span>Like ({likedReviews[revId] !== undefined ? likedReviews[revId] : (rev.reviewLikeCount || 0)})</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="mc-student-review-item">
-                  <div className="student-review-author-row">
-                    <div className="author-identity-group">
-                      <div className="student-avatar-wrap">
-                        <span className="student-avatar-initials">AS</span>
-                      </div>
-                      <div className="student-author-info">
-                        <h4 className="student-name-heading">Anjali Sharma</h4>
-                        <div className="student-stars-and-date">
-                          <div className="student-mini-stars">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} size={13} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
-                            ))}
-                          </div>
-                          <span className="review-timestamp">• 3 months ago</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className="student-review-body-text">
-                    I am currently pursuing the Stress Management course on this LMS, and my learning experience has been excellent so far. The course content is well-structured, engaging, and easy to follow, with interactive lessons and assessments that enhance my understanding. I am learning practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life. Overall, this course is helping me build valuable skills that I can apply in my daily life.
-                  </p>
-
-                  <div className="student-review-action-row">
-                    <button
-                      type="button"
-                      className={`btn-like-pill ${hasLiked['sample-1'] ? 'liked' : ''}`}
-                      onClick={() => handleToggleLike('sample-1')}
-                    >
-                      <ThumbsUp size={13} fill={hasLiked['sample-1'] ? 'currentColor' : 'none'} />
-                      <span>Like ({likedReviews['sample-1'] !== undefined ? likedReviews['sample-1'] : 2})</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
           </div>
 
         </div>
 
         {/* ========================================================
-            RIGHT COLUMN: STICKY SIDEBAR
+            RIGHT COLUMN: STICKY SIDEBAR (DESKTOP VIEW)
             ======================================================== */}
         <div className="mc-main-right-sidebar">
 
@@ -1320,7 +1422,7 @@ export default function MicrocredentialDetail({
             </div>
           </div>
 
-          {/* 2. "Course Details" Table Card (Clean non-repetitive rows) */}
+          {/* 2. "Course Details" Table Card */}
           <div className="mc-sidebar-card-box">
             <h3 className="mc-sidebar-card-title">Course Details</h3>
 
@@ -1328,11 +1430,11 @@ export default function MicrocredentialDetail({
               {/* Row 1: Level */}
               <div className="mc-include-row">
                 <div className="include-key-cell">
-                  <Layers size={15} className="inc-icon" />
+                  <Users size={15} className="inc-icon" />
                   <span>Level</span>
                 </div>
                 <div className="include-val-cell">
-                  {courseData.courseLevel || courseData.fullLevel || courseData.level || 'Beginner'}
+                  {courseData.courseLevel || courseData.fullLevel || courseData.level || 'Beginner (Level 1)'}
                 </div>
               </div>
 
@@ -1343,20 +1445,20 @@ export default function MicrocredentialDetail({
                   <span>Duration</span>
                 </div>
                 <div className="include-val-cell">
-                  {courseData.duration || courseData.microcredentialCourseDuration || '2 Hours'}
+                  {courseData.duration || courseData.microcredentialCourseDuration || '3 Month(s)'}
                 </div>
               </div>
 
               {/* Row 3: Fees */}
               <div className="mc-include-row">
                 <div className="include-key-cell">
-                  <DollarSign size={15} className="inc-icon" />
+                  <Zap size={15} className="inc-icon" />
                   <span>Microcredential Fees</span>
                 </div>
                 <div className="include-val-cell bold-price">
                   {courseData.price !== undefined && courseData.price !== null && Number(courseData.price) > 0
                     ? `₹ ${Number(courseData.price).toLocaleString()}/-`
-                    : 'Free'}
+                    : (courseData.price === 0 || courseData.price === '0' ? 'Free' : '₹ 7,000/-')}
                 </div>
               </div>
 
@@ -1377,8 +1479,8 @@ export default function MicrocredentialDetail({
                   <Globe size={15} className="inc-icon" />
                   <span>Language</span>
                 </div>
-                <div className="include-val-cell">
-                  {courseData.language || 'English'}
+                <div className="include-val-cell" style={{ textTransform: 'uppercase' }}>
+                  {courseData.language || 'ENGLISH'}
                 </div>
               </div>
 
@@ -1423,6 +1525,19 @@ export default function MicrocredentialDetail({
 
         </div>
 
+      </div>
+
+      {/* ========================================================
+          STICKY BOTTOM BAR (MOBILE VIEW)
+          ======================================================== */}
+      <div className="mc-sticky-bottom-bar">
+        <button
+          type="button"
+          className="mc-btn-enroll-mobile"
+          onClick={() => onWatchCourse(courseData || initialCourse)}
+        >
+          Enroll Now
+        </button>
       </div>
 
       {/* Authentication Required Modal */}

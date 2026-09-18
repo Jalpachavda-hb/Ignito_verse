@@ -1,8 +1,9 @@
 // ignitoverse: Simplified Clean Navbar (Home, Microcredentials & Profile / Log In)
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
-  Menu, X, LogIn, ChevronDown, User, LayoutDashboard, 
-  Award, ShieldCheck, Settings, LogOut, Calendar 
+  Menu, X, LogIn, ChevronDown, User, 
+  LogOut, Calendar 
 } from 'lucide-react';
 import logoImg from '../../assets/newlg.png';
 import './navbar.css';
@@ -44,21 +45,128 @@ export default function Navbar({
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
+
   const handleLinkClick = (pageId, e) => {
-    e.preventDefault();
-    onNavigate(pageId);
+    if (e) e.preventDefault();
     setMobileMenuOpen(false);
     setProfileDropdownOpen(false);
+    onNavigate(pageId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleProfileSubNav = (tabId, e) => {
-    e.preventDefault();
-    onNavigate('profile', tabId);
-    setProfileDropdownOpen(false);
+    if (e) e.preventDefault();
     setMobileMenuOpen(false);
+    setProfileDropdownOpen(false);
+    onNavigate('profile', tabId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const drawerElement = (
+    <>
+      {/* Backdrop Overlay for Right-Side Mobile Drawer */}
+      <div 
+        className={`navbar-drawer-backdrop ${mobileMenuOpen ? 'open' : ''}`} 
+        onClick={() => setMobileMenuOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* Right-Side Slide Mobile Drawer */}
+      <div 
+        className={`navbar-mobile-drawer ${mobileMenuOpen ? 'open' : ''}`}
+        aria-hidden={!mobileMenuOpen}
+      >
+        {/* Drawer Header: Logo + Close Button */}
+        <div className="mobile-drawer-header">
+          <div className="mobile-drawer-logo">
+            {logoImg ? (
+              <img src={logoImg} alt="IgnitoCaptiq" className="mobile-drawer-brand-img" />
+            ) : (
+              <div className="brand-fallback-text">
+                <span className="brand-title">IGNITO</span>
+                <span className="brand-sub">VERSE</span>
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            className="mobile-drawer-close-btn"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close navigation menu"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Drawer Content */}
+        <div className="mobile-drawer-inner">
+          <ul className="mobile-drawer-links">
+            {navItems.map((item) => (
+              <li key={item.id} className="mobile-nav-li">
+                <a
+                  href={item.id === 'home' ? '/' : `/${item.id}`}
+                  className={`mobile-drawer-link ${activePage === item.id ? 'active' : ''}`}
+                  onClick={(e) => handleLinkClick(item.id, e)}
+                >
+                  <span>{item.label}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+
+          {/* Blue Card with Profile & Logout or Login */}
+          <div className="mobile-blue-card">
+            {user ? (
+              <div className="mobile-user-profile-actions">
+                <button
+                  type="button"
+                  className="mobile-btn-profile"
+                  onClick={(e) => handleProfileSubNav('dashboard', e)}
+                >
+                  <User size={16} />
+                  <span>Profile</span>
+                </button>
+                <button
+                  type="button"
+                  className="mobile-btn-logout"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onLogout();
+                  }}
+                >
+                  <LogOut size={16} />
+                  <span>Log Out</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="mobile-btn-login"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onLogin();
+                }}
+              >
+                <LogIn size={16} />
+                <span>Log In</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <header className={`full-navbar-header ${isScrolled ? 'scrolled' : ''}`}>
@@ -72,7 +180,7 @@ export default function Navbar({
             aria-label="Ignitoverse Home"
           >
             {logoImg ? (
-              <img src={logoImg} alt="Ignitoverse Enterprise Learning" className="navbar-brand-img" />
+              <img src={logoImg} alt="IgnitoCaptiq" className="navbar-brand-img" />
             ) : (
               <div className="brand-fallback-text">
                 <span className="brand-title">IGNITO</span>
@@ -181,70 +289,16 @@ export default function Navbar({
         <button
           type="button"
           className="navbar-mobile-toggle"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onClick={() => setMobileMenuOpen(true)}
           aria-expanded={mobileMenuOpen}
           aria-label="Toggle navigation menu"
         >
-          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          <Menu size={24} />
         </button>
       </div>
 
-      {/* Mobile Drawer */}
-      <div className={`navbar-mobile-drawer ${mobileMenuOpen ? 'open' : ''}`}>
-        <div className="mobile-drawer-inner">
-          <ul className="mobile-drawer-links">
-            {navItems.map((item) => (
-              <li key={item.id} className="mobile-nav-li">
-                <a
-                  href={item.id === 'home' ? '/' : `/${item.id}`}
-                  className={`mobile-drawer-link ${activePage === item.id ? 'active' : ''}`}
-                  onClick={(e) => handleLinkClick(item.id, e)}
-                >
-                  <span>{item.label}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mobile-blue-card">
-            {user ? (
-              <div className="mobile-user-profile-actions">
-                <button
-                  type="button"
-                  className="mobile-btn-login"
-                  onClick={(e) => handleProfileSubNav('dashboard', e)}
-                >
-                  <User size={16} />
-                  <span>Profile</span>
-                </button>
-                <button
-                  type="button"
-                  className="mobile-btn-logout"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onLogout();
-                  }}
-                >
-                  <LogOut size={16} />
-                  <span>Log Out</span>
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="mobile-btn-login"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onLogin();
-                }}
-              >
-                <LogIn size={16} />
-                <span>Log In</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Render Drawer via React Portal directly into body */}
+      {typeof document !== 'undefined' ? createPortal(drawerElement, document.body) : null}
     </header>
   );
 }
