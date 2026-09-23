@@ -53,25 +53,9 @@ export default function ProfilePage({
   const [searchQuery, setSearchQuery] = useState('');
   const [calendarEventsCount, setCalendarEventsCount] = useState(0);
 
-  // Expanded Quiz Attempt Rows state (Screenshot 1 & 2)
-  // Default to 201 so first quiz attempts are open like in screenshot 1
-  const [expandedQuizId, setExpandedQuizId] = useState(201);
-  const [attemptsByQuiz, setAttemptsByQuiz] = useState({
-    201: [
-      {
-        attemptId: 1,
-        attemptNumber: 1,
-        score: 1,
-        totalMarks: 20,
-        percentage: 5,
-        totalQuestions: 20,
-        correctCount: 1,
-        wrongCount: 3,
-        skippedCount: 16,
-        grade: 'F'
-      }
-    ]
-  });
+  // Expanded Quiz Attempt Rows state (dynamic from user activity)
+  const [expandedQuizId, setExpandedQuizId] = useState(null);
+  const [attemptsByQuiz, setAttemptsByQuiz] = useState({});
   const [loadingAttemptsForQuiz, setLoadingAttemptsForQuiz] = useState(false);
 
   // Result Modal State (Screenshot 3)
@@ -200,7 +184,7 @@ export default function ProfilePage({
     setLoadingQuizzes(true);
     try {
       const studentId = getSessionStudentId();
-      const res = await studentMicrocredentialsQuizAttemptList(1, 50, 'QuizId', 'DESC', 0, searchQuery, studentId);
+      const res = await studentMicrocredentialsQuizAttemptList(1, 50, 'LastAttemptDate', 'DESC', 0, searchQuery, studentId);
       if (res?.success) {
         setQuizList(res.microStudentQuizAttemptList || []);
       }
@@ -290,79 +274,22 @@ export default function ProfilePage({
     setResultDetailError('');
   };
 
-  // Default courses matching Screenshot 2
-  const DEFAULT_ENROLLED_COURSES = [
-    {
-      id: 101,
-      microcredentialCourseId: 101,
-      microcredentialCourseName: 'Data Security Fundamentals',
-      title: 'Data Security Fundamentals',
-      description: 'Learn the key principles of data security, risk management, and best practices to protect sensitive information.',
-      totalModules: 6,
-      level: 'Intermediate',
-      progressPercentage: 60,
-      lastAccessed: '12 Sep 2026, 10:30 AM',
-      thumbnail: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=500&auto=format&fit=crop&q=80',
-      category: 'Information Security'
-    },
-    {
-      id: 102,
-      microcredentialCourseId: 102,
-      microcredentialCourseName: 'Leadership and Team Management',
-      title: 'Leadership and Team Management',
-      description: 'Develop essential leadership skills and learn how to build, motivate, and manage high-performing teams.',
-      totalModules: 8,
-      level: 'Advanced',
-      progressPercentage: 35,
-      lastAccessed: '8 Sep 2026, 02:15 PM',
-      thumbnail: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=500&auto=format&fit=crop&q=80',
-      category: 'Management'
-    }
-  ];
-
-  // Default quizzes matching Screenshot 1
-  const DEFAULT_QUIZ_LIST = [
-    {
-      quizId: 201,
-      quizName: 'Stress Management Fundamentals',
-      streamName: 'STRESS MANAGEMENT',
-      lastAttemptDate: '10 Sep 2026, 06:03 PM',
-      totalAttempt: 1,
-      attempts: [
-        {
-          attemptId: 1,
-          attemptNumber: 1,
-          score: 1,
-          totalMarks: 20,
-          percentage: 5,
-          totalQuestions: 20,
-          correctCount: 1,
-          wrongCount: 3,
-          skippedCount: 16,
-          grade: 'F'
-        }
-      ]
-    }
-  ];
-
   // Course search state for Tab 1
   const [courseSearchQuery, setCourseSearchQuery] = useState('');
 
-  const baseCourses = (apiEnrolledCourses && apiEnrolledCourses.length > 0)
-    ? apiEnrolledCourses
-    : DEFAULT_ENROLLED_COURSES;
+  // Strictly dynamic enrolled / purchased courses (no static mock courses)
+  const baseCourses = Array.isArray(apiEnrolledCourses) ? apiEnrolledCourses : [];
 
   const displayedCoursesList = baseCourses.filter(c => {
     if (!courseSearchQuery) return true;
     const term = courseSearchQuery.toLowerCase();
     const title = c.title || c.microcredentialCourseName || '';
-    const desc = c.description || '';
+    const desc = c.description || c.courseDescription || c.streamName || '';
     return title.toLowerCase().includes(term) || desc.toLowerCase().includes(term);
   });
 
-  const baseQuizzes = (quizList && quizList.length > 0)
-    ? quizList
-    : DEFAULT_QUIZ_LIST;
+  // Dynamic quizzes from API
+  const baseQuizzes = Array.isArray(quizList) ? quizList : [];
 
   const filteredQuizList = baseQuizzes.filter(q => {
     if (!searchQuery) return true;
@@ -373,6 +300,10 @@ export default function ProfilePage({
       (q.microcredentialCourseName && q.microcredentialCourseName.toLowerCase().includes(term))
     );
   });
+
+  const overallProgress = baseCourses.length > 0
+    ? Math.round(baseCourses.reduce((acc, c) => acc + Number(c.progressPercentage || c.progress || 0), 0) / baseCourses.length)
+    : 0;
 
   // ==========================================================================
   // UNAUTHENTICATED STATE VIEW
@@ -688,7 +619,7 @@ export default function ProfilePage({
                   <BookOpen size={18} />
                 </div>
                 <div className="stat-text-col-ss">
-                  <span className="stat-big-num-ss">{displayedCoursesList.length}</span>
+                  <span className="stat-big-num-ss">{baseCourses.length}</span>
                   <span className="stat-sub-label-ss">Enrolled Courses</span>
                 </div>
               </div>
@@ -718,7 +649,7 @@ export default function ProfilePage({
                   <BarChart2 size={18} />
                 </div>
                 <div className="stat-text-col-ss">
-                  <span className="stat-big-num-ss">78%</span>
+                  <span className="stat-big-num-ss">{overallProgress}%</span>
                   <span className="stat-sub-label-ss">Overall Progress</span>
                 </div>
               </div>
@@ -738,7 +669,7 @@ export default function ProfilePage({
           >
             <BookOpen size={16} />
             <span>Courses in Progress</span>
-            <span className="ss-tab-pill-badge">{displayedCoursesList.length}</span>
+            <span className="ss-tab-pill-badge">{baseCourses.length}</span>
           </button>
 
           <button
@@ -801,82 +732,186 @@ export default function ProfilePage({
 
             {/* Courses Horizontal List Stack */}
             <div className="ss-courses-list-stack">
-              {displayedCoursesList.map((course) => {
-                const title = course.title || course.microcredentialCourseName || 'Microcredential Course';
-                const courseId = course.microcredentialCourseId || course.id;
-                const thumb = course.thumbnail || formatImageUrl(course.microcredentialCourseIntroImage) || 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=500&auto=format&fit=crop&q=80';
-                const progressPct = course.progressPercentage || course.progress || 60;
-                const modules = course.totalModules || 6;
-                const level = course.level || 'Intermediate';
-                const lastAccessed = course.lastAccessed || '12 Sep 2026, 10:30 AM';
-                const desc = course.description || 'Learn the key principles of data security, risk management, and best practices to protect sensitive information.';
+              {loadingCourses ? (
+                <div style={{ textAlign: 'center', padding: '3.5rem 1rem', color: '#00385E' }}>
+                  <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 12px auto', display: 'block' }} />
+                  <p style={{ fontWeight: 600, margin: 0, color: '#64748b', fontSize: '0.92rem' }}>Loading enrolled courses...</p>
+                </div>
+              ) : displayedCoursesList.length === 0 ? (
+                <div className="ss-courses-empty-state" style={{
+                  textAlign: 'center',
+                  padding: '3.5rem 1.5rem',
+                  background: '#ffffff',
+                  borderRadius: '16px',
+                  border: '1px dashed #cbd5e1',
+                  margin: '1rem 0'
+                }}>
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    background: '#f0f9ff',
+                    color: '#00385E',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 16px auto'
+                  }}>
+                    <BookOpen size={30} />
+                  </div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
+                    No course found
+                  </h3>
+                  <p style={{ fontSize: '0.9rem', color: '#64748b', maxWidth: '420px', margin: '0 auto 20px auto', lineHeight: '1.5' }}>
+                    {courseSearchQuery
+                      ? `No enrolled courses match "${courseSearchQuery}".`
+                      : 'You have not enrolled in or purchased any microcredential courses yet.'}
+                  </p>
+                  {courseSearchQuery ? (
+                    <button
+                      type="button"
+                      onClick={() => setCourseSearchQuery('')}
+                      style={{
+                        padding: '9px 18px',
+                        borderRadius: '10px',
+                        border: '1px solid #cbd5e1',
+                        background: '#ffffff',
+                        color: '#0f172a',
+                        fontWeight: 600,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Clear Search
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onExploreCatalog ? onExploreCatalog() : (onNavigate && onNavigate('microcredentials'))}
+                      style={{
+                        padding: '10px 22px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: '#00385E',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        fontSize: '0.88rem',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        boxShadow: '0 4px 12px rgba(0, 56, 94, 0.18)'
+                      }}
+                    >
+                      <BookOpen size={16} />
+                      <span>Explore Courses</span>
+                    </button>
+                  )}
+                </div>
+              ) : (
+                displayedCoursesList.map((course) => {
+                  const title = course.microcredentialCourseName || course.title || 'Microcredential Course';
+                  const courseId = course.microcredentialCourseId || course.id;
+                  const rawImg = course.microcredentialCourseIntroImage || course.introImage || course.thumbnail || '';
+                  const thumb = rawImg ? formatImageUrl(rawImg) : '';
+                  const progressPct = course.progressPercentage ?? course.progress ?? 0;
+                  const duration = course.microcredentialCourseDuration || '';
+                  const modules = course.totalModules ? `${course.totalModules} Modules` : duration;
+                  const level = course.courseLevel || course.level || '';
+                  const desc = course.description || course.courseDescription || course.streamName || '';
 
-                return (
-                  <div key={courseId} className="ss-horizontal-course-card">
-                    {/* Left Thumbnail & Info */}
-                    <div className="ss-course-left-part">
-                      <div className="ss-course-thumb-box">
-                        <img src={thumb} alt={title} className="ss-course-thumb-img" />
-                      </div>
+                  return (
+                    <div key={courseId} className="ss-horizontal-course-card">
+                      {/* Left Thumbnail & Info */}
+                      <div className="ss-course-left-part">
+                        <div className="ss-course-thumb-box">
+                          {thumb ? (
+                            <img src={thumb} alt={title} className="ss-course-thumb-img" />
+                          ) : (
+                            <div style={{
+                              width: '100%',
+                              height: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: '#f1f5f9',
+                              color: '#00385E'
+                            }}>
+                              <BookOpen size={28} />
+                            </div>
+                          )}
+                        </div>
 
-                      <div className="ss-course-info-col">
-                        <span className="ss-course-status-pill">IN PROGRESS</span>
-                        <h3 className="ss-course-title">{title}</h3>
-                        <p className="ss-course-description">{desc}</p>
-                        <div className="ss-course-meta-bottom">
-                          <span className="ss-meta-item">
-                            <Clock size={13} /> {modules} Modules
-                          </span>
-                          <span className="ss-meta-item">
-                            <BarChart2 size={13} /> {level}
-                          </span>
+                        <div className="ss-course-info-col">
+                          <span className="ss-course-status-pill">{course.courseStatus || 'IN PROGRESS'}</span>
+                          <h3 className="ss-course-title">{title}</h3>
+                          {desc && <p className="ss-course-description">{desc}</p>}
+                          <div className="ss-course-meta-bottom">
+                            {modules && (
+                              <span className="ss-meta-item">
+                                <Clock size={13} /> {modules}
+                              </span>
+                            )}
+                            {level && (
+                              <span className="ss-meta-item">
+                                <BarChart2 size={13} /> {level}
+                              </span>
+                            )}
+                            {course.streamName && (
+                              <span className="ss-meta-item">
+                                <Sparkles size={13} /> {course.streamName}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Right CTA */}
-                    <div className="ss-course-action-part">
-                      <button
-                        type="button"
-                        className="btn-ss-continue"
-                        onClick={() => onViewCourse({
-                          id: courseId,
-                          microcredentialCourseId: courseId,
-                          encryptedMicrocredentialCourseId: course.encryptedMicrocredentialCourseId || '',
-                          title: title,
-                          name: title,
-                          thumbnail: thumb,
-                          category: course.streamName || 'Management',
-                          level: level,
-                          duration: course.duration || '3 Month',
-                          ...course
-                        })}
-                      >
-                        <span>Continue Learning</span>
-                        <ArrowRight size={14} />
-                      </button>
+                      {/* Right CTA */}
+                      <div className="ss-course-action-part">
+                        <button
+                          type="button"
+                          className="btn-ss-continue"
+                          onClick={() => onViewCourse({
+                            id: courseId,
+                            microcredentialCourseId: courseId,
+                            encryptedMicrocredentialCourseId: course.encryptedMicrocredentialCourseId || '',
+                            title: title,
+                            name: title,
+                            thumbnail: thumb,
+                            category: course.streamName || 'Microcredentials',
+                            level: level,
+                            duration: duration || 'Self-paced',
+                            ...course
+                          })}
+                        >
+                          <span>Continue Learning</span>
+                          <ArrowRight size={14} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
 
             {/* Footer Pagination */}
-            <div className="ss-footer-pagination">
-              <span className="ss-footer-count-text">
-                Showing 1 to {displayedCoursesList.length} of {displayedCoursesList.length} courses
-              </span>
+            {displayedCoursesList.length > 0 && (
+              <div className="ss-footer-pagination">
+                <span className="ss-footer-count-text">
+                  Showing 1 to {displayedCoursesList.length} of {displayedCoursesList.length} courses
+                </span>
 
-              <div className="ss-page-nav-controls">
-                <button type="button" className="btn-ss-page-nav" disabled aria-label="Previous Page">
-                  <ChevronLeft size={15} />
-                </button>
-                <span className="ss-page-pill-current">1</span>
-                <button type="button" className="btn-ss-page-nav" disabled aria-label="Next Page">
-                  <ChevronRight size={15} />
-                </button>
+                <div className="ss-page-nav-controls">
+                  <button type="button" className="btn-ss-page-nav" disabled aria-label="Previous Page">
+                    <ChevronLeft size={15} />
+                  </button>
+                  <span className="ss-page-pill-current">1</span>
+                  <button type="button" className="btn-ss-page-nav" disabled aria-label="Next Page">
+                    <ChevronRight size={15} />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -919,7 +954,25 @@ export default function ProfilePage({
                 <div style={{ textAlign: 'right' }}>VIEW ATTEMPT LIST</div>
               </div>
 
-              {filteredQuizList.map((quiz, idx) => {
+              {loadingQuizzes ? (
+                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#00385E' }}>
+                  <RefreshCw size={22} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 10px auto', display: 'block' }} />
+                  <p style={{ margin: 0, fontWeight: 600, color: '#64748b', fontSize: '0.9rem' }}>Loading quiz assessments...</p>
+                </div>
+              ) : filteredQuizList.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '3rem 1.5rem', color: '#64748b' }}>
+                  <Award size={36} style={{ color: '#d97706', margin: '0 auto 12px auto', display: 'block' }} />
+                  <h4 style={{ fontWeight: 800, color: '#0f172a', marginBottom: '6px', fontSize: '1.05rem' }}>
+                    No quiz assessments found
+                  </h4>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
+                    {searchQuery
+                      ? `No quiz assessments match "${searchQuery}".`
+                      : 'You have not attempted any microcredential quiz assessments yet.'}
+                  </p>
+                </div>
+              ) : (
+                filteredQuizList.map((quiz, idx) => {
                 const qId = quiz.quizId || quiz.id || idx;
                 const isExpanded = expandedQuizId === qId;
                 const attempts = attemptsByQuiz[qId] || quiz.attempts || [];
@@ -931,6 +984,11 @@ export default function ProfilePage({
                         <span className="ss-dot-bullet" />
                         <div>
                           <div className="ss-quiz-heading">{quiz.quizName}</div>
+                          {quiz.moduleName && (
+                            <div style={{ fontSize: '0.78rem', color: '#00385E', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span>📌</span> {quiz.moduleName}
+                            </div>
+                          )}
                           <div className="ss-quiz-last-attempt">
                             Last Attempt: {quiz.lastAttemptDate || '10 Sep 2026, 06:03 PM'}
                           </div>
@@ -939,7 +997,7 @@ export default function ProfilePage({
 
                       <div className="ss-quiz-info-col">
                         <span className="ss-stream-chip">
-                          {quiz.streamName || 'STRESS MANAGEMENT'}
+                          {quiz.microcredentialCourseName || quiz.streamName || 'MICROCREDENTIAL'}
                         </span>
                         <span className="ss-attempts-count-sub">
                           {quiz.totalAttempt || attempts.length || 1} Attempts
@@ -1005,24 +1063,26 @@ export default function ProfilePage({
                     )}
                   </React.Fragment>
                 );
-              })}
+              }))}
             </div>
 
             {/* Footer Pagination */}
-            <div className="ss-footer-pagination">
-              <span className="ss-footer-count-text">
-                Page 1 of 1 ({filteredQuizList.length} quiz{filteredQuizList.length !== 1 ? 'zes' : ''})
-              </span>
+            {filteredQuizList.length > 0 && (
+              <div className="ss-footer-pagination">
+                <span className="ss-footer-count-text">
+                  Page 1 of 1 ({filteredQuizList.length} quiz{filteredQuizList.length !== 1 ? 'zes' : ''})
+                </span>
 
-              <div className="ss-page-nav-controls">
-                <button type="button" className="btn-ss-page-nav" disabled aria-label="Previous Page">
-                  <ChevronLeft size={15} />
-                </button>
-                <button type="button" className="btn-ss-page-nav" disabled aria-label="Next Page">
-                  <ChevronRight size={15} />
-                </button>
+                <div className="ss-page-nav-controls">
+                  <button type="button" className="btn-ss-page-nav" disabled aria-label="Previous Page">
+                    <ChevronLeft size={15} />
+                  </button>
+                  <button type="button" className="btn-ss-page-nav" disabled aria-label="Next Page">
+                    <ChevronRight size={15} />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 

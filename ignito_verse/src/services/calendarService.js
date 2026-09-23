@@ -83,8 +83,11 @@ export async function getStudentCalendarEvents(studentId = 0, passedCourses = nu
       meetingBatches.forEach(batch => {
         allMeetings.push(...batch);
       });
+    } else if (Array.isArray(passedCourses) && passedCourses.length === 0) {
+      // Student has no purchased/enrolled courses - do not return any meetings
+      allMeetings = [];
     } else {
-      // Only fallback to 0 if student has no specific enrolled courses
+      // Only fallback to 0 if student has no specific enrolled courses loaded
       try {
         const directRes = await getMicrocredentialLiveMeetingsByCourse(0, finalStudentId);
         if (directRes?.success && Array.isArray(directRes.liveMeetings)) {
@@ -125,7 +128,7 @@ export async function getStudentCalendarEvents(studentId = 0, passedCourses = nu
         endDate: endIso,
         displayStart: item.startDateTime || '',
         displayEnd: item.endDateTime || '',
-        programName: item.microcredentialCourseName || 'Microcredential Course',
+        programName: item.microcredentialCourseName || item.courseName || '',
         programSub: item.description || item.title || '',
         joinUrl: item.joinLink || '',
         createdDate: item.startDateTime || '',

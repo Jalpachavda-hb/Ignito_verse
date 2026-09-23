@@ -60,6 +60,20 @@ export default function QuizPage({
     1
   );
 
+  const moduleMasterId = Number(
+    currentCourse.microcredentialModuleMasterId || 
+    currentCourse.selectedModuleMasterId || 
+    currentCourse.moduleMasterId || 
+    currentCourse.moduleId || 
+    sessionStorage.getItem('MicrocredentialModuleMasterId') || 
+    localStorage.getItem('MicrocredentialModuleMasterId') || 
+    0
+  );
+
+  const moduleName = currentCourse.moduleName || 
+    currentCourse.selectedModuleName || 
+    (moduleMasterId > 0 ? `Module ${moduleMasterId}` : '');
+
   const courseTitle = currentCourse.title || currentCourse.microcredentialCourseName || 'Microcredential Course';
   
   // Page View Modes: 'loading' | 'attemptList' | 'quiz' | 'scoreSummary'
@@ -120,8 +134,8 @@ export default function QuizPage({
     try {
       const studentId = resolveStudentId();
       
-      // Step 1: Check Attempt Status
-      const statusRes = await checkStudentQuizAttemptStatus(courseId, studentId, 2);
+      // Step 1: Check Attempt Status (with moduleMasterId)
+      const statusRes = await checkStudentQuizAttemptStatus(courseId, studentId, 2, moduleMasterId);
 
       if (statusRes && statusRes.isSuccess) {
         const quizId = statusRes.quizId || 0;
@@ -133,11 +147,11 @@ export default function QuizPage({
           await loadAttemptList(quizId, studentId);
         } else {
           // STEP 2B: Not Attempted -> Load Quiz Preview Data & Resume/Start
-          await startQuizExecution(courseId, studentId);
+          await startQuizExecution(courseId, studentId, moduleMasterId);
         }
       } else {
         // Fallback directly to loading quiz preview
-        await startQuizExecution(courseId, studentId);
+        await startQuizExecution(courseId, studentId, moduleMasterId);
       }
     } catch (err) {
       console.error('Error in initializeQuizFlow:', err);
@@ -148,7 +162,7 @@ export default function QuizPage({
 
   useEffect(() => {
     initializeQuizFlow();
-  }, [courseId]);
+  }, [courseId, moduleMasterId]);
 
   // ==========================================================================
   // STEP 2A — FETCH ATTEMPT LIST
@@ -178,7 +192,7 @@ export default function QuizPage({
   // ==========================================================================
   // STEP 2B & STEP 3 — START QUIZ & PREFILL EXISTING ATTEMPT
   // ==========================================================================
-  const startQuizExecution = async (cId = courseId, sId = resolveStudentId()) => {
+  const startQuizExecution = async (cId = courseId, sId = resolveStudentId(), mId = moduleMasterId) => {
     if (isQuizFinalized) {
       alert('You have already submitted and finalized this assessment. No additional attempts are allowed.');
       return;
@@ -188,8 +202,8 @@ export default function QuizPage({
     setError(null);
 
     try {
-      // Step 2B: Get Quiz Preview Data
-      const previewRes = await getQuizPreviewData(cId, sId, 2);
+      // Step 2B: Get Quiz Preview Data (with moduleMasterId)
+      const previewRes = await getQuizPreviewData(cId, sId, 2, mId);
 
       if (previewRes && (previewRes.success || previewRes.isSuccess || (previewRes.questions && previewRes.questions.length > 0))) {
         const qId = previewRes.quizId || 0;
@@ -209,7 +223,7 @@ export default function QuizPage({
         setQuizMetadata({
           quizId: qId,
           attemptId: attId,
-          quizName: previewRes.quizName || `Quiz: ${courseTitle}`,
+          quizName: previewRes.quizName || (moduleName ? `${courseTitle} — ${moduleName}` : `Quiz: ${courseTitle}`),
           quizDescription: previewRes.quizDescription || '',
           timeLimit: previewRes.timeLimit || 120,
           attemptsAllowed: attemptsAllowed,
@@ -236,8 +250,11 @@ export default function QuizPage({
         const structuredQuestions = rawQuestions.map((q, qIdx) => {
           const questionId = q.questionId || q.questionsId || (qIdx + 1);
           
-          const matchingOptions = rawOptions
-            .filter(opt => (opt.questionId || opt.questionsId) === questionId)
+          const optionsSource = Array.isArray(q.options) && q.options.length > 0
+            ? q.options
+            : rawOptions.filter(opt => (opt.questionId || opt.questionsId) === questionId);
+
+          const matchingOptions = optionsSource
             .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
             .map((opt, optIdx) => ({
               id: opt.answerId || (optIdx + 1),
@@ -576,7 +593,9 @@ export default function QuizPage({
             
             <div className="attempt-history-header">
               <div className="attempt-history-title-wrap">
-                <h2>{courseTitle} - Quiz History</h2>
+                <h2>
+                  {courseTitle} {moduleName && <span style={{ fontSize: '0.85rem', fontWeight: 600, background: '#e0f2fe', color: '#0369a1', padding: '3px 10px', borderRadius: '6px', marginLeft: '8px' }}>{moduleName}</span>} - Quiz History
+                </h2>
                 <p>
                   {isQuizFinalized 
                     ? 'Assessment completed. All attempts are finalized.' 

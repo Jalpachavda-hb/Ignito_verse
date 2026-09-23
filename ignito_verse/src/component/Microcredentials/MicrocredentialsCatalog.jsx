@@ -1,6 +1,6 @@
 // ignitoverse: Executive Certified Microcredentials Catalog Page
 import React, { useState, useEffect, useMemo } from 'react';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, ArrowLeft } from 'lucide-react';
 import CourseCard from './CourseCard';
 import { getMicrocredentialCourseBindDataList } from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
@@ -9,8 +9,16 @@ import mcbg from '../../assets/mcbg.jpg';
 export default function MicrocredentialsCatalog({
   onViewDetails = () => { },
   onPreviewVideo = () => { },
-  onNavigate = () => { }
+  onNavigate = () => { },
+  onBack
 }) {
+  const handleGoHome = () => {
+    if (onBack) {
+      onBack();
+    } else if (onNavigate) {
+      onNavigate('home');
+    }
+  };
   const [coursesList, setCoursesList] = useState([]);
   const [levelList, setLevelList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,10 +101,32 @@ export default function MicrocredentialsCatalog({
         style={{ backgroundImage: `url(${mcbg})` }}
       >
         <div className="mc-catalog-hero-overlay" />
+
+        {/* Floating Top Back Button */}
+        <div className="mc-catalog-hero-top-bar">
+          <button
+            type="button"
+            className="mc-catalog-back-btn"
+            onClick={handleGoHome}
+            aria-label="Back to Home"
+          >
+            <ArrowLeft size={16} className="back-arrow-icon" />
+            <span>Back to Home</span>
+          </button>
+        </div>
+
         <div className="mc-catalog-hero-inner">
           {/* Breadcrumb Trail */}
           <div className="mc-catalog-hero-breadcrumb">
-            <span className="crumb-link" onClick={() => onNavigate('home')}>HOME</span>
+            <span 
+              className="crumb-link" 
+              onClick={handleGoHome}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleGoHome(); }}
+              role="button"
+              tabIndex={0}
+            >
+              HOME
+            </span>
             <span className="crumb-slash">/</span>
             <span className="crumb-current">MICROCREDENTIALS</span>
           </div>

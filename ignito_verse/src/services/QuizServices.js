@@ -25,6 +25,7 @@ import { getLoggedInStudentId } from './microcredentialService';
 import { buildMicrocredentialQuizChekStudentMicrocredentialQuizAttemptsInput } from '../dto/input/microcredentialQuizChekStudentMicrocredentialQuizAttemptsInput';
 import { buildGetMicrocredentialQuizStudentAttemptListInput } from '../dto/input/getMicrocredentialQuizStudentAttemptListInput';
 import { buildGetStudentMicroQuizByMicrocredentialCourseIdInput } from '../dto/input/getStudentMicroQuizByMicrocredentialCourseIdInput';
+import { buildGetStudentMicroQuizByMicrocredentialModuleIdInput } from '../dto/input/getStudentMicroQuizByMicrocredentialModuleIdInput';
 import { buildMicrocredentialQuizAttemptGetByIdInput } from '../dto/input/microcredentialQuizAttemptGetByIdInput';
 import { buildMicrocredentialQuizAttemptSaveInput } from '../dto/input/microcredentialQuizAttemptSaveInput';
 import { buildMicrocredentialQuizStudentFinalSubmitInput } from '../dto/input/microcredentialQuizStudentFinalSubmitInput';
@@ -43,7 +44,9 @@ import {
 } from '../dto/output/getMicrocredentialQuizStudentAttemptListOutput';
 import { 
     parseGetStudentMicroQuizByMicrocredentialCourseIdOutput, 
-    parseGetStudentMicroQuizByMicrocredentialCourseIdErrorOutput 
+    parseGetStudentMicroQuizByMicrocredentialCourseIdErrorOutput,
+    parseGetStudentMicroQuizByMicrocredentialModuleIdOutput,
+    parseGetStudentMicroQuizByMicrocredentialModuleIdErrorOutput
 } from '../dto/output/getStudentMicroQuizByMicrocredentialCourseIdOutput';
 import { 
     parseMicrocredentialQuizAttemptGetByIdOutput, 
@@ -120,15 +123,17 @@ export function resolveStudentId(studentId = 0) {
  * @param {number} [educationTypeId=2] - Education Type ID (default 2)
  * @returns {Promise<object>} Parsed response containing `{ success, isSuccess, isAttemptedFlag, quizId, status, message, rawData }`
  */
-export async function checkStudentQuizAttemptStatus(microcredentialCourseId, studentId = 0, educationTypeId = 2) {
+export async function checkStudentQuizAttemptStatus(microcredentialCourseId, studentId = 0, educationTypeId = 2, microcredentialModuleMasterId = 0) {
     try {
         const finalStudentId = resolveStudentId(studentId);
         const finalCourseId = Number(microcredentialCourseId) || 0;
+        const finalModuleId = Number(microcredentialModuleMasterId) || 0;
 
         const inputDto = buildMicrocredentialQuizChekStudentMicrocredentialQuizAttemptsInput(
             finalCourseId,
             finalStudentId,
-            educationTypeId
+            educationTypeId,
+            finalModuleId
         );
 
         const response = await apiClient('api/StudentMicrocredentialQuizAPI/MicrocredentialQuizChekStudentMicrocredentialQuizAttempts', {
@@ -196,24 +201,91 @@ export const getMicrocredentialQuizStudentAttemptList = getStudentAttemptList;
 // ============================================================================
 
 /**
- * Fetches complete quiz metadata, all question types, and configuration to render the quiz.
+ * Fetches student quiz availability and questions for a specific Module.
  * 
- * Endpoint: POST /api/StudentMicrocredentialQuizAPI/GetStudentMicroQuizByMicrocredentialCourseId
+ * Endpoint: POST /api/StudentMicrocredentialQuizAPI/GetStudentMicroQuizByMicrocredentialModuleId
+ * 
+ * @param {number|string} microcredentialCourseId - Microcredential Course ID
+ * @param {number|string} microcredentialModuleMasterId - Microcredential Module Master ID
+ * @param {number} [studentId=0] - Student ID (defaults to active logged-in student)
+ * @returns {Promise<object>} Parsed quiz structure with availability and question list
+ */
+export async function getStudentMicroQuizByMicrocredentialModuleId(
+    microcredentialCourseId, 
+    microcredentialModuleMasterId = 0, 
+    studentId = 0
+) {
+    try {
+        const finalStudentId = resolveStudentId(studentId);
+        const finalCourseId = Number(microcredentialCourseId) || 0;
+        const finalModuleId = Number(microcredentialModuleMasterId) || 0;
+
+        const inputDto = buildGetStudentMicroQuizByMicrocredentialModuleIdInput(
+            finalCourseId,
+            finalModuleId,
+            finalStudentId
+        );
+
+        const response = await apiClient('api/StudentMicrocredentialQuizAPI/GetStudentMicroQuizByMicrocredentialModuleId', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseGetStudentMicroQuizByMicrocredentialModuleIdErrorOutput(response.data, response.status);
+        }
+
+        return parseGetStudentMicroQuizByMicrocredentialModuleIdOutput(response.data, response.status);
+    } catch (error) {
+        console.error('Error in getStudentMicroQuizByMicrocredentialModuleId:', error);
+        return parseGetStudentMicroQuizByMicrocredentialModuleIdErrorOutput({ message: error.message }, 500);
+    }
+}
+
+/**
+ * Fetches complete quiz metadata, all question types, and configuration to render the quiz.
+ * Supports both Module-Level and Course-Level retrieval.
+ * 
+ * Endpoints:
+ * - POST /api/StudentMicrocredentialQuizAPI/GetStudentMicroQuizByMicrocredentialModuleId
+ * - POST /api/StudentMicrocredentialQuizAPI/GetStudentMicroQuizByMicrocredentialCourseId
  * 
  * @param {number|string} microcredentialCourseId - Microcredential Course ID
  * @param {number} [studentId=0] - Student ID (defaults to active logged-in student)
  * @param {number} [educationTypeId=2] - Education Type ID (default 2)
+ * @param {number|string} [microcredentialModuleMasterId=0] - Microcredential Module Master ID
  * @returns {Promise<object>} Parsed quiz structure with all question types and options
  */
-export async function getQuizPreviewData(microcredentialCourseId, studentId = 0, educationTypeId = 2) {
+export async function getQuizPreviewData(
+    microcredentialCourseId, 
+    studentId = 0, 
+    educationTypeId = 2, 
+    microcredentialModuleMasterId = 0
+) {
     try {
         const finalStudentId = resolveStudentId(studentId);
         const finalCourseId = Number(microcredentialCourseId) || 0;
+        const finalModuleId = Number(microcredentialModuleMasterId) || 0;
 
+        // If moduleMasterId is provided, first try the dedicated GetStudentMicroQuizByMicrocredentialModuleId endpoint
+        if (finalModuleId > 0) {
+            try {
+                const moduleRes = await getStudentMicroQuizByMicrocredentialModuleId(finalCourseId, finalModuleId, finalStudentId);
+                if (moduleRes && (moduleRes.success || moduleRes.isSuccess || (Array.isArray(moduleRes.questions) && moduleRes.questions.length > 0))) {
+                    return moduleRes;
+                }
+            } catch (modErr) {
+                console.warn('Module quiz endpoint returned error, falling back to course endpoint with moduleId:', modErr);
+            }
+        }
+
+        // Fallback or course-level retrieval with both courseId and moduleMasterId
         const inputDto = buildGetStudentMicroQuizByMicrocredentialCourseIdInput(
             finalCourseId,
             finalStudentId,
-            educationTypeId
+            educationTypeId,
+            finalModuleId
         );
 
         const response = await apiClient('api/StudentMicrocredentialQuizAPI/GetStudentMicroQuizByMicrocredentialCourseId', {
@@ -703,6 +775,7 @@ export default {
     getStudentAttemptList,
     getMicrocredentialQuizStudentAttemptList,
     getQuizPreviewData,
+    getStudentMicroQuizByMicrocredentialModuleId,
     getStudentMicroQuizByMicrocredentialCourseId,
     getQuizAttemptById,
     microcredentialQuizAttemptGetById,

@@ -20,19 +20,33 @@ export function buildStudentMicrocredentialsQuizAttemptListInput(
     searchInput = '',
     studentId = 0
 ) {
+    const sId = Number(studentId) || 0;
+    const pNo = Number(pageNo) || 1;
+    const pSize = Number(pageSize) || 10;
+    const oCol = orderByColumn || 'LastAttemptDate';
+    const oDir = orderByDirection || 'DESC';
+    const sInput = searchInput || '';
+
     return {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            pageNo: pageNo,
-            pageSize: pageSize,
-            orderByColumn: orderByColumn,
-            orderByDirection: orderByDirection,
-            totalRecords: totalRecords,
-            searchInput: searchInput,
-            studentId: studentId
+            StudentId: sId,
+            PageNo: pNo,
+            PageSize: pSize,
+            OrderByColumn: oCol,
+            OrderByDirection: oDir,
+            SearchInput: sInput,
+            TotalRecords: Number(totalRecords) || 0,
+            studentId: sId,
+            pageNo: pNo,
+            pageSize: pSize,
+            orderByColumn: oCol,
+            orderByDirection: oDir,
+            searchInput: sInput,
+            totalRecords: Number(totalRecords) || 0
         })
     };
 }

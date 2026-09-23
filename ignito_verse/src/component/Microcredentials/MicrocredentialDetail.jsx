@@ -18,7 +18,6 @@ import {
   Check,
   Play,
   ThumbsUp,
-  Share2,
   Calendar,
   Brain,
   ChevronRight,
@@ -35,7 +34,6 @@ import {
   BarChart2,
   Radio,
   ExternalLink,
-  Heart,
   Users
 } from 'lucide-react';
 import AuthRequiredModal from '../modals/AuthRequiredModal';
@@ -82,8 +80,6 @@ export default function MicrocredentialDetail({
     details: false
   });
   const [expandedReviews, setExpandedReviews] = useState({});
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [shareToast, setShareToast] = useState(false);
 
   const toggleSection = (sectionKey) => {
     setCollapsedSections(prev => ({
@@ -97,23 +93,6 @@ export default function MicrocredentialDetail({
       ...prev,
       [reviewId]: !prev[reviewId]
     }));
-  };
-
-  const handleShareClick = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: courseData.title || 'Microcredential Course',
-        url: window.location.href
-      }).catch(() => {});
-    } else {
-      navigator.clipboard?.writeText(window.location.href);
-      setShareToast(true);
-      setTimeout(() => setShareToast(false), 2500);
-    }
-  };
-
-  const toggleFavorite = () => {
-    setIsFavorite(prev => !prev);
   };
 
   // Authentication Required Modal state
@@ -694,13 +673,6 @@ export default function MicrocredentialDetail({
 
   return (
     <div className="mc-detail-page-wrapper">
-      {/* Toast Notification for Share */}
-      {shareToast && (
-        <div className="mc-toast-copied-notification">
-          <span>Link copied to clipboard!</span>
-        </div>
-      )}
-
       <div className="mc-fluid-container mc-main-two-col-grid">
 
         {/* ========================================================
@@ -715,27 +687,6 @@ export default function MicrocredentialDetail({
                 <ArrowLeft size={18} />
                 <span className="mc-back-link-text">My Learning</span>
               </button>
-
-              <div className="mc-nav-right-actions">
-                <button
-                  type="button"
-                  className={`mc-nav-icon-btn ${isFavorite ? 'active-favorite' : ''}`}
-                  onClick={toggleFavorite}
-                  title={isFavorite ? 'Remove from Wishlist' : 'Add to Wishlist'}
-                  aria-label="Wishlist"
-                >
-                  <Heart size={19} fill={isFavorite ? '#ef4444' : 'none'} color={isFavorite ? '#ef4444' : '#475569'} />
-                </button>
-                <button
-                  type="button"
-                  className="mc-nav-icon-btn"
-                  onClick={handleShareClick}
-                  title="Share Course"
-                  aria-label="Share Course"
-                >
-                  <Share2 size={19} color="#475569" />
-                </button>
-              </div>
             </div>
           </div>
 

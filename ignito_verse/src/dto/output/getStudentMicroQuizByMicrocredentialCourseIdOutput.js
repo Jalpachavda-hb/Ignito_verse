@@ -10,13 +10,35 @@ export function parseGetStudentMicroQuizByMicrocredentialCourseIdOutput(rawJson 
     const isHttpOk = status >= 200 && status < 300;
     const isSuccess = Boolean(rawJson?.isSuccess ?? rawJson?.IsSuccess ?? isHttpOk);
 
-    // Normalize Questions
-    const questions = Array.isArray(rawJson?.questions || rawJson?.Questions)
-        ? (rawJson?.questions || rawJson?.Questions).map(q => ({
-            questionId: q?.questionsId ?? q?.QuestionsId ?? q?.questionId ?? q?.QuestionId ?? 0,
-            questionsId: q?.questionsId ?? q?.QuestionsId ?? q?.questionId ?? q?.QuestionId ?? 0,
+    // Normalize Questions (supports both legacy 'questions' and new module-level 'questionList' / 'QuestionList')
+    const rawQuestionArray = Array.isArray(rawJson?.questionList || rawJson?.QuestionList)
+        ? (rawJson?.questionList || rawJson?.QuestionList)
+        : (Array.isArray(rawJson?.questions || rawJson?.Questions) ? (rawJson?.questions || rawJson?.Questions) : []);
+
+    const extractedAnswerOptions = [];
+
+    const questions = rawQuestionArray.map((q, qIdx) => {
+        const questionId = q?.questionsId ?? q?.QuestionsId ?? q?.questionId ?? q?.QuestionId ?? (qIdx + 1);
+        const nestedOptions = Array.isArray(q?.degreeAnswersOptions || q?.DegreeAnswersOptions || q?.options || q?.Options)
+            ? (q?.degreeAnswersOptions || q?.DegreeAnswersOptions || q?.options || q?.Options).map((opt, optIdx) => {
+                const optObj = {
+                    answerId: opt?.answerId ?? opt?.AnswerId ?? (optIdx + 1),
+                    questionId: opt?.questionId ?? opt?.QuestionId ?? questionId,
+                    text: opt?.text || opt?.Text || '',
+                    isCorrect: Boolean(opt?.isCorrect ?? opt?.IsCorrect ?? false),
+                    displayOrder: opt?.displayOrder ?? opt?.DisplayOrder ?? (optIdx + 1),
+                    answerFeedback: opt?.answerFeedback || opt?.AnswerFeedback || ''
+                };
+                extractedAnswerOptions.push(optObj);
+                return optObj;
+            })
+            : [];
+
+        return {
+            questionId,
+            questionsId: questionId,
             quizId: q?.quizId ?? q?.QuizId ?? 0,
-            degreeQuestionType: q?.degreeQuestionType ?? q?.DegreeQuestionType ?? 0,
+            degreeQuestionType: q?.degreeQuestionType ?? q?.DegreeQuestionType ?? 1,
             title: q?.title || q?.Title || '',
             questionText: q?.questionText || q?.QuestionText || '',
             questionFeedback: q?.questionFeedback || q?.QuestionFeedback || '',
@@ -25,26 +47,29 @@ export function parseGetStudentMicroQuizByMicrocredentialCourseIdOutput(rawJson 
             enumeration: q?.enumeration || q?.Enumeration || '',
             customWeights: q?.customWeights || q?.CustomWeights || '',
             points: Number(q?.points ?? q?.Points ?? 1),
-            displayOrder: q?.displayOrder ?? q?.DisplayOrder ?? 0,
+            displayOrder: q?.displayOrder ?? q?.DisplayOrder ?? (qIdx + 1),
             imageUrl: q?.imageUrl || q?.ImageUrl || '',
             difficulty: q?.difficulty ?? q?.Difficulty ?? 0,
             alternativeText: q?.alternativeText || q?.AlternativeText || '',
             randomizeAnswers: Boolean(q?.randomizeAnswers ?? q?.RandomizeAnswers ?? false),
-            howPointAssignedToBlanks: q?.howPointAssignedToBlanks || q?.HowPointAssignedToBlanks || ''
-        }))
-        : [];
+            howPointAssignedToBlanks: q?.howPointAssignedToBlanks || q?.HowPointAssignedToBlanks || '',
+            options: nestedOptions
+        };
+    });
 
-    // Normalize Answer Options
-    const answerOptions = Array.isArray(rawJson?.answerOptions || rawJson?.AnswerOptions)
-        ? (rawJson?.answerOptions || rawJson?.AnswerOptions).map(opt => ({
-            answerId: opt?.answerId ?? opt?.AnswerId ?? 0,
-            questionId: opt?.questionId ?? opt?.QuestionId ?? 0,
-            text: opt?.text || opt?.Text || '',
-            isCorrect: Boolean(opt?.isCorrect ?? opt?.IsCorrect ?? false),
-            displayOrder: opt?.displayOrder ?? opt?.DisplayOrder ?? 0,
-            answerFeedback: opt?.answerFeedback || opt?.AnswerFeedback || ''
-        }))
-        : [];
+    // Normalize Answer Options (from root array or extracted from questions)
+    const rawOptions = Array.isArray(rawJson?.answerOptions || rawJson?.AnswerOptions)
+        ? (rawJson?.answerOptions || rawJson?.AnswerOptions)
+        : extractedAnswerOptions;
+
+    const answerOptions = rawOptions.map(opt => ({
+        answerId: opt?.answerId ?? opt?.AnswerId ?? 0,
+        questionId: opt?.questionId ?? opt?.QuestionId ?? 0,
+        text: opt?.text || opt?.Text || '',
+        isCorrect: Boolean(opt?.isCorrect ?? opt?.IsCorrect ?? false),
+        displayOrder: opt?.displayOrder ?? opt?.DisplayOrder ?? 0,
+        answerFeedback: opt?.answerFeedback || opt?.AnswerFeedback || ''
+    }));
 
     // Normalize Question Text Components
     const questionTextComponents = Array.isArray(rawJson?.questionTextComponents || rawJson?.QuestionTextComponents)
@@ -216,15 +241,26 @@ export function parseGetStudentMicroQuizByMicrocredentialCourseIdOutput(rawJson 
         }))
         : [];
 
+    const resolvedQuizId = Number(rawJson?.quizId ?? rawJson?.QuizId ?? questions?.[0]?.quizId ?? 0);
+    const availabilityRaw = rawJson?.availability || rawJson?.Availability || {};
+    const availability = {
+        isWithinTime: Boolean(availabilityRaw?.isWithinTime ?? availabilityRaw?.IsWithinTime ?? true),
+        isTimeExpired: Boolean(availabilityRaw?.isTimeExpired ?? availabilityRaw?.IsTimeExpired ?? false),
+        availabilityMessage: availabilityRaw?.availabilityMessage || availabilityRaw?.AvailabilityMessage || ''
+    };
+
     return {
         success: isSuccess,
         isSuccess,
-        quizId: rawJson?.quizId ?? rawJson?.QuizId ?? 0,
-        quizName: rawJson?.quizName || rawJson?.QuizName || '',
+        quizId: resolvedQuizId,
+        quizName: rawJson?.quizName || rawJson?.QuizName || questions?.[0]?.title || '',
         quizDescription: rawJson?.quizDescription || rawJson?.QuizDescription || '',
         attemptId: rawJson?.attemptId ?? rawJson?.AttemptId ?? 0,
-        attemptsAllowed: Number(rawJson?.attemptsAllowed ?? rawJson?.AttemptsAllowed ?? 0),
-        remainingAttempts: Number(rawJson?.remainingAttempts ?? rawJson?.RemainingAttempts ?? 0),
+        microcredentialCourseId: Number(rawJson?.microcredentialCourseId ?? rawJson?.MicrocredentialCourseId ?? 0),
+        microcredentialModuleMasterId: Number(rawJson?.microcredentialModuleMasterId ?? rawJson?.MicrocredentialModuleMasterId ?? 0),
+        availability,
+        attemptsAllowed: Number(rawJson?.attemptsAllowed ?? rawJson?.AttemptsAllowed ?? 10),
+        remainingAttempts: Number(rawJson?.remainingAttempts ?? rawJson?.RemainingAttempts ?? 10),
         attemptsDone: Number(rawJson?.attemptsDone ?? rawJson?.AttemptsDone ?? 0),
         currentAttemptNumber: Number(rawJson?.currentAttemptNumber ?? rawJson?.CurrentAttemptNumber ?? 1),
         timeLimit: Number(rawJson?.timeLimit ?? rawJson?.TimeLimit ?? 0),
@@ -237,6 +273,7 @@ export function parseGetStudentMicroQuizByMicrocredentialCourseIdOutput(rawJson 
 
         // Collections
         questions,
+        questionList: questions,
         answerOptions,
         questionTextComponents,
         blankAnswers,
@@ -304,3 +341,7 @@ export function parseGetStudentMicroQuizByMicrocredentialCourseIdErrorOutput(raw
         rawData: rawJson
     };
 }
+
+export const parseGetStudentMicroQuizByMicrocredentialModuleIdOutput = parseGetStudentMicroQuizByMicrocredentialCourseIdOutput;
+export const parseGetStudentMicroQuizByMicrocredentialModuleIdErrorOutput = parseGetStudentMicroQuizByMicrocredentialCourseIdErrorOutput;
+

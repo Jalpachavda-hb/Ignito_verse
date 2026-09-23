@@ -4978,789 +4978,809 @@ a {
 }
 
 /* ==========================================================================
-   EXECUTIVE ENTERPRISE INTERACTIVE LOGIN PAGE (WHITE CANVAS THEME)
+   IGNITOCAPTIQ DESK HERO LOGIN PAGE (EXACT SCREENSHOT REPLICA)
+   Theme: #052765 (Deep Navy), #7f489f (Brand Purple), #e11d48 / #d81b60 (Pink Accent)
+   Background: loginbg.png with laptop desk, mug, books, plant
    ========================================================================== */
-.executive-login-wrapper {
+
+.captiq-desk-viewport {
   min-height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: radial-gradient(circle at 50% 15%, #ffffff 0%, #f8fafc 45%, #eef4fb 100%);
-  padding: clamp(24px, 4vw, 48px) clamp(16px, 3vw, 32px);
+  background: radial-gradient(circle at 50% 30%, #ffffff 0%, #f6f8fd 60%, #edf2fa 100%);
+  padding: clamp(20px, 3.5vw, 40px) clamp(16px, 2.5vw, 32px);
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
   box-sizing: border-box;
   font-family: var(--font-family, 'Hind Vadodara', sans-serif);
 }
 
-/* Background Canvas Layer */
-.executive-canvas-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
+/* /* Top Navigation Bar: Back to Home */
+.captiq-desk-top-bar {
   width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* Back to Home Button with Subtle Hover Shift */
-.login-floating-top-bar {
-  width: 100%;
-  max-width: 1180px;
+  max-width: 1220px;
   display: flex;
   justify-content: flex-start;
-  margin-bottom: 16px;
+  align-items: center;
+  margin-bottom: 14px;
   position: relative;
   z-index: 10;
+  padding: 0 4px;
+  box-sizing: border-box;
 }
 
-.executive-back-btn {
+.captiq-back-home-text-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: #ffffff;
-  border: 1.5px solid #dbeafe;
-  color: #00385E;
+  gap: 7px;
+  background: transparent;
+  border: none;
+  color: #052765;
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   font-weight: 700;
-  padding: 9px 20px;
-  border-radius: 9999px;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 56, 94, 0.06);
-  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  padding: 6px 0;
+  transition: all 0.2s ease;
 }
 
-.back-arrow-icon {
-  transition: transform 0.25s ease;
+.captiq-back-home-text-btn:hover {
+  color: #3a2c8c;
+  transform: translateX(-3px);
 }
 
-.executive-back-btn:hover {
-  background: #00385E;
-  border-color: #00385E;
-  color: #ffffff;
-  box-shadow: 0 4px 16px rgba(0, 56, 94, 0.25);
-}
-
-.executive-back-btn:hover .back-arrow-icon {
-  transform: translateX(-4px);
-}
-
-/* Main Dual-Panel Container Box */
-.executive-container-box {
+/* Master Login Card with loginbg.png as background */
+.captiq-desk-card {
   width: 100%;
-  max-width: 1180px;
-  background: #ffffff;
-  border-radius: 32px;
-  overflow: hidden;
+  max-width: 1220px;
+  min-height: 590px;
+  background-color: #ffffff;
+  background-image: url('./assets/home/loginbg.png');
+  background-repeat: no-repeat;
+  background-position: 40% center;
+  background-size: cover;
+  border-radius: 36px;
+  box-shadow: 0 25px 70px -15px rgba(58, 44, 140, 0.14), 0 2px 10px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(226, 217, 243, 0.85);
   display: flex;
+  justify-content: space-between;
+  padding: 0;
+  box-sizing: border-box;
   position: relative;
   z-index: 5;
-  box-shadow: 0 24px 70px rgba(0, 56, 94, 0.12), 0 4px 20px rgba(0, 0, 0, 0.03);
-  border: 1.5px solid rgba(219, 234, 254, 0.85);
-  box-sizing: border-box;
-  transition: all 0.4s ease;
+  overflow: hidden;
+  transition: all 0.35s ease;
 }
 
-.executive-container-box.box-auth-granted {
-  box-shadow: 0 30px 90px rgba(5, 150, 105, 0.25), 0 0 60px rgba(5, 150, 105, 0.15);
-  border-color: rgba(5, 150, 105, 0.4);
+.captiq-desk-card.card-auth-success {
+  box-shadow: 0 30px 90px rgba(16, 185, 129, 0.22);
+  border-color: rgba(16, 185, 129, 0.4);
 }
 
 /* ==========================================================================
-   LEFT PANEL: Deep Navy Brand Info & Dynamic Security Shield
+   LEFT COLUMN: Logo, People. Skills. Real Impact., 3 Features, Motto
    ========================================================================== */
-.executive-box-left {
-  flex: 1.15;
-  background: linear-gradient(155deg, #001220 0%, #00223d 40%, #00385E 100%);
-  color: #ffffff;
-  padding: clamp(36px, 3.5vw, 48px);
-  position: relative;
+.captiq-desk-col-left {
+  width: 330px;
+  padding: 40px 0 40px 48px;
+  box-sizing: border-box;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  overflow: hidden;
-  box-sizing: border-box;
-  transition: background 0.5s ease;
+  position: relative;
+  z-index: 6;
+  text-align: left;
 }
 
-.executive-box-glow {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 80% 20%, rgba(36, 183, 245, 0.12) 0%, transparent 60%);
-  pointer-events: none;
+.captiq-desk-brand {
+  margin-bottom: 20px;
 }
 
-.executive-network-pattern {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 320px;
-  height: 280px;
-  pointer-events: none;
-  z-index: 1;
-  overflow: hidden;
-}
-
-.network-svg {
-  width: 100%;
-  height: 100%;
+.brand-logo-img {
+  height: 48px;
+  width: auto;
+  max-width: 220px;
+  object-fit: contain;
   display: block;
 }
 
-.executive-left-content {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  justify-content: space-between;
+/* People. Skills. Real Impact. (2 Lines) */
+.captiq-desk-title-block {
+  margin-bottom: 18px;
 }
 
-.executive-brand-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 24px;
-}
-
-.executive-brand-emblem {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #1769FF 0%, #00385E 100%);
-  border: 1.5px solid rgba(255, 255, 255, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(23, 105, 255, 0.35);
-}
-
-.executive-brand-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.executive-brand-title {
+.captiq-people-title {
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
-  font-size: 1.28rem;
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-  color: #ffffff;
-}
-
-.cyan-highlight {
-  color: #24B7F5;
-}
-
-.executive-brand-sub {
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: #94a3b8;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-top: 2px;
-}
-
-.executive-headline-area {
-  margin-bottom: 24px;
-}
-
-.executive-main-title {
-  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
-  font-size: clamp(1.85rem, 2.5vw, 2.35rem);
+  font-size: 2.15rem;
   font-weight: 800;
   line-height: 1.18;
-  color: #ffffff;
-  margin-bottom: 12px;
+  color: #052765;
+  margin: 0 0 10px 0;
+  letter-spacing: -0.02em;
   display: flex;
   flex-direction: column;
 }
 
-.executive-cyan-gradient {
-  color: #24B7F5;
-  background: linear-gradient(90deg, #24B7F5 0%, #1769FF 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.title-first-line {
+  color: #052765;
+  white-space: nowrap;
 }
 
-.executive-desc {
-  font-size: 0.94rem;
-  line-height: 1.55;
-  color: #cbd5e1;
-  max-width: 480px;
+.title-real-impact {
+  color: #af4bb8;
 }
 
-.executive-features-stack {
+.captiq-people-desc {
+  font-size: 0.85rem;
+  line-height: 1.52;
+  color: #64748b;
+  margin: 0;
+  max-width: 300px;
+}
+
+/* Feature Stack */
+.captiq-desk-features {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin-bottom: 24px;
+  gap: 13px;
+  margin-bottom: 18px;
 }
 
-.executive-feature-card {
+.feature-pill-item {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 8px 12px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  align-items: center;
+  gap: 13px;
 }
 
-.executive-feature-card:hover {
-  background: rgba(36, 183, 245, 0.08);
-  border-color: rgba(36, 183, 245, 0.3);
-  transform: translateX(6px);
-}
-
-.feature-card-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: rgba(36, 183, 245, 0.12);
-  border: 1px solid rgba(36, 183, 245, 0.3);
-  color: #24B7F5;
+.feature-pill-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease;
 }
 
-.executive-feature-card:hover .feature-card-icon {
-  transform: scale(1.08) rotate(3deg);
-  background: rgba(36, 183, 245, 0.22);
+.feature-pill-icon.icon-pink {
+  background: #faf0fc;
+  color: #af4bb8;
+  border: 1px solid rgba(175, 75, 184, 0.22);
 }
 
-.feature-card-info h4 {
+.feature-pill-icon.icon-purple {
+  background: #f4f2fc;
+  color: #3a2c8c;
+  border: 1px solid rgba(58, 44, 140, 0.22);
+}
+
+.feature-pill-icon.icon-blue {
+  background: #eff6ff;
+  color: #052765;
+  border: 1px solid rgba(5, 39, 101, 0.22);
+}
+
+.feature-pill-info h4 {
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
-  font-size: 0.96rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 2px;
+  color: #052765;
+  margin: 0 0 2px 0;
 }
 
-.feature-card-info p {
-  font-size: 0.84rem;
-  color: #94a3b8;
-  line-height: 1.4;
+.feature-pill-info p {
+  font-size: 0.78rem;
+  color: #64748b;
   margin: 0;
 }
 
-/* 3D Security Shield Dynamic Platform Stage */
-.executive-shield-stage {
+/* Handwritten Script Motto */
+.captiq-desk-motto {
+  margin-top: 6px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  margin-top: auto;
-  padding-top: 14px;
-  position: relative;
+  align-items: flex-start;
 }
 
-.shield-ambient-pulse {
-  position: absolute;
-  top: 30%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 220px;
-  height: 220px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(36, 183, 245, 0.2) 0%, transparent 70%);
-  pointer-events: none;
-  transition: all 0.5s ease;
-}
-
-.shield-mode-active .shield-ambient-pulse {
-  background: radial-gradient(circle, rgba(36, 183, 245, 0.45) 0%, rgba(23, 105, 255, 0.2) 50%, transparent 80%);
-  transform: translate(-50%, -50%) scale(1.25);
-}
-
-.shield-mode-granted .shield-ambient-pulse {
-  background: radial-gradient(circle, rgba(5, 150, 105, 0.55) 0%, rgba(36, 183, 245, 0.2) 50%, transparent 80%);
-  transform: translate(-50%, -50%) scale(1.35);
-}
-
-.executive-shield-illustration {
-  max-width: 300px;
-  width: 100%;
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 16px 36px rgba(0, 0, 0, 0.45));
-  transition: transform 0.4s ease, filter 0.4s ease;
-  animation: floatLevitate 5s ease-in-out infinite;
-}
-
-.shield-mode-active .executive-shield-illustration {
-  filter: drop-shadow(0 20px 45px rgba(36, 183, 245, 0.45));
-  transform: translateY(-6px) scale(1.02);
-}
-
-.shield-mode-granted .executive-shield-illustration {
-  filter: drop-shadow(0 24px 50px rgba(5, 150, 105, 0.55));
-  transform: translateY(-8px) scale(1.04);
-}
-
-/* Dynamic Live Status Pill under Shield */
-.shield-live-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background: rgba(0, 18, 32, 0.75);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(36, 183, 245, 0.25);
-  color: #cbd5e1;
-  font-size: 0.76rem;
-  font-weight: 600;
+.handwritten-script {
+  font-family: 'Caveat', 'Dancing Script', cursive, sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #052765;
+  line-height: 1.15;
+  transform: rotate(-4deg);
+  display: inline-block;
   letter-spacing: 0.02em;
-  padding: 6px 14px;
-  border-radius: 9999px;
-  margin-top: 10px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
 }
 
-.status-idle-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #24B7F5;
-  box-shadow: 0 0 8px #24B7F5;
-  animation: pulseDot 2s infinite;
-}
-
-@keyframes pulseDot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.8); }
-}
-
-.status-encrypt-icon {
-  color: #24B7F5;
-  animation: pulseDot 1.2s infinite;
-}
-
-.status-granted-icon {
-  color: #10b981;
-}
-
-.shield-mode-granted .shield-live-status-pill {
-  background: rgba(6, 78, 59, 0.85);
-  border-color: rgba(16, 185, 129, 0.5);
-  color: #ecfdf5;
+.handwritten-line {
+  width: 32px;
+  height: 3px;
+  background: #af4bb8;
+  border-radius: 2px;
+  margin-top: 5px;
 }
 
 /* ==========================================================================
-   RIGHT PANEL: Executive White Form Panel
+   CENTER SPACER: lets desk photo, mug, laptop, books breathe
    ========================================================================== */
-.executive-box-right {
+.captiq-desk-center-spacer {
   flex: 1;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: clamp(34px, 3.8vw, 48px) clamp(30px, 3.8vw, 48px);
-  box-sizing: border-box;
+  min-width: 30px;
+  pointer-events: none;
 }
 
-.executive-form-container {
-  width: 100%;
-  max-width: 415px;
-  text-align: center;
-}
-
-.executive-card-shield-badge {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto 12px;
-}
-
-.login-card-badge-img {
-  width: 76px;
-  height: 76px;
-  object-fit: contain;
-  filter: drop-shadow(0 6px 18px rgba(36, 183, 245, 0.3));
-  transition: transform 0.3s ease;
-}
-
-.login-card-badge-img:hover {
-  transform: scale(1.06) rotate(3deg);
-}
-
-.executive-card-heading {
-  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
-  font-size: 1.78rem;
-  font-weight: 800;
-  color: #08233D;
-  margin-bottom: 4px;
-}
-
-.executive-card-subheading {
-  font-size: 0.92rem;
-  color: #64748b;
-  margin-bottom: 22px;
-}
-
-.executive-login-form {
+/* ==========================================================================
+   RIGHT COLUMN: Welcome Back Form Panel
+   ========================================================================== */
+.captiq-desk-col-right {
+  width: 440px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  justify-content: center;
+  position: relative;
+  z-index: 6;
   text-align: left;
+  background: #ffffff;
+  padding: 44px 48px;
+  box-sizing: border-box;
+  border-top-right-radius: 36px;
+  border-bottom-right-radius: 36px;
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
+  box-shadow: -15px 0 35px rgba(5, 39, 101, 0.04);
 }
 
-.executive-field-group {
+.captiq-form-header-bar {
+  width: 32px;
+  height: 3.5px;
+  background: linear-gradient(90deg, #3a2c8c 0%, #af4bb8 100%);
+  border-radius: 2px;
+  margin-bottom: 14px;
+}
+
+.captiq-desk-form-heading {
+  margin-bottom: 24px;
+}
+
+.captiq-right-title {
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #052765;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+}
+
+.title-back-accent {
+  color: #af4bb8;
+}
+
+.captiq-right-sub {
+  font-size: 0.91rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ==========================================================================
+   FEEDBACK BANNERS (Refined OTP Alerts with Modern Badges & Clean Spacing)
+   ========================================================================== */
+.captiq-banner-msg {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 15px;
+  border-radius: 11px;
+  font-family: var(--font-body, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 14px;
+  margin-bottom: 18px;
+  box-sizing: border-box;
+  animation: captiqBannerFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes captiqBannerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.captiq-banner-msg .banner-icon {
+  flex-shrink: 0;
+}
+
+.captiq-banner-msg .banner-text {
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Success Banner */
+.captiq-banner-msg.banner-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.08);
+}
+
+.captiq-banner-msg.banner-success .banner-icon {
+  color: #16a34a;
+}
+
+/* Error Banner */
+.captiq-banner-msg.banner-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08);
+}
+
+.captiq-banner-msg.banner-error .banner-icon {
+  color: #dc2626;
+}
+
+/* Form */
+.captiq-right-form {
   display: flex;
   flex-direction: column;
-  gap: 6px;
 }
 
-.executive-label {
-  font-size: 0.85rem;
+/* Method Switcher */
+.method-switcher-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.method-pill-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  border-radius: 10px;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.92rem;
   font-weight: 700;
-  color: #08233D;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #f8fafc;
+  border: 1.5px solid transparent;
+  color: #052765;
 }
 
-.executive-input-wrapper {
+.method-pill-btn:hover:not(.active) {
+  background: #f1f5f9;
+  color: #3a2c8c;
+}
+
+.method-pill-btn.active {
+  background: #fcf6fd;
+  border: 1.5px solid #af4bb8;
+  color: #af4bb8;
+  box-shadow: 0 2px 10px rgba(175, 75, 184, 0.16);
+}
+
+/* Field Box */
+.captiq-field-box {
+  margin-bottom: 18px;
+}
+
+.captiq-form-label {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #052765;
+  margin-bottom: 6px;
+}
+
+.captiq-styled-input-wrap {
   position: relative;
   display: flex;
   align-items: center;
   width: 100%;
-  border: 1.5px solid #D8E5F0;
-  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
   background: #ffffff;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
-.executive-input-wrapper.field-focused {
-  border-color: #1769FF;
-  box-shadow: 0 0 0 3.5px rgba(23, 105, 255, 0.12), 0 2px 10px rgba(0, 56, 94, 0.04);
+.captiq-styled-input-wrap.has-focus {
+  border-color: #3a2c8c;
+  box-shadow: 0 0 0 3px rgba(58, 44, 140, 0.12);
 }
 
-.executive-input {
+.field-icon-lead {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+
+.captiq-styled-input-wrap.has-focus .field-icon-lead {
+  color: #3a2c8c;
+}
+
+.captiq-styled-input {
   width: 100%;
   height: 48px;
-  padding: 12px 46px 12px 16px;
+  padding: 10px 14px 10px 44px;
   border: none;
-  border-radius: 10px;
   background: transparent;
   font-size: 0.94rem;
   font-family: inherit;
-  color: #08233D;
+  font-weight: 600;
+  color: #052765;
   outline: none;
   box-sizing: border-box;
 }
 
-/* Chrome / Safari / Edge Autofill Fix - prevent ugly cut-off background box */
-.executive-input:-webkit-autofill,
-.executive-input:-webkit-autofill:hover, 
-.executive-input:-webkit-autofill:focus, 
-.executive-input:-webkit-autofill:active {
+.captiq-styled-input:-webkit-autofill,
+.captiq-styled-input:-webkit-autofill:hover, 
+.captiq-styled-input:-webkit-autofill:focus, 
+.captiq-styled-input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-  -webkit-text-fill-color: #08233D !important;
+  -webkit-text-fill-color: #052765 !important;
   box-shadow: 0 0 0 1000px #ffffff inset !important;
   transition: background-color 5000s ease-in-out 0s;
-  border-radius: 10px;
 }
 
-.input-trailing-icon {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.default-input-icon {
-  color: #94a3b8;
-}
-
-.valid-email-check {
-  color: #10b981;
-  animation: popIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-@keyframes popIn {
-  0% { transform: scale(0.5); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.password-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.executive-forgot-link {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #1769FF;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.executive-forgot-link:hover {
-  text-decoration: underline;
-  color: #00385E;
-}
-
-.input-eye-toggle-btn {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: #94a3b8;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  height: 32px;
-  width: 32px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  z-index: 2;
-}
-
-.input-eye-toggle-btn:hover {
-  color: #00385E;
-  background: rgba(0, 56, 94, 0.05);
-}
-
-/* Remember Me Checkbox */
-.executive-remember-row {
-  display: flex;
-  align-items: center;
-  margin-top: 1px;
-}
-
-.executive-checkbox-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.exec-native-chk {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.exec-chk-box {
-  width: 17px;
-  height: 17px;
-  border-radius: 5px;
-  border: 1.5px solid #cbd5e1;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.exec-native-chk:checked + .exec-chk-box {
-  background: #00385E;
-  border-color: #00385E;
-  color: #ffffff;
-}
-
-.exec-chk-text {
-  font-size: 0.86rem;
-  color: #475569;
-  font-weight: 600;
-}
-
-/* Multi-Stage Sign In CTA Button */
-.executive-cta-button {
+/* Primary Action Button (Send OTP & Verify OTP) */
+.captiq-primary-submit-btn {
   width: 100%;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: #00385E;
+  background: linear-gradient(90deg, #3a2c8c 0%, #af4bb8 100%);
   color: #ffffff;
   border: none;
-  padding: 13px;
   border-radius: 12px;
   font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
-  font-size: 1rem;
+  font-size: 0.98rem;
   font-weight: 700;
   cursor: pointer;
-  margin-top: 6px;
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-  box-shadow: 0 8px 24px rgba(0, 56, 94, 0.22);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 22px rgba(58, 44, 140, 0.32);
 }
 
-.cta-arrow-icon {
-  transition: transform 0.25s ease;
-}
-
-.executive-cta-button:hover:not(:disabled) {
-  background: #002844;
+.captiq-primary-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(90deg, #2e2175 0%, #9937a2 100%);
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(0, 56, 94, 0.32);
+  box-shadow: 0 12px 28px rgba(175, 75, 184, 0.42);
 }
 
-.executive-cta-button:hover:not(:disabled) .cta-arrow-icon {
-  transform: translateX(4px);
-}
-
-.executive-cta-button.verifying {
-  background: #00223d;
-  cursor: wait;
-}
-
-.spinner-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #24B7F5;
-  animation: pulseDot 0.8s infinite;
-}
-
-.executive-cta-button.granted {
-  background: #059669;
+.captiq-primary-submit-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #94a3b8;
   box-shadow: none;
-  cursor: default;
+  transform: none;
 }
 
-.granted-check {
-  animation: popIn 0.3s ease;
-}
-
-/* Secure by Design Trust Status */
-.executive-trust-badge {
+/* ==========================================================================
+   EXACT 4-BOX DEDICATED OTP INPUT ROW (SMART FOCUS & DYNAMIC GLOW)
+   ========================================================================== */
+.captiq-otp-4box-row {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  color: #64748b;
-  font-weight: 600;
-  margin-top: -4px;
-}
-
-.trust-check-icon {
-  color: #10b981;
-}
-
-/* SSO Divider */
-.executive-divider {
-  display: flex;
+  justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin: 4px 0;
+  margin: 12px 0 16px 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.divider-line {
+.captiq-otp-digit-box {
   flex: 1;
-  height: 1px;
-  background: #e2e8f0;
+  height: 60px;
+  max-width: 74px;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #052765;
+  text-align: center;
+  outline: none;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+  caret-color: #af4bb8;
+  padding: 0;
 }
 
-.divider-text {
-  font-size: 0.78rem;
-  font-weight: 600;
+.captiq-otp-digit-box:hover:not(:disabled) {
+  border-color: #cbd5e1;
+}
+
+/* Filled State */
+.captiq-otp-digit-box.is-filled {
+  border-color: #af4bb8;
+  background: linear-gradient(135deg, #fdf7fe 0%, #f6f0fc 100%);
+  color: #052765;
+  box-shadow: 0 2px 8px rgba(175, 75, 184, 0.12);
+}
+
+/* Focused / Active State with Dynamic Glow */
+.captiq-otp-digit-box:focus,
+.captiq-otp-digit-box.is-focused {
+  border-color: #af4bb8;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(175, 75, 184, 0.22), 0 6px 18px rgba(58, 44, 140, 0.16);
+  transform: translateY(-2px);
+}
+
+.captiq-otp-digit-box.is-filled:focus {
+  background: linear-gradient(135deg, #fdf8fe 0%, #f6f1fc 100%);
+  box-shadow: 0 0 0 4px rgba(175, 75, 184, 0.25), 0 8px 20px rgba(175, 75, 184, 0.2);
+}
+
+/* Verify OTP Sub-elements */
+.verify-top-subrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.verify-top-subrow .captiq-form-label {
+  margin-bottom: 0;
+}
+
+.captiq-text-link {
+  background: transparent;
+  border: none;
+  color: #3a2c8c;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.captiq-text-link:hover {
+  color: #af4bb8;
+  text-decoration: underline;
+}
+
+.resend-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: 10px 0 18px 0;
+}
+
+/* ==========================================================================
+   OUTSIDE CARD: Bottom Right Slogan
+   ========================================================================== */
+.captiq-bottom-right-slogan {
+  position: absolute;
+  right: clamp(24px, 4vw, 56px);
+  bottom: clamp(16px, 3vh, 32px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   color: #94a3b8;
-  text-transform: lowercase;
+  line-height: 1.35;
+  text-transform: uppercase;
 }
 
-/* SSO Buttons */
-.executive-sso-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+.slogan-pink-bar {
+  width: 24px;
+  height: 3px;
+  background: #af4bb8;
+  border-radius: 2px;
+  margin-top: 4px;
 }
 
-.sso-btn {
+/* Responsive Handling */
+@media (max-width: 1120px) {
+  .captiq-desk-card {
+    flex-direction: column;
+    padding: 36px 28px;
+    background-size: cover;
+    background-position: top center;
+    gap: 32px;
+  }
+
+  .captiq-desk-col-left,
+  .captiq-desk-col-right {
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+  }
+
+  .captiq-desk-center-spacer {
+    display: none;
+  }
+
+  .captiq-bottom-right-slogan {
+    position: static;
+    margin-top: 20px;
+    align-items: center;
+  }
+}
+
+/* QR Code Modal */
+.qr-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
+  padding: 16px;
+}
+
+.qr-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 6, 35, 0.65);
+  backdrop-filter: blur(8px);
+}
+
+.qr-modal-card {
+  position: relative;
+  z-index: 2;
   background: #ffffff;
-  border: 1.5px solid #D8E5F0;
-  border-radius: 12px;
-  padding: 10px 14px;
-  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #08233D;
+  border-radius: 24px;
+  max-width: 400px;
+  width: 100%;
+  padding: 32px 28px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  animation: popIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.qr-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.sso-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  transform: translateY(-1.5px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+.qr-modal-close:hover {
+  background: #e2e8f0;
+  color: #052765;
 }
 
-.executive-card-footer-link {
+.qr-icon-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fdf5fe 0%, #f4f2fc 100%);
+  border: 1.5px solid #af4bb8;
+  color: #3a2c8c;
   display: flex;
-  justify-content: center;
   align-items: center;
-  margin-top: 6px;
+  justify-content: center;
+  margin: 0 auto 16px;
 }
 
-.footer-secure-notice {
+.qr-modal-title {
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #052765;
+  margin: 0 0 6px 0;
+}
+
+.qr-modal-subtitle {
+  font-size: 0.88rem;
+  color: #64748b;
+  line-height: 1.45;
+  margin: 0 0 20px 0;
+}
+
+.qr-code-display-box {
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1.5px solid #e2e8f0;
+  display: inline-block;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  margin-bottom: 16px;
+}
+
+.qr-svg-canvas {
+  width: 190px;
+  height: 190px;
+  display: block;
+}
+
+.qr-scan-pulse-hint {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
+  gap: 8px;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #64748b;
+  justify-content: center;
 }
 
-.footer-trust-icon {
-  color: #10b981;
+.pulse-radar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulseDot 1.5s infinite;
 }
 
 /* ==========================================================================
    MOBILE & RESPONSIVE BEHAVIOR (< 992px)
    ========================================================================== */
 @media (max-width: 992px) {
-  .executive-container-box {
+  .captiq-login-card {
     flex-direction: column;
-    min-height: auto;
     max-width: 480px;
     border-radius: 24px;
+    min-height: auto;
   }
 
-  .executive-box-left {
-    padding: 28px 24px;
+  .captiq-panel-left {
+    padding: 32px 24px;
   }
 
-  .executive-headline-area,
-  .executive-features-stack,
-  .executive-shield-stage {
+  .panel-wave-divider {
     display: none;
   }
 
-  .executive-brand-row {
-    margin-bottom: 0;
+  .captiq-hero-text,
+  .captiq-feature-list {
+    display: none;
   }
 
-  .executive-box-right {
+  .captiq-brand-block {
+    margin-bottom: 0;
+    text-align: center;
+  }
+
+  .captiq-panel-right {
     padding: 32px 24px 40px;
+  }
+
+  .decor-cube {
+    display: none;
   }
 }
 
@@ -10831,6 +10851,60 @@ a {
   inset: 0;
   background: linear-gradient(180deg, rgba(10, 25, 47, 0.72) 0%, rgba(0, 56, 94, 0.88) 100%);
   z-index: 1;
+}
+
+/* Floating Top-Left Back to Home Button */
+.mc-catalog-hero-top-bar {
+  position: absolute;
+  top: 24px;
+  left: clamp(20px, 4vw, 60px);
+  z-index: 10;
+}
+
+.mc-catalog-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1.5px solid #dbeafe;
+  color: #00385E;
+  font-family: var(--font-heading, 'Hind Vadodara', sans-serif);
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  text-decoration: none;
+}
+
+.mc-catalog-back-btn .back-arrow-icon {
+  transition: transform 0.25s ease;
+}
+
+.mc-catalog-back-btn:hover {
+  background: #00385E;
+  border-color: #00385E;
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(0, 56, 94, 0.35);
+  transform: translateY(-1px);
+}
+
+.mc-catalog-back-btn:hover .back-arrow-icon {
+  transform: translateX(-4px);
+}
+
+@media (max-width: 768px) {
+  .mc-catalog-hero-top-bar {
+    top: 14px;
+    left: 14px;
+  }
+  
+  .mc-catalog-back-btn {
+    padding: 6px 14px;
+    font-size: 0.82rem;
+  }
 }
 
 .mc-catalog-hero-inner {

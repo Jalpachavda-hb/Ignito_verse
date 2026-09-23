@@ -596,7 +596,8 @@ export async function getStudentMicrocredentialRaiseHandAnswerList(
  */
 export async function microcredentialQuizStudentAttemptDetail(
     microcredentialCourseId = 0,
-    studentId = 0
+    studentId = 0,
+    microcredentialModuleMasterId = 0
 ) {
     try {
         let finalStudentId = Number(studentId) || 0;
@@ -604,7 +605,11 @@ export async function microcredentialQuizStudentAttemptDetail(
             finalStudentId = getLoggedInStudentId();
         }
 
-        const inputDto = buildMicrocredentialQuizStudentAttemptDetailInput(microcredentialCourseId, finalStudentId);
+        const inputDto = buildMicrocredentialQuizStudentAttemptDetailInput(
+            microcredentialCourseId, 
+            finalStudentId,
+            microcredentialModuleMasterId
+        );
         const response = await apiClient('api/StudentMicrocredentialQuizAPI/MicrocredentialQuizStudentAttemptDetail', {
             method: 'POST',
             headers: inputDto.headers,

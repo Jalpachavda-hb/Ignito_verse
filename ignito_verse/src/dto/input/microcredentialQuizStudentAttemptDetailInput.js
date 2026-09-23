@@ -8,18 +8,25 @@
  */
 export function buildMicrocredentialQuizStudentAttemptDetailInput(
     microcredentialCourseId = 0,
-    studentId = 0
+    studentId = 0,
+    microcredentialModuleMasterId = 0
 ) {
+    const cId = Number(microcredentialCourseId) || 0;
+    const sId = Number(studentId) || 0;
+    const mId = Number(microcredentialModuleMasterId) || 0;
+
     return {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            MicrocredentialCourseId: Number(microcredentialCourseId) || 0,
-            StudentId: Number(studentId) || 0,
-            microcredentialCourseId: Number(microcredentialCourseId) || 0,
-            studentId: Number(studentId) || 0
+            MicrocredentialCourseId: cId,
+            StudentId: sId,
+            MicrocredentialModuleMasterId: mId,
+            microcredentialCourseId: cId,
+            studentId: sId,
+            microcredentialModuleMasterId: mId
         })
     };
 }

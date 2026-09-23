@@ -81,11 +81,20 @@ export async function studentMicrocredentialsQuizAttemptList(
             searchInput,
             finalStudentId
         );
-        const response = await apiClient('api/StudentMyProfileAPI/StudentMicrocredentialsQuizAttemptList', {
+        let response = await apiClient('api/StudentMyProfileAPI/GetMicroStudentQuizAttemptList', {
             method: 'POST',
             headers: inputDto.headers,
             body: inputDto.body
         });
+
+        // Fallback to legacy endpoint name if 404
+        if (response.status === 404 || (!response.ok && !response.data)) {
+            response = await apiClient('api/StudentMyProfileAPI/StudentMicrocredentialsQuizAttemptList', {
+                method: 'POST',
+                headers: inputDto.headers,
+                body: inputDto.body
+            });
+        }
 
         if (!response.ok && response.status !== 200) {
             return parseStudentMicrocredentialsQuizAttemptListErrorOutput(response.data, response.status);
@@ -98,6 +107,8 @@ export async function studentMicrocredentialsQuizAttemptList(
         return parseStudentMicrocredentialsQuizAttemptListErrorOutput({ message: error.message }, 500);
     }
 }
+
+export const getMicroStudentQuizAttemptList = studentMicrocredentialsQuizAttemptList;
 
 /**
  * Fetches student microcredential quiz result by Quiz ID.

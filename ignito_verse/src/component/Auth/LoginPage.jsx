@@ -1,156 +1,107 @@
-// ignitoverse: Executive Enterprise Interactive Login Page with OTP Authentication
-import React, { useState, useEffect, useRef } from 'react';
+// IgnitoCaptiq: Modern Executive Login Page with Desk Background & Clean Layout
+import React, { useState, useRef, useEffect } from 'react';
 import { 
-  ShieldCheck, TrendingUp, GraduationCap, Mail, Phone, 
-  ArrowRight, BookOpen, ArrowLeft, Check, CheckCircle2,
-  LockKeyhole, Sparkles, RefreshCw
+  ShieldCheck, BarChart2, GraduationCap, Mail, Smartphone, 
+  ArrowRight, ArrowLeft, Check,
+  LockKeyhole, RefreshCw, CheckCircle2, AlertCircle
 } from 'lucide-react';
-import logoImg from '../../assets/Ignitoverse Logo.png';
-import loginMainImg from '../../assets/home/login_main.png';
-import loginBadgeImg from '../../assets/login_page.png';
+import captiqLogoImg from '../../assets/newlg.png';
+import loginBgImg from '../../assets/home/loginbg.png';
 import { sendStudentLoginOTP, validateStudentLoginOTP } from '../../services/authService';
 
 export default function LoginPage({ 
   onLoginSuccess = () => {}, 
   onNavigateHome = () => {} 
 }) {
-  // Login Mode & Step State
-  const [step, setStep] = useState('send_otp'); // 'send_otp' | 'verify_otp'
+  // Method Switcher: 'email' | 'mobile'
+  const [loginMethod, setLoginMethod] = useState('email');
   const [emailOrMobile, setEmailOrMobile] = useState('');
-  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState('send_otp'); // 'send_otp' | 'verify_otp'
   
-  // OTP Session Details from Backend
+  // 4-Digit OTP state & refs
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '']);
+  const otpInputRefs = useRef([]);
+
+  // Backend session details
   const [studentId, setStudentId] = useState(0);
   const [otpId, setOtpId] = useState(0);
   
-  // Interaction & Focus States
-  const [focusedField, setFocusedField] = useState(null); // 'identifier' | 'otp' | null
+  // Interaction & Status
+  const [focusedField, setFocusedField] = useState(null);
   const [authStage, setAuthStage] = useState('idle'); // 'idle' | 'verifying' | 'granted'
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  
+
   // Validation
-  const isEmail = emailOrMobile.includes('@');
-  const isInputValid = emailOrMobile.trim().length >= 4;
-  const isOtpValid = otp.trim().length >= 4;
+  const isInputValid = emailOrMobile.trim().length >= (loginMethod === 'email' ? 5 : 7);
+  const isOtpValid = otpDigits.every(d => d.trim().length === 1 && /^\d$/.test(d));
 
-  // Canvas & Background Particle Mesh
-  const canvasRef = useRef(null);
-
+  // Auto-focus first box on entering verify_otp
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let animationFrameId;
+    if (step === 'verify_otp') {
+      setTimeout(() => {
+        otpInputRefs.current[0]?.focus();
+      }, 120);
+    }
+  }, [step]);
 
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
-
-    const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', handleResize);
-
-    // Generate Elegant Light Particles
-    const particleCount = Math.min(Math.max(Math.floor((width * height) / 9500), 80), 130);
-    const particles = [];
-    for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.45,
-        vy: (Math.random() - 0.5) * 0.45,
-        radius: Math.random() * 0.9 + 1.4, // Delicate 1.4px to 2.3px dots
-        color: i % 3 === 0 ? 'rgba(56, 189, 248, ' : i % 3 === 1 ? 'rgba(96, 165, 250, ' : 'rgba(125, 211, 252, '
-      });
+  // Smart Focus & Input Handlers
+  const handleOtpChange = (index, value) => {
+    const cleaned = value.replace(/\D/g, '');
+    if (!cleaned) {
+      const next = [...otpDigits];
+      next[index] = '';
+      setOtpDigits(next);
+      return;
     }
 
-    let mouse = { x: -1000, y: -1000, radius: 200 };
+    const digit = cleaned.slice(-1);
+    const next = [...otpDigits];
+    next[index] = digit;
+    setOtpDigits(next);
 
-    const handleCanvasMouseMove = (e) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-    };
+    // Smart Focus: Advance to next box
+    if (digit && index < 3) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
 
-    const handleCanvasMouseLeave = () => {
-      mouse.x = -1000;
-      mouse.y = -1000;
-    };
-
-    window.addEventListener('mousemove', handleCanvasMouseMove);
-    window.addEventListener('mouseleave', handleCanvasMouseLeave);
-
-    const render = () => {
-      ctx.clearRect(0, 0, width, height);
-
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // Smooth wrap/bounce boundaries
-        if (p.x < 0 || p.x > width) p.vx *= -1;
-        if (p.y < 0 || p.y > height) p.vy *= -1;
-
-        // Draw soft, light particle dot
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = p.color + '0.65)';
-        ctx.shadowBlur = 4;
-        ctx.shadowColor = 'rgba(56, 189, 248, 0.25)';
-        ctx.fill();
-        ctx.shadowBlur = 0; // reset shadow for lines
-
-        // Connect nearby particles with subtle light lines
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 150) {
-            const alpha = (1 - dist / 150) * 0.24;
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(56, 189, 248, ${alpha})`;
-            ctx.lineWidth = 0.95;
-            ctx.stroke();
-          }
-        }
-
-        // Connect particles to mouse cursor with soft light glow
-        const mdx = p.x - mouse.x;
-        const mdy = p.y - mouse.y;
-        const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
-
-        if (mdist < mouse.radius) {
-          const malpha = (1 - mdist / mouse.radius) * 0.42;
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(mouse.x, mouse.y);
-          ctx.strokeStyle = `rgba(56, 189, 248, ${malpha})`;
-          ctx.lineWidth = 1.15;
-          ctx.stroke();
-        }
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace') {
+      if (!otpDigits[index] && index > 0) {
+        // Backspace Flow: jump back and clear previous
+        const next = [...otpDigits];
+        next[index - 1] = '';
+        setOtpDigits(next);
+        otpInputRefs.current[index - 1]?.focus();
+      } else {
+        const next = [...otpDigits];
+        next[index] = '';
+        setOtpDigits(next);
       }
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && index < 3) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
 
-      animationFrameId = requestAnimationFrame(render);
-    };
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
+    if (!pasted) return;
 
-    render();
+    const next = ['', '', '', ''];
+    for (let i = 0; i < pasted.length; i++) {
+      next[i] = pasted[i];
+    }
+    setOtpDigits(next);
 
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('mousemove', handleCanvasMouseMove);
-      window.removeEventListener('mouseleave', handleCanvasMouseLeave);
-    };
-  }, []);
+    const focusIdx = Math.min(pasted.length, 3);
+    otpInputRefs.current[focusIdx]?.focus();
+  };
 
-  // Handle Requesting OTP
+  // Request OTP
   const handleSendOTP = async (e) => {
     if (e) e.preventDefault();
     if (authStage !== 'idle') return;
@@ -160,8 +111,9 @@ export default function LoginPage({
     setAuthStage('verifying');
 
     try {
-      const payload = isEmail 
-        ? { email: emailOrMobile.trim(), mobileNumber: '' } 
+      const isActuallyEmail = emailOrMobile.includes('@');
+      const payload = isActuallyEmail || loginMethod === 'email'
+        ? { email: emailOrMobile.trim(), mobileNumber: '' }
         : { email: '', mobileNumber: emailOrMobile.trim() };
 
       const result = await sendStudentLoginOTP(payload);
@@ -169,12 +121,13 @@ export default function LoginPage({
       if (result.isSuccess || result.success) {
         setStudentId(result.studentId || 0);
         setOtpId(result.otpId || 0);
+        setOtpDigits(['', '', '', '']);
         setStep('verify_otp');
         setAuthStage('idle');
-        setSuccessMessage(result.message || 'OTP sent successfully! Please check your inbox/SMS.');
+        setSuccessMessage(result.message || 'OTP sent successfully! Please check your inbox / messages.');
       } else {
         setAuthStage('idle');
-        setErrorMessage(result.message || result.error || 'Failed to send OTP. Please check your Email or Mobile Number.');
+        setErrorMessage(result.message || result.error || 'Failed to send OTP. Please check your credentials.');
       }
     } catch (err) {
       console.error('[LoginPage] Send OTP Exception:', err);
@@ -183,7 +136,7 @@ export default function LoginPage({
     }
   };
 
-  // Handle Validating OTP & Logging In
+  // Validate OTP
   const handleValidateOTP = async (e) => {
     if (e) e.preventDefault();
     if (authStage !== 'idle') return;
@@ -196,14 +149,14 @@ export default function LoginPage({
       const result = await validateStudentLoginOTP({
         studentId,
         otpId,
-        otp: otp.trim()
+        otp: otpDigits.join('')
       });
 
       if (result.isSuccess || result.success) {
         setAuthStage('granted');
         setTimeout(() => {
           onLoginSuccess(result.user);
-        }, 700);
+        }, 650);
       } else {
         setAuthStage('idle');
         setErrorMessage(result.message || result.error || 'Invalid OTP. Please check and try again.');
@@ -216,329 +169,302 @@ export default function LoginPage({
   };
 
   return (
-    <div className="executive-login-wrapper">
-      {/* Background Interactive Canvas Particle Layer */}
-      <canvas ref={canvasRef} className="executive-canvas-layer" />
-
-      {/* Top Floating Back Button with Animated Arrow */}
-      <div className="login-floating-top-bar">
+    <div className="captiq-desk-viewport">
+      
+      {/* Top Navigation Bar: Back to Home */}
+      <div className="captiq-desk-top-bar">
         <button 
           type="button" 
-          className="executive-back-btn" 
+          className="captiq-back-home-text-btn" 
           onClick={onNavigateHome}
           aria-label="Back to Home"
         >
-          <ArrowLeft size={16} className="back-arrow-icon" />
+          <ArrowLeft size={16} />
           <span>Back to Home</span>
         </button>
       </div>
 
-      {/* Centered Dual-Panel Box */}
-      <div className={`executive-container-box ${authStage === 'granted' ? 'box-auth-granted' : ''}`}>
+      {/* Main Dual-Column Card with loginbg.png as background */}
+      <div 
+        className={`captiq-desk-card ${authStage === 'granted' ? 'card-auth-success' : ''}`}
+        style={{ backgroundImage: `url(${loginBgImg})` }}
+      >
         
-        {/* LEFT PANEL: Deep Navy Brand & Dynamic Security Shield */}
-        <div className={`executive-box-left ${focusedField === 'otp' ? 'shield-mode-active' : ''} ${authStage === 'granted' ? 'shield-mode-granted' : ''}`}>
-          <div className="executive-box-glow" aria-hidden="true" />
+        {/* ========================================================
+            LEFT COLUMN: Logo, People. Skills. Real Impact., Features, Motto
+            ======================================================== */}
+        <div className="captiq-desk-col-left">
           
-          {/* Top-Right Molecular Lattice Pattern */}
-          <div className="executive-network-pattern" aria-hidden="true">
-            <svg viewBox="0 0 320 280" fill="none" xmlns="http://www.w3.org/2000/svg" className="network-svg">
-              <path d="M220 20 L270 50 L270 110 L220 140 L170 110 L170 50 Z" stroke="#24B7F5" strokeWidth="1.2" strokeOpacity="0.25" />
-              <path d="M270 50 L310 75 L310 135 L270 160 L220 140" stroke="#24B7F5" strokeWidth="1.2" strokeOpacity="0.2" />
-              <path d="M170 110 L120 140 L120 200 L170 230 L220 200 L220 140" stroke="#24B7F5" strokeWidth="1.2" strokeOpacity="0.22" />
-              
-              <line x1="220" y1="20" x2="250" y2="5" stroke="#24B7F5" strokeWidth="1.2" strokeOpacity="0.18" />
-              <line x1="170" y1="50" x2="130" y2="30" stroke="#24B7F5" strokeWidth="1.2" strokeOpacity="0.18" />
-              
-              <circle cx="220" cy="20" r="4.5" fill="#24B7F5" fillOpacity="0.6" />
-              <circle cx="270" cy="50" r="5" fill="#24B7F5" fillOpacity="0.75" />
-              <circle cx="270" cy="110" r="4.5" fill="#24B7F5" fillOpacity="0.6" />
-              <circle cx="220" cy="140" r="6" fill="#1769FF" fillOpacity="0.85" />
-              <circle cx="170" cy="110" r="5" fill="#24B7F5" fillOpacity="0.7" />
-              <circle cx="170" cy="50" r="4" fill="#24B7F5" fillOpacity="0.5" />
-              <circle cx="120" cy="140" r="5" fill="#24B7F5" fillOpacity="0.65" />
-            </svg>
+          {/* Brand Logo */}
+          <div className="captiq-desk-brand">
+            <img src={captiqLogoImg} alt="ignitoCaptiq" className="brand-logo-img" />
           </div>
 
-          <div className="executive-left-content">
-            {/* Top Brand Lockup */}
-            <div className="executive-brand-row">
-              <div className="executive-brand-emblem">
-                <BookOpen size={17} />
-              </div>
-              <div className="executive-brand-text">
-                <div className="executive-brand-title">
-                  <span>Ignito</span><span className="cyan-highlight">Verse</span>
-                </div>
-                <span className="executive-brand-sub">Enterprise Learning Platform</span>
-              </div>
-            </div>
+          {/* Headline & Description (2 Lines) */}
+          <div className="captiq-desk-title-block">
+            <h1 className="captiq-people-title">
+              <span className="title-first-line">People. Skills.</span>
+              <span className="title-real-impact">Real Impact.</span>
+            </h1>
+            <p className="captiq-people-desc">
+              IgnitoCaptiq empowers organizations to build future-ready teams with verified microcredentials and passwordless OTP login.
+            </p>
+          </div>
 
-            {/* Main Headline */}
-            <div className="executive-headline-area">
-              <h1 className="executive-main-title">
-                Enterprise Learning.
-                <span className="executive-cyan-gradient">Measurable Impact.</span>
-              </h1>
-              <p className="executive-desc">
-                Ignitoverse empowers organizations to build future-ready teams with verified microcredentials and passwordless OTP login.
-              </p>
-            </div>
-
-            {/* Feature Highlights */}
-            <div className="executive-features-stack">
-              <div className="executive-feature-card">
-                <div className="feature-card-icon">
-                  <ShieldCheck size={18} />
-                </div>
-                <div className="feature-card-info">
-                  <h4>Trusted & Secure OTP</h4>
-                  <p>Enterprise-grade passwordless authentication.</p>
-                </div>
+          {/* 3 Feature Rows */}
+          <div className="captiq-desk-features">
+            <div className="feature-pill-item">
+              <div className="feature-pill-icon icon-pink">
+                <GraduationCap size={18} />
               </div>
-
-              <div className="executive-feature-card">
-                <div className="feature-card-icon">
-                  <TrendingUp size={18} />
-                </div>
-                <div className="feature-card-info">
-                  <h4>Measurable Outcomes</h4>
-                  <p>Track progress, verify skills, and drive real business impact.</p>
-                </div>
-              </div>
-
-              <div className="executive-feature-card">
-                <div className="feature-card-icon">
-                  <GraduationCap size={18} />
-                </div>
-                <div className="feature-card-info">
-                  <h4>Industry-Aligned Learning</h4>
-                  <p>Role-aligned learning paths backed by industry experts.</p>
-                </div>
+              <div className="feature-pill-info">
+                <h4>Skill Development</h4>
+                <p>Future-ready workforce</p>
               </div>
             </div>
 
-            {/* Interactive 3D Security Shield Platform */}
-            <div className="executive-shield-stage">
-              <div className="shield-ambient-pulse" aria-hidden="true" />
-              <img 
-                src={loginMainImg} 
-                alt="Enterprise Security Shield" 
-                className="executive-shield-illustration" 
-              />
+            <div className="feature-pill-item">
+              <div className="feature-pill-icon icon-purple">
+                <BarChart2 size={18} />
+              </div>
+              <div className="feature-pill-info">
+                <h4>Measurable Outcomes</h4>
+                <p>Track progress and impact</p>
+              </div>
+            </div>
+
+            <div className="feature-pill-item">
+              <div className="feature-pill-icon icon-blue">
+                <ShieldCheck size={18} />
+              </div>
+              <div className="feature-pill-info">
+                <h4>Secure & Trusted</h4>
+                <p>Enterprise-grade authentication</p>
+              </div>
             </div>
           </div>
+
+          {/* Handwritten Motto at bottom */}
+          <div className="captiq-desk-motto">
+            <span className="handwritten-script">
+              A Brighter<br/>Learning Tomorrow
+            </span>
+            <span className="handwritten-line" />
+          </div>
+
         </div>
 
-        {/* RIGHT PANEL: Executive White Form Panel */}
-        <div className="executive-box-right">
-          <div className="executive-form-container">
-            
-            {/* Header Badge Image */}
-            <div className="executive-card-shield-badge">
-              <img 
-                src={loginBadgeImg} 
-                alt="Security Shield Emblem" 
-                className="login-card-badge-img" 
-              />
-            </div>
+        {/* ========================================================
+            CENTER SPACER: lets desk photo, mug, laptop, books breathe
+            ======================================================== */}
+        <div className="captiq-desk-center-spacer" aria-hidden="true" />
 
-            {/* Title & Tagline */}
-            <h2 className="executive-card-heading">
-              {step === 'send_otp' ? 'Employee Login' : 'Enter Verification OTP'}
+        {/* ========================================================
+            RIGHT COLUMN: Welcome Back Form
+            ======================================================== */}
+        <div className="captiq-desk-col-right">
+          
+          <div className="captiq-form-header-bar" />
+
+          {/* Title Area */}
+          <div className="captiq-desk-form-heading">
+            <h2 className="captiq-right-title">
+              Welcome <span className="title-back-accent">Back</span>
             </h2>
-            <p className="executive-card-subheading">
-              {step === 'send_otp' 
-                ? 'Sign in via One-Time Password (OTP)' 
-                : `We sent a code to ${emailOrMobile}`}
+            <p className="captiq-right-sub">
+              Sign in to continue to your IgnitoCaptiq account
             </p>
+          </div>
 
-            {/* Success Banner */}
-            {successMessage && (
-              <div 
-                style={{
-                  background: 'rgba(34, 197, 94, 0.12)',
-                  border: '1px solid rgba(34, 197, 94, 0.35)',
-                  color: '#4ade80',
-                  borderRadius: '8px',
-                  padding: '10px 14px',
-                  fontSize: '13px',
-                  lineHeight: '1.4',
-                  marginBottom: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <span>✅</span>
-                <span>{successMessage}</span>
-              </div>
-            )}
+          {/* Feedback Banners */}
+          {successMessage && (
+            <div className="captiq-banner-msg banner-success" role="status">
+              <CheckCircle2 size={16} strokeWidth={2.4} className="banner-icon" />
+              <span className="banner-text">{successMessage}</span>
+            </div>
+          )}
+          {errorMessage && (
+            <div className="captiq-banner-msg banner-error" role="alert">
+              <AlertCircle size={16} strokeWidth={2.4} className="banner-icon" />
+              <span className="banner-text">{errorMessage}</span>
+            </div>
+          )}
 
-            {/* Error Banner */}
-            {errorMessage && (
-              <div 
-                style={{
-                  background: 'rgba(239, 68, 68, 0.12)',
-                  border: '1px solid rgba(239, 68, 68, 0.35)',
-                  color: '#f87171',
-                  borderRadius: '8px',
-                  padding: '10px 14px',
-                  fontSize: '13px',
-                  lineHeight: '1.4',
-                  marginBottom: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <span>⚠️</span>
-                <span>{errorMessage}</span>
-              </div>
-            )}
-
-            {/* STEP 1: Send OTP Form */}
-            {step === 'send_otp' && (
-              <form className="executive-login-form" onSubmit={handleSendOTP}>
-                <div className="executive-field-group">
-                  <label htmlFor="exec-identifier" className="executive-label">
-                    Email or Mobile Number
-                  </label>
-                  <div className={`executive-input-wrapper ${focusedField === 'identifier' ? 'field-focused' : ''}`}>
-                    <input
-                      type="text"
-                      id="exec-identifier"
-                      required
-                      placeholder="employee@company.com or +1234567890"
-                      value={emailOrMobile}
-                      onChange={(e) => setEmailOrMobile(e.target.value)}
-                      onFocus={() => setFocusedField('identifier')}
-                      onBlur={() => setFocusedField(null)}
-                      autoComplete="username"
-                      className="executive-input"
-                    />
-                    <div className="input-trailing-icon">
-                      {isEmail ? (
-                        <Mail size={17} className="default-input-icon" />
-                      ) : (
-                        <Phone size={17} className="default-input-icon" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <button 
-                  type="submit" 
-                  className={`executive-cta-button ${authStage}`}
-                  disabled={authStage !== 'idle' || !isInputValid}
+          {/* STEP 1: Send OTP Mode */}
+          {step === 'send_otp' && (
+            <form className="captiq-right-form" onSubmit={handleSendOTP}>
+              
+              {/* Method Switcher Tabs */}
+              <div className="method-switcher-row">
+                <button
+                  type="button"
+                  className={`method-pill-btn ${loginMethod === 'email' ? 'active' : ''}`}
+                  onClick={() => {
+                    setLoginMethod('email');
+                    setErrorMessage('');
+                  }}
                 >
-                  {authStage === 'idle' && (
-                    <>
-                      <span>Send OTP</span>
-                      <ArrowRight size={17} className="cta-arrow-icon" />
-                    </>
-                  )}
-                  {authStage === 'verifying' && (
-                    <>
-                      <span className="spinner-dot" />
-                      <span>Sending OTP...</span>
-                    </>
-                  )}
-                  {authStage === 'granted' && (
-                    <>
-                      <Check size={18} strokeWidth={3} className="granted-check" />
-                      <span>OTP Sent</span>
-                    </>
-                  )}
+                  <Mail size={16} />
+                  <span>Email</span>
                 </button>
-              </form>
-            )}
+                <button
+                  type="button"
+                  className={`method-pill-btn ${loginMethod === 'mobile' ? 'active' : ''}`}
+                  onClick={() => {
+                    setLoginMethod('mobile');
+                    setErrorMessage('');
+                  }}
+                >
+                  <Smartphone size={16} />
+                  <span>Mobile</span>
+                </button>
+              </div>
 
-            {/* STEP 2: Validate OTP Form */}
-            {step === 'verify_otp' && (
-              <form className="executive-login-form" onSubmit={handleValidateOTP}>
-                <div className="executive-field-group">
-                  <div className="password-header-row">
-                    <label htmlFor="exec-otp" className="executive-label">
-                      One-Time Password (OTP)
-                    </label>
-                    <button 
-                      type="button" 
-                      className="executive-forgot-link"
-                      onClick={() => {
-                        setStep('send_otp');
-                        setOtp('');
-                        setErrorMessage('');
-                        setSuccessMessage('');
-                      }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                    >
-                      Change Contact
-                    </button>
+              {/* Input Field */}
+              <div className="captiq-field-box">
+                <label className="captiq-form-label">
+                  {loginMethod === 'email' ? 'Email Address' : 'Mobile Number'}
+                </label>
+                <div className={`captiq-styled-input-wrap ${focusedField === 'identifier' ? 'has-focus' : ''}`}>
+                  <div className="field-icon-lead">
+                    {loginMethod === 'email' ? <Mail size={17} /> : <Smartphone size={17} />}
                   </div>
-                  <div className={`executive-input-wrapper ${focusedField === 'otp' ? 'field-focused' : ''}`}>
-                    <input
-                      type="text"
-                      id="exec-otp"
-                      required
-                      placeholder="Enter OTP"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      onFocus={() => setFocusedField('otp')}
-                      onBlur={() => setFocusedField(null)}
-                      autoComplete="one-time-code"
-                      className="executive-input"
-                      maxLength={10}
-                    />
-                    <div className="input-trailing-icon">
-                      <LockKeyhole size={17} className="default-input-icon" />
-                    </div>
-                  </div>
+                  <input
+                    type={loginMethod === 'email' ? 'email' : 'tel'}
+                    required
+                    placeholder={loginMethod === 'email' ? 'you@company.com' : '+1234567890'}
+                    value={emailOrMobile}
+                    onChange={(e) => setEmailOrMobile(e.target.value)}
+                    onFocus={() => setFocusedField('identifier')}
+                    onBlur={() => setFocusedField(null)}
+                    autoComplete="username"
+                    className="captiq-styled-input"
+                  />
                 </div>
+              </div>
 
-                <div className="executive-remember-row" style={{ justifyContent: 'space-between' }}>
+              {/* Primary Action Button (Send OTP) */}
+              <button
+                type="submit"
+                className="captiq-primary-submit-btn"
+                disabled={authStage !== 'idle' || !isInputValid}
+              >
+                {authStage === 'idle' && (
+                  <>
+                    <span>Send OTP</span>
+                    <ArrowRight size={17} />
+                  </>
+                )}
+                {authStage === 'verifying' && <span>Sending OTP...</span>}
+                {authStage === 'granted' && (
+                  <>
+                    <Check size={17} strokeWidth={3} />
+                    <span>OTP Sent</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* STEP 2: Verify OTP Mode */}
+          {step === 'verify_otp' && (
+            <form className="captiq-right-form" onSubmit={handleValidateOTP}>
+              <div className="captiq-field-box">
+                <div className="verify-top-subrow">
+                  <label className="captiq-form-label">One-Time Password (4-Digit OTP)</label>
                   <button
                     type="button"
-                    className="executive-forgot-link"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
-                    onClick={handleSendOTP}
-                    disabled={authStage !== 'idle'}
+                    className="captiq-text-link"
+                    onClick={() => {
+                      setStep('send_otp');
+                      setOtpDigits(['', '', '', '']);
+                      setErrorMessage('');
+                      setSuccessMessage('');
+                    }}
                   >
-                    <RefreshCw size={12} /> Resend OTP
+                    Change Contact
                   </button>
                 </div>
 
-                <button 
-                  type="submit" 
-                  className={`executive-cta-button ${authStage}`}
-                  disabled={authStage !== 'idle' || !isOtpValid}
-                >
-                  {authStage === 'idle' && (
-                    <>
-                      <span>Verify & Sign In</span>
-                      <ArrowRight size={17} className="cta-arrow-icon" />
-                    </>
-                  )}
-                  {authStage === 'verifying' && (
-                    <>
-                      <span className="spinner-dot" />
-                      <span>Verifying OTP...</span>
-                    </>
-                  )}
-                  {authStage === 'granted' && (
-                    <>
-                      <Check size={18} strokeWidth={3} className="granted-check" />
-                      <span>Access Granted</span>
-                    </>
-                  )}
-                </button>
-              </form>
-            )}
+                {/* Exact 4 Dedicated Digit Boxes */}
+                <div className="captiq-otp-4box-row" onPaste={handleOtpPaste}>
+                  {[0, 1, 2, 3].map((index) => {
+                    const val = otpDigits[index] || '';
+                    const isFilled = val.length === 1;
+                    const isFocused = focusedField === `otp-${index}`;
 
-          </div>
+                    return (
+                      <input
+                        key={index}
+                        ref={(el) => (otpInputRefs.current[index] = el)}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={1}
+                        autoComplete="off"
+                        className={`captiq-otp-digit-box ${isFilled ? 'is-filled' : ''} ${isFocused ? 'is-focused' : ''}`}
+                        value={val}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                        onFocus={() => setFocusedField(`otp-${index}`)}
+                        onBlur={() => setFocusedField(null)}
+                        aria-label={`Digit ${index + 1}`}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="resend-row">
+                <button
+                  type="button"
+                  className="captiq-text-link resend-btn"
+                  onClick={(e) => {
+                    setOtpDigits(['', '', '', '']);
+                    handleSendOTP(e);
+                  }}
+                  disabled={authStage !== 'idle'}
+                >
+                  <RefreshCw size={13} />
+                  <span>Resend OTP</span>
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                className="captiq-primary-submit-btn"
+                disabled={authStage !== 'idle' || !isOtpValid}
+              >
+                {authStage === 'idle' && (
+                  <>
+                    <span>Verify & Sign In</span>
+                    <ArrowRight size={17} />
+                  </>
+                )}
+                {authStage === 'verifying' && <span>Verifying OTP...</span>}
+                {authStage === 'granted' && (
+                  <>
+                    <Check size={17} strokeWidth={3} />
+                    <span>Access Granted</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
         </div>
 
       </div>
+
+      {/* Outside Card: Bottom Right Empowering Slogan */}
+      <div className="captiq-bottom-right-slogan" aria-hidden="true">
+        <span>EMPOWERING</span>
+        <span>PEOPLE.</span>
+        <span>POWERING</span>
+        <span>PROGRESS.</span>
+        <div className="slogan-pink-bar" />
+      </div>
+
     </div>
   );
 }

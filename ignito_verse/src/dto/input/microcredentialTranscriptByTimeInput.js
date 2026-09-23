@@ -39,7 +39,8 @@ export function buildMicrocredentialTranscriptByTimeInput(
             HandRaiseTime: Number(handRaiseTime) || 0,
             Econtent: econtent || '',
             IsEcontent: Boolean(isEcontent),
-            MicrocredentialModuleMasterId: numModuleId
+            MicrocredentialModuleMasterId: numModuleId,
+            microcredentialModuleMasterId: numModuleId
         })
     };
 }

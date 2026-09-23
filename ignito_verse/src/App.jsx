@@ -14,6 +14,7 @@ import AuthRequiredModal from './component/modals/AuthRequiredModal';
 import { microcredentialsData } from './data/microcredentials';
 import { getSavedUserSession, logoutUser } from './services/authService';
 import { getLoggedInStudentId } from './services/microcredentialService';
+import Chatbot from './component/Chatbot/Chatbot';
 import './Global.css';
 
 /**
@@ -211,6 +212,12 @@ export default function App() {
       const courseId = subParam?.microcredentialCourseId || subParam?.encryptedMicrocredentialCourseId || subParam?.id || (typeof subParam === 'string' ? subParam : '') || selectedCourse?.microcredentialCourseId || selectedCourse?.encryptedMicrocredentialCourseId || selectedCourse?.id || '';
       targetPath = courseId ? `/watch/${courseId}` : '/microcredentials';
     } else if (pageId === 'quiz') {
+      if (subParam && typeof subParam === 'object') {
+        setSelectedCourse(subParam);
+        try {
+          sessionStorage.setItem('ignito_selected_course', JSON.stringify(subParam));
+        } catch (e) {}
+      }
       const courseId = subParam?.microcredentialCourseId || subParam?.encryptedMicrocredentialCourseId || subParam?.id || (typeof subParam === 'string' ? subParam : '') || selectedCourse?.microcredentialCourseId || selectedCourse?.encryptedMicrocredentialCourseId || selectedCourse?.id || '';
       targetPath = courseId ? `/quiz/${courseId}` : '/quiz';
     }
@@ -350,6 +357,8 @@ export default function App() {
             initialCategory={catalogCategory}
             onViewDetails={handleViewCourseDetails}
             onPreviewVideo={handleOpenVideoPreview}
+            onNavigate={handleNavigate}
+            onBack={() => handleNavigate('home')}
           />
         )}
 
@@ -426,6 +435,11 @@ export default function App() {
         courseTitle={authCourseTitle}
         actionText="access your learning profile, course dashboard, and certificates"
       />
+
+      {/* Ignito Captio Assistant (Captiq AI) Floating Chatbot */}
+      {activePage !== 'login' && (
+        <Chatbot onNavigate={handleNavigate} user={user} />
+      )}
     </div>
   );
 }

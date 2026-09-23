@@ -10,11 +10,29 @@ export function parseMicrocredentialQuizChekStudentMicrocredentialQuizAttemptsOu
     const isHttpOk = status >= 200 && status < 300;
     const isSuccess = Boolean(rawJson?.isSuccess ?? rawJson?.IsSuccess ?? isHttpOk);
 
+    const attemptNumber = Number(rawJson?.attemptNumber ?? rawJson?.AttemptNumber ?? 1);
+    const usedAttempts = Number(rawJson?.usedAttempts ?? rawJson?.UsedAttempts ?? 0);
+    const remainingAttempts = Number(rawJson?.remainingAttempts ?? rawJson?.RemainingAttempts ?? 0);
+    const isAttemptAllowed = rawJson?.isAttemptAllowed !== undefined 
+        ? Boolean(rawJson.isAttemptAllowed) 
+        : (rawJson?.IsAttemptAllowed !== undefined ? Boolean(rawJson.IsAttemptAllowed) : true);
+
+    const isAttemptedFlag = rawJson?.isAttemptedFlag ?? rawJson?.IsAttemptedFlag ?? (usedAttempts > 0 ? 1 : 0);
+    const quizId = rawJson?.quizId ?? rawJson?.QuizId ?? 0;
+    const microcredentialCourseId = rawJson?.microcredentialCourseId ?? rawJson?.MicrocredentialCourseId ?? 0;
+    const microcredentialModuleMasterId = rawJson?.microcredentialModuleMasterId ?? rawJson?.MicrocredentialModuleMasterId ?? 0;
+
     return {
         success: isSuccess,
         isSuccess,
-        isAttemptedFlag: rawJson?.isAttemptedFlag ?? rawJson?.IsAttemptedFlag ?? 0,
-        quizId: rawJson?.quizId ?? rawJson?.QuizId ?? 0,
+        isAttemptedFlag: Number(isAttemptedFlag) || 0,
+        quizId: Number(quizId) || 0,
+        attemptNumber,
+        usedAttempts,
+        remainingAttempts,
+        isAttemptAllowed,
+        microcredentialCourseId,
+        microcredentialModuleMasterId,
         status,
         message: rawJson?.message || rawJson?.Message || (isSuccess ? 'Attempt status retrieved successfully' : 'Failed to retrieve attempt status'),
         rawData: rawJson
@@ -27,6 +45,12 @@ export function parseMicrocredentialQuizChekStudentMicrocredentialQuizAttemptsEr
         isSuccess: false,
         isAttemptedFlag: 0,
         quizId: 0,
+        attemptNumber: 1,
+        usedAttempts: 0,
+        remainingAttempts: 0,
+        isAttemptAllowed: false,
+        microcredentialCourseId: 0,
+        microcredentialModuleMasterId: 0,
         status,
         message: rawJson?.message || rawJson?.Message || 'Failed to check student quiz attempt status',
         rawData: rawJson
