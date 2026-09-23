@@ -173,6 +173,14 @@ export default function MicrocredentialDetail({
         learningOutcomes: directLearn.length > 0 ? directLearn : [],
         materialIncludeList: merged.materialIncludeOutputList || []
       });
+      try {
+        sessionStorage.setItem('ignito_selected_course', JSON.stringify({
+          ...merged,
+          id: merged.microcredentialCourseId || numericCourseId,
+          microcredentialCourseId: merged.microcredentialCourseId || numericCourseId,
+          encryptedMicrocredentialCourseId: merged.encryptedMicrocredentialCourseId || encryptedId
+        }));
+      } catch (e) {}
       setCourseNotFound(false);
     };
 

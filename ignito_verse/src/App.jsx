@@ -36,7 +36,7 @@ function parseCurrentRoute() {
   }
 
   const routeStr = path || 'home';
-  const parts = routeStr.split('/');
+  const parts = routeStr.split('/').filter(Boolean);
   const rawPage = parts[0] || 'home';
   const rawParam = parts.slice(1).join('/') || '';
   let param = rawParam;
@@ -45,6 +45,7 @@ function parseCurrentRoute() {
   } catch (e) {
     param = rawParam;
   }
+  param = String(param || '').trim().replace(/^\/+|\/+$/g, '');
 
   if (rawPage === 'microcredentials' && param) {
     return { page: 'detail', param };
@@ -74,7 +75,9 @@ function parseCurrentRoute() {
  * Resolves course data from ID (numeric or encrypted string) or sessionStorage
  */
 function resolveSelectedCourse(courseId) {
-  if (!courseId) {
+  const cleanId = String(courseId || '').trim().replace(/^\/+|\/+$/g, '');
+
+  if (!cleanId) {
     try {
       const stored = sessionStorage.getItem('ignito_selected_course');
       if (stored) return JSON.parse(stored);
@@ -82,28 +85,33 @@ function resolveSelectedCourse(courseId) {
     return null;
   }
 
-  const cleanId = String(courseId).trim();
   const numId = Number(cleanId);
+  const isNumeric = !isNaN(numId) && numId > 0 && /^\d+$/.test(cleanId);
 
   // 1. Try matching from static catalog data
-  if (!isNaN(numId) && numId > 0) {
+  if (isNumeric) {
     const found = microcredentialsData.find(c => Number(c.microcredentialCourseId) === numId || Number(c.id) === numId);
     if (found) return found;
+  } else {
+    const foundByEnc = microcredentialsData.find(c => 
+      String(c.encryptedMicrocredentialCourseId || '').trim() === cleanId || 
+      String(c.id || '').trim() === cleanId
+    );
+    if (foundByEnc) return foundByEnc;
   }
-
-  const foundByEnc = microcredentialsData.find(c => 
-    String(c.encryptedMicrocredentialCourseId || '').trim() === cleanId || 
-    String(c.id || '').trim() === cleanId
-  );
-  if (foundByEnc) return foundByEnc;
 
   // 2. Try restoring cached dynamic course from sessionStorage
   try {
     const stored = sessionStorage.getItem('ignito_selected_course');
     if (stored) {
       const parsed = JSON.parse(stored);
+      const parsedCourseId = Number(parsed.microcredentialCourseId || parsed.courseId || parsed.id || 0);
+      const parsedEncId = String(parsed.encryptedMicrocredentialCourseId || parsed.encryptedId || '').trim();
+
       if (
-        String(parsed.id || '').trim() === cleanId || 
+        (isNumeric && parsedCourseId === numId) ||
+        (!isNumeric && parsedEncId === cleanId) ||
+        String(parsed.id || '').trim().replace(/^\/+|\/+$/g, '') === cleanId || 
         String(parsed.microcredentialCourseId || '').trim() === cleanId || 
         String(parsed.encryptedMicrocredentialCourseId || '').trim() === cleanId
       ) {
@@ -114,9 +122,9 @@ function resolveSelectedCourse(courseId) {
 
   // 3. Return descriptor object with exact courseId for dynamic validation
   return {
-    id: cleanId,
-    microcredentialCourseId: (!isNaN(numId) && numId > 0) ? numId : 0,
-    encryptedMicrocredentialCourseId: cleanId,
+    id: isNumeric ? numId : cleanId,
+    microcredentialCourseId: isNumeric ? numId : 0,
+    encryptedMicrocredentialCourseId: isNumeric ? '' : cleanId,
     isPendingValidation: true
   };
 }

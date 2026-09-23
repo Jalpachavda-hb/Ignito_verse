@@ -111,6 +111,10 @@ export default function MicrocredentialWatchPage({
         .then(res => {
           if (res && res.microcredentialCourseName) {
             setCourseDetails(res);
+            try {
+              const prev = JSON.parse(sessionStorage.getItem('ignito_selected_course') || '{}');
+              sessionStorage.setItem('ignito_selected_course', JSON.stringify({ ...prev, ...res }));
+            } catch (e) {}
           }
         })
         .catch(() => { });
@@ -210,10 +214,37 @@ export default function MicrocredentialWatchPage({
   useEffect(() => {
     let isMounted = true;
     const rawId = course?.microcredentialCourseId || course?.courseId || course?.id || course?.rawData?.microcredentialCourseId;
-    const courseId = Number(rawId) || 0;
-    const encryptedId = course?.encryptedMicrocredentialCourseId || course?.encryptedId || course?.rawData?.encryptedMicrocredentialCourseId || '';
-    const rawModuleMasterId = course?.microcredentialModuleMasterId || course?.selectedModuleMasterId || course?.selectedModuleId || course?.microcredentialModuleId || course?.moduleId || course?.rawData?.microcredentialModuleMasterId || 0;
-    const moduleMasterId = Number(rawModuleMasterId) || 0;
+    let courseId = Number(rawId) || 0;
+    let encryptedId = course?.encryptedMicrocredentialCourseId || course?.encryptedId || course?.rawData?.encryptedMicrocredentialCourseId || '';
+
+    // Sanitize encryptedId: if it's numeric (e.g. "1" or "1/"), it is invalid and should never be used as encryptedId
+    if (typeof encryptedId === 'string' && (/^\d+\/?$/.test(encryptedId.trim()) || encryptedId.trim().length <= 4)) {
+      if (!courseId) {
+        courseId = Number(encryptedId.trim().replace(/\/+/g, '')) || 0;
+      }
+      encryptedId = '';
+    }
+
+    let rawModuleMasterId = course?.microcredentialModuleMasterId || course?.selectedModuleMasterId || course?.selectedModuleId || course?.microcredentialModuleId || course?.moduleId || course?.rawData?.microcredentialModuleMasterId || 0;
+    let moduleMasterId = Number(rawModuleMasterId) || 0;
+
+    // Try recovering encrypted ID or moduleMasterId from sessionStorage if missing
+    if (!encryptedId || moduleMasterId === 0) {
+      try {
+        const stored = JSON.parse(sessionStorage.getItem('ignito_selected_course') || '{}');
+        const storedCourseId = Number(stored.microcredentialCourseId || stored.courseId || stored.id || 0);
+        if ((courseId > 0 && storedCourseId === courseId) || (!courseId && storedCourseId > 0)) {
+          if (!courseId && storedCourseId > 0) courseId = storedCourseId;
+          const storedEnc = stored.encryptedMicrocredentialCourseId || stored.encryptedId || '';
+          if (storedEnc && !/^\d+\/?$/.test(String(storedEnc).trim()) && String(storedEnc).trim().length > 4) {
+            encryptedId = storedEnc;
+          }
+          if (moduleMasterId === 0 && stored.microcredentialModuleMasterId) {
+            moduleMasterId = Number(stored.microcredentialModuleMasterId) || 0;
+          }
+        }
+      } catch (e) {}
+    }
 
     const studentId = getLoggedInStudentId();
 
@@ -268,40 +299,57 @@ export default function MicrocredentialWatchPage({
       }
     };
 
-    getMicroCourseTopicDetail(courseId, studentId, encryptedId, moduleMasterId)
-      .then((res) => {
+    const loadTopics = async () => {
+      let finalEncryptedId = encryptedId;
+      let finalModuleMasterId = moduleMasterId;
+
+      // If we have courseId but missing a valid encrypted ID, pre-fetch course details
+      if (!finalEncryptedId && courseId > 0) {
+        try {
+          const detailRes = await getMicrocredentialCourseDetail(courseId);
+          if (detailRes && detailRes.encryptedMicrocredentialCourseId) {
+            finalEncryptedId = detailRes.encryptedMicrocredentialCourseId;
+            setCourseDetails(detailRes);
+            try {
+              const prev = JSON.parse(sessionStorage.getItem('ignito_selected_course') || '{}');
+              sessionStorage.setItem('ignito_selected_course', JSON.stringify({ ...prev, ...detailRes }));
+            } catch (e) {}
+          }
+        } catch (err) {
+          console.warn('Could not pre-fetch course detail for encrypted ID:', err);
+        }
+      }
+
+      try {
+        const res = await getMicroCourseTopicDetail(courseId, studentId, finalEncryptedId, finalModuleMasterId);
         if (!isMounted) return;
         const topicList = res?.getMicroCourseTopicDetailList || res?.rawData?.getMicroCourseTopicDetailList || [];
         const docList = res?.microcredentialStudentDownloadDocumentList || res?.rawData?.microcredentialStudentDownloadDocumentList || [];
 
         if (Array.isArray(topicList) && topicList.length > 0) {
           processTopicsAndDocs(topicList, docList);
-        } else if (moduleMasterId > 0) {
+        } else if (finalModuleMasterId > 0) {
           // If filtering by module returned 0 topics, fallback to all topics for the course (moduleMasterId = 0)
-          getMicroCourseTopicDetail(courseId, studentId, encryptedId, 0)
-            .then((fallbackRes) => {
-              if (!isMounted) return;
-              const fallbackTopics = fallbackRes?.getMicroCourseTopicDetailList || fallbackRes?.rawData?.getMicroCourseTopicDetailList || [];
-              const fallbackDocs = fallbackRes?.microcredentialStudentDownloadDocumentList || fallbackRes?.rawData?.microcredentialStudentDownloadDocumentList || [];
-              processTopicsAndDocs(fallbackTopics, fallbackDocs.length > 0 ? fallbackDocs : docList);
-            })
-            .catch(() => {
-              processTopicsAndDocs([], docList);
-            });
+          const fallbackRes = await getMicroCourseTopicDetail(courseId, studentId, finalEncryptedId, 0);
+          if (!isMounted) return;
+          const fallbackTopics = fallbackRes?.getMicroCourseTopicDetailList || fallbackRes?.rawData?.getMicroCourseTopicDetailList || [];
+          const fallbackDocs = fallbackRes?.microcredentialStudentDownloadDocumentList || fallbackRes?.rawData?.microcredentialStudentDownloadDocumentList || [];
+          processTopicsAndDocs(fallbackTopics, fallbackDocs.length > 0 ? fallbackDocs : docList);
         } else {
           processTopicsAndDocs([], docList);
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error('Error fetching course topic details:', err);
         if (isMounted) {
           setPlaylist([]);
           setDownloadDocuments([]);
         }
-      })
-      .finally(() => {
+      } finally {
         if (isMounted) setLoading(false);
-      });
+      }
+    };
+
+    loadTopics();
 
     return () => {
       isMounted = false;

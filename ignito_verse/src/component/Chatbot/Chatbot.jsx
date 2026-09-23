@@ -338,12 +338,7 @@ export default function Chatbot({ onNavigate = () => {}, user = null }) {
           />
 
           {/* Unread badge indicator */}
-          {!isOpen && hasUnread && (
-            <div className="ignito-chatbot-badge-tooltip">
-              <span className="ignito-chatbot-badge-dot" />
-              <span>Ask Captiq AI</span>
-            </div>
-          )}
+      
         </button>
       </div>
 

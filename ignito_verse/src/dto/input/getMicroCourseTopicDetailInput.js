@@ -4,10 +4,15 @@ export function buildGetMicroCourseTopicDetailInput(
     encryptedMicrocredentialCourseId = '',
     microcredentialModuleMasterId = 0
 ) {
-    const numCourseId = Number(microcredentialCourseId);
-    const resolvedCourseId = (!isNaN(numCourseId) && numCourseId > 0) ? numCourseId : microcredentialCourseId;
+    const cleanCourseStr = String(microcredentialCourseId || '').trim().replace(/^\/+|\/+$/g, '');
+    const numCourseId = Number(cleanCourseStr);
+    const resolvedCourseId = (!isNaN(numCourseId) && numCourseId > 0) ? numCourseId : (cleanCourseStr || 0);
     const numStudentId = Number(studentId) || 0;
     const numModuleId = Number(microcredentialModuleMasterId) || 0;
+
+    // Sanitize encrypted course ID: never allow plain numeric strings or strings with slashes like "1" or "1/"
+    const rawEnc = String(encryptedMicrocredentialCourseId || '').trim().replace(/^\/+|\/+$/g, '');
+    const validEncryptedId = (/^\d+$/.test(rawEnc) || rawEnc.length <= 4) ? '' : rawEnc;
 
     return {
         headers: {
@@ -25,8 +30,8 @@ export function buildGetMicroCourseTopicDetailInput(
             microcredentialModuleMasterId: numModuleId,
             StudentId: numStudentId,
             studentId: numStudentId,
-            EncryptedMicrocredentialCourseId: encryptedMicrocredentialCourseId || '',
-            encryptedMicrocredentialCourseId: encryptedMicrocredentialCourseId || ''
+            EncryptedMicrocredentialCourseId: validEncryptedId,
+            encryptedMicrocredentialCourseId: validEncryptedId
         })
     };
 }
