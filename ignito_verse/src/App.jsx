@@ -21,17 +21,27 @@ import './Global.css';
  * Parses current URL pathname or legacy hash into route and parameters
  */
 function parseCurrentRoute() {
+  // Normalize pathname: remove trailing slash if present (e.g. /watch/1/ -> /watch/1)
+  const rawPathname = window.location.pathname;
+  if (rawPathname.length > 1 && rawPathname.endsWith('/')) {
+    const cleanPathname = rawPathname.replace(/\/+$/, '');
+    const cleanUrl = cleanPathname + window.location.search + (window.location.hash || '');
+    try {
+      window.history.replaceState({}, '', cleanUrl);
+    } catch (e) {}
+  }
+
   // Check pathname first (e.g. /microcredentials, /microcredentials/1, /watch/1, /profile/certificates)
-  let path = window.location.pathname.replace(/^\/+/, '');
+  let path = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
   
   // If user entered via legacy hash (e.g. #microcredentials, /#microcredentials, or #), sanitize and migrate to clean path
   if (window.location.hash) {
-    const legacyHash = window.location.hash.replace(/^#\/?/, '');
+    const legacyHash = window.location.hash.replace(/^#\/?/, '').replace(/\/+$/, '');
     if (legacyHash) {
       path = legacyHash;
       window.history.replaceState({}, '', `/${legacyHash}`);
     } else {
-      window.history.replaceState({}, '', window.location.pathname || '/');
+      window.history.replaceState({}, '', (window.location.pathname.replace(/\/+$/, '') || '/'));
     }
   }
 
@@ -156,6 +166,15 @@ export default function App() {
   // Synchronize route and handle browser Back/Forward & URL changes across page refreshes
   useEffect(() => {
     const syncRouteFromUrl = () => {
+      // Normalize URL in address bar if it has a trailing slash
+      const currentPath = window.location.pathname;
+      if (currentPath.length > 1 && currentPath.endsWith('/')) {
+        const cleanPath = currentPath.replace(/\/+$/, '');
+        try {
+          window.history.replaceState({}, '', cleanPath + window.location.search + (window.location.hash || ''));
+        } catch (e) {}
+      }
+
       const { page, param } = parseCurrentRoute();
       setActivePage(page);
 
@@ -215,10 +234,12 @@ export default function App() {
       }
     } else if (pageId === 'detail') {
       const courseId = subParam?.microcredentialCourseId || subParam?.encryptedMicrocredentialCourseId || subParam?.id || (typeof subParam === 'string' ? subParam : '') || selectedCourse?.microcredentialCourseId || selectedCourse?.encryptedMicrocredentialCourseId || selectedCourse?.id || '';
-      targetPath = courseId ? `/microcredentials/${courseId}` : '/microcredentials';
+      const cleanCourseId = String(courseId).trim().replace(/^\/+|\/+$/g, '');
+      targetPath = cleanCourseId ? `/microcredentials/${cleanCourseId}` : '/microcredentials';
     } else if (pageId === 'watch') {
       const courseId = subParam?.microcredentialCourseId || subParam?.encryptedMicrocredentialCourseId || subParam?.id || (typeof subParam === 'string' ? subParam : '') || selectedCourse?.microcredentialCourseId || selectedCourse?.encryptedMicrocredentialCourseId || selectedCourse?.id || '';
-      targetPath = courseId ? `/watch/${courseId}` : '/microcredentials';
+      const cleanCourseId = String(courseId).trim().replace(/^\/+|\/+$/g, '');
+      targetPath = cleanCourseId ? `/watch/${cleanCourseId}` : '/microcredentials';
     } else if (pageId === 'quiz') {
       if (subParam && typeof subParam === 'object') {
         setSelectedCourse(subParam);
@@ -227,9 +248,11 @@ export default function App() {
         } catch (e) {}
       }
       const courseId = subParam?.microcredentialCourseId || subParam?.encryptedMicrocredentialCourseId || subParam?.id || (typeof subParam === 'string' ? subParam : '') || selectedCourse?.microcredentialCourseId || selectedCourse?.encryptedMicrocredentialCourseId || selectedCourse?.id || '';
-      targetPath = courseId ? `/quiz/${courseId}` : '/quiz';
+      const cleanCourseId = String(courseId).trim().replace(/^\/+|\/+$/g, '');
+      targetPath = cleanCourseId ? `/quiz/${cleanCourseId}` : '/quiz';
     }
 
+    targetPath = targetPath.replace(/\/+$/, '') || '/';
     window.history.pushState({}, '', targetPath);
     setActivePage(pageId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -246,7 +269,8 @@ export default function App() {
       const courseObj = pendingWatchCourse;
       setPendingWatchCourse(null);
       const courseId = courseObj?.microcredentialCourseId || courseObj?.encryptedMicrocredentialCourseId || courseObj?.id || '';
-      window.history.pushState({}, '', courseId ? `/watch/${courseId}` : '/microcredentials');
+      const cleanCourseId = String(courseId).trim().replace(/^\/+|\/+$/g, '');
+      window.history.pushState({}, '', cleanCourseId ? `/watch/${cleanCourseId}` : '/microcredentials');
       setActivePage('watch');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (pendingRedirect) {
@@ -285,7 +309,8 @@ export default function App() {
     } catch (e) {}
 
     const courseId = courseObj?.microcredentialCourseId || courseObj?.encryptedMicrocredentialCourseId || courseObj?.id || '';
-    window.history.pushState({}, '', courseId ? `/microcredentials/${courseId}` : '/microcredentials');
+    const cleanCourseId = String(courseId).trim().replace(/^\/+|\/+$/g, '');
+    window.history.pushState({}, '', cleanCourseId ? `/microcredentials/${cleanCourseId}` : '/microcredentials');
     setActivePage('detail');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -308,7 +333,8 @@ export default function App() {
     }
 
     const courseId = courseObj?.microcredentialCourseId || courseObj?.encryptedMicrocredentialCourseId || courseObj?.id || '';
-    window.history.pushState({}, '', courseId ? `/watch/${courseId}` : '/microcredentials');
+    const cleanCourseId = String(courseId).trim().replace(/^\/+|\/+$/g, '');
+    window.history.pushState({}, '', cleanCourseId ? `/watch/${cleanCourseId}` : '/microcredentials');
     setActivePage('watch');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

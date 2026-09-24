@@ -673,27 +673,50 @@ export default function MicrocredentialWatchPage({
       const moduleMasterId = Number(rawModuleMasterId) || 0;
       const res = await getMicrocredentialStudentWatchVideoData(studentId, courseId, moduleMasterId);
       if (res && res.success) {
-        if (typeof res.overallPercentage === 'number' && res.overallPercentage >= 0) {
-          setOverallWatchPct(Math.round(res.overallPercentage));
-        }
         setIsQuizEligible(Boolean(res.isQuizOpen));
         if (res.statusMessage) {
           setQuizStatusMessage(res.statusMessage);
         }
         if (Array.isArray(res.studentwatchvideodetails) && res.studentwatchvideodetails.length > 0) {
           const map = {};
+          let topicSumPct = 0;
+          let calculatedCount = 0;
           res.studentwatchvideodetails.forEach(item => {
             const vId = item.videoId || item.VideoId;
             if (vId) {
+              const watchedSec = Math.round(Number(item.watchedSeconds ?? item.WatchedSeconds ?? 0));
+              const totalDur = Math.round(Number(item.totalDuration ?? item.TotalDuration ?? 0));
+              let pct = Math.round(Number(item.percentageWatched ?? item.PercentageWatched ?? 0));
+
+              // If totalDuration is valid, recompute the true percentage from watchedSeconds to self-heal any stale/corrupt 99% values
+              if (totalDur > 0) {
+                const isCompleted = watchedSec >= totalDur;
+                pct = isCompleted ? 100 : Math.min(99, Math.max(0, Math.floor((watchedSec / totalDur) * 100)));
+                topicSumPct += pct;
+                calculatedCount++;
+              } else {
+                topicSumPct += pct;
+              }
+
               map[vId] = {
-                percentageWatched: Math.round(Number(item.percentageWatched ?? item.PercentageWatched ?? 0)),
-                watchedSeconds: Math.round(Number(item.watchedSeconds ?? item.WatchedSeconds ?? 0)),
-                totalDuration: Math.round(Number(item.totalDuration ?? item.TotalDuration ?? 0))
+                percentageWatched: pct,
+                watchedSeconds: watchedSec,
+                totalDuration: totalDur
               };
             }
           });
           setVideoProgressMap(map);
           videoProgressMapRef.current = map;
+
+          if (calculatedCount > 0) {
+            const recomputedOverall = Math.min(100, Math.round(topicSumPct / res.studentwatchvideodetails.length));
+            setOverallWatchPct(recomputedOverall);
+            if (recomputedOverall >= 90) {
+              setIsQuizEligible(true);
+            }
+          } else if (typeof res.overallPercentage === 'number' && res.overallPercentage >= 0) {
+            setOverallWatchPct(Math.round(res.overallPercentage));
+          }
 
           // Resume active lecture position if video is at 0
           const curLecture = activeLectureRef.current || activeLecture;
@@ -719,6 +742,8 @@ export default function MicrocredentialWatchPage({
               } catch (e) { }
             }
           }
+        } else if (typeof res.overallPercentage === 'number' && res.overallPercentage >= 0) {
+          setOverallWatchPct(Math.round(res.overallPercentage));
         }
       }
     } catch (err) {
@@ -840,22 +865,38 @@ export default function MicrocredentialWatchPage({
       if (!vId) return;
 
       const sec = Math.round(Number(watchedSec ?? currentTimeRef.current ?? 0));
-      const dur = Math.round(Number(totalDur ?? videoDurationRef.current ?? curLecture?.videoDuration ?? 1));
-      if (sec <= 0 && dur <= 0) return;
+      let effectiveDur = Math.round(Number(totalDur || 0));
+      if (effectiveDur <= 0 && videoDurationRef.current > 0) {
+        effectiveDur = Math.round(videoDurationRef.current);
+      }
+      if (effectiveDur <= 0 && ytPlayerRef.current && typeof ytPlayerRef.current.getDuration === 'function') {
+        effectiveDur = Math.round(ytPlayerRef.current.getDuration() || 0);
+      }
+      if (effectiveDur <= 0 && curLecture?.videoDuration > 0) {
+        effectiveDur = Math.round(curLecture.videoDuration);
+      }
+      if (effectiveDur <= 0 && videoRef.current && videoRef.current.duration > 0) {
+        effectiveDur = Math.round(videoRef.current.duration);
+      }
+
+      // If duration is unknown, do not save invalid percentage or fallback to 1
+      if (effectiveDur <= 0) return;
 
       // Detect completion: strictly 100% only when the video actually reaches full duration
-      const isCompleted = dur > 0 && sec >= dur;
-      const finalSec = isCompleted ? dur : sec;
-      const pct = isCompleted ? 100 : Math.min(99, Math.max(0, Math.floor((finalSec / (dur || 1)) * 100)));
+      const isCompleted = effectiveDur > 0 && sec >= effectiveDur;
+      const finalSec = isCompleted ? effectiveDur : sec;
+      const pct = effectiveDur > 0
+        ? (isCompleted ? 100 : Math.min(99, Math.max(0, Math.floor((finalSec / effectiveDur) * 100))))
+        : 0;
 
-      // Update local progress map optimistically
+      // Update local progress map optimistically with proper calculated percentage
       const prevMap = videoProgressMapRef.current || {};
       const updatedMap = {
         ...prevMap,
         [vId]: {
-          percentageWatched: Math.max(pct, prevMap[vId]?.percentageWatched || 0),
+          percentageWatched: pct,
           watchedSeconds: Math.max(finalSec, prevMap[vId]?.watchedSeconds || 0),
-          totalDuration: dur
+          totalDuration: effectiveDur
         }
       };
       setVideoProgressMap(updatedMap);
@@ -866,10 +907,19 @@ export default function MicrocredentialWatchPage({
       let sumPct = 0;
       playlistItems.forEach(pItem => {
         const itemVid = pItem.ytId || getYouTubeVideoId(pItem.videoUrl) || pItem.id;
-        sumPct += (updatedMap[itemVid]?.percentageWatched || 0);
+        const itemData = updatedMap[itemVid];
+        let itemPct = itemData?.percentageWatched || 0;
+        if (itemData?.totalDuration > 0 && itemData?.watchedSeconds >= 0) {
+          const itemDone = itemData.watchedSeconds >= itemData.totalDuration;
+          itemPct = itemDone ? 100 : Math.min(99, Math.floor((itemData.watchedSeconds / itemData.totalDuration) * 100));
+        }
+        sumPct += itemPct;
       });
       const calcOverall = Math.min(100, Math.round(sumPct / totalUnits));
       setOverallWatchPct(calcOverall);
+      if (calcOverall >= 90) {
+        setIsQuizEligible(true);
+      }
 
       const payloadDetails = [
         {
@@ -993,8 +1043,12 @@ export default function MicrocredentialWatchPage({
               onReady: (event) => {
                 if (isCancelled) return;
                 const dur = event.target.getDuration();
-                if (dur && dur > 0) setVideoDuration(dur);
-                else if (activeLecture.videoDuration) setVideoDuration(activeLecture.videoDuration);
+                if (dur && dur > 0) {
+                  setVideoDuration(dur);
+                  setPlaylist(prev => prev.map((p, i) => i === activeLectureIdx ? { ...p, videoDuration: Math.round(dur), duration: formatDuration(dur) } : p));
+                } else if (activeLecture.videoDuration) {
+                  setVideoDuration(activeLecture.videoDuration);
+                }
 
                 // Position scrubber at saved watch seconds
                 if (initialResumeSec > 0) {
@@ -1016,6 +1070,11 @@ export default function MicrocredentialWatchPage({
                 if (event.data === window.YT.PlayerState.PLAYING) {
                   userInitiatedPlayRef.current = true;
                   setIsPlaying(true);
+                  const dur = event.target.getDuration();
+                  if (dur && dur > 0) {
+                    setVideoDuration(dur);
+                    setPlaylist(prev => prev.map((p, i) => i === activeLectureIdx ? { ...p, videoDuration: Math.round(dur), duration: formatDuration(dur) } : p));
+                  }
                   startProgressTracking();
                 } else if (event.data === window.YT.PlayerState.PAUSED) {
                   setIsPlaying(false);
@@ -1084,13 +1143,16 @@ export default function MicrocredentialWatchPage({
             String(curLecture?.id || '');
           if (vId) {
             setVideoProgressMap(prev => {
-              const currentSaved = prev[vId]?.percentageWatched || 0;
-              if (livePct > currentSaved) {
+              const currentSaved = prev[vId]?.percentageWatched;
+              const currentWatchedSec = prev[vId]?.watchedSeconds || 0;
+              const newWatchedSec = Math.round(Math.max(curr, maxWatchedRef.current));
+              // Update if progress changed or if currentSaved is stale/inaccurate
+              if (currentSaved === undefined || livePct !== currentSaved || newWatchedSec > currentWatchedSec) {
                 const next = {
                   ...prev,
                   [vId]: {
                     percentageWatched: livePct,
-                    watchedSeconds: Math.round(Math.max(curr, maxWatchedRef.current)),
+                    watchedSeconds: newWatchedSec,
                     totalDuration: Math.round(dur)
                   }
                 };
@@ -1186,9 +1248,9 @@ export default function MicrocredentialWatchPage({
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const targetPct = Math.max(0, Math.min(1, clickX / rect.width));
-    const targetSeconds = targetPct * (videoDuration || activeLecture.videoDuration || 1);
-
     // Only allow seeking up to the maximum watched point
+    const activeDurSeek = videoDuration || activeLecture?.videoDuration || 0;
+    const targetSeconds = activeDurSeek > 0 ? targetPct * activeDurSeek : 0;
     if (targetSeconds > maxWatchedRef.current + 1) {
       triggerSkipWarning();
       // Snap to maximum allowed watched point
@@ -1205,7 +1267,6 @@ export default function MicrocredentialWatchPage({
         ytPlayerRef.current.seekTo(targetSeconds, true);
         setCurrentTime(targetSeconds);
       } else if (videoRef.current) {
-        videoRef.current.currentTime = targetSeconds;
         videoRef.current.currentTime = targetSeconds;
         setCurrentTime(targetSeconds);
       }
@@ -1240,13 +1301,15 @@ export default function MicrocredentialWatchPage({
         String(curLecture?.id || '');
       if (vId) {
         setVideoProgressMap(prev => {
-          const currentSaved = prev[vId]?.percentageWatched || 0;
-          if (livePct > currentSaved) {
+          const currentSaved = prev[vId]?.percentageWatched;
+          const currentWatchedSec = prev[vId]?.watchedSeconds || 0;
+          const newWatchedSec = Math.round(Math.max(curr, maxWatchedRef.current));
+          if (currentSaved === undefined || livePct !== currentSaved || newWatchedSec > currentWatchedSec) {
             const next = {
               ...prev,
               [vId]: {
                 percentageWatched: livePct,
-                watchedSeconds: Math.round(Math.max(curr, maxWatchedRef.current)),
+                watchedSeconds: newWatchedSec,
                 totalDuration: Math.round(dur)
               }
             };
@@ -1461,8 +1524,8 @@ export default function MicrocredentialWatchPage({
   };
 
   const activeDuration = videoDuration || activeLecture?.videoDuration || 0;
-  const currentPct = Math.min(100, Math.max(0, (currentTime / (activeDuration || 1)) * 100));
-  const maxWatchedPct = Math.min(100, Math.max(0, (maxWatchedTime / (activeDuration || 1)) * 100));
+  const currentPct = activeDuration > 0 ? Math.min(100, Math.max(0, (currentTime / activeDuration) * 100)) : 0;
+  const maxWatchedPct = activeDuration > 0 ? Math.min(100, Math.max(0, (maxWatchedTime / activeDuration) * 100)) : 0;
 
   return (
     <div className="mc-watch-page-container">
@@ -2271,22 +2334,38 @@ export default function MicrocredentialWatchPage({
               const playlistItems = currentPlaylist.length > 0 ? currentPlaylist : [];
               const curLecture = activeLecture;
               const activeVid = curLecture?.ytId || getYouTubeVideoId(curLecture?.videoUrl) || curLecture?.videoId || String(curLecture?.id || '');
-              const activeDur = videoDuration || curLecture?.videoDuration || 1;
+              const activeDur = videoDuration > 0
+                ? videoDuration
+                : (curLecture?.videoDuration > 0 ? curLecture.videoDuration : (videoProgressMap[activeVid]?.totalDuration > 0 ? videoProgressMap[activeVid]?.totalDuration : 0));
               const liveSec = Math.max(currentTime, maxWatchedTime);
               const liveActivePct = activeDur > 0
                 ? (liveSec >= activeDur ? 100 : Math.min(99, Math.floor((liveSec / activeDur) * 100)))
-                : 0;
+                : (videoProgressMap[activeVid]?.percentageWatched || 0);
 
               let sum = 0;
               let completedCount = 0;
               playlistItems.forEach(pItem => {
                 const pVid = pItem.ytId || getYouTubeVideoId(pItem.videoUrl) || pItem.id;
-                const rawPct = videoProgressMap[pVid]?.percentageWatched || 0;
-                const finalPct = pVid === activeVid ? Math.max(rawPct, liveActivePct) : rawPct;
+                const rawData = videoProgressMap[pVid];
+                let finalPct = 0;
+
+                if (pVid === activeVid) {
+                  finalPct = activeDur > 0 ? liveActivePct : (rawData?.percentageWatched || 0);
+                } else if (rawData) {
+                  if (rawData.totalDuration > 0 && rawData.watchedSeconds >= 0) {
+                    const isDone = rawData.watchedSeconds >= rawData.totalDuration;
+                    finalPct = isDone ? 100 : Math.min(99, Math.floor((rawData.watchedSeconds / rawData.totalDuration) * 100));
+                  } else {
+                    finalPct = rawData.percentageWatched || 0;
+                  }
+                }
+
                 sum += finalPct;
                 if (finalPct >= 100) completedCount++;
               });
-              const liveOverallPct = playlistItems.length > 0 ? Math.min(100, Math.max(overallWatchPct || 0, Math.round(sum / playlistItems.length))) : (overallWatchPct || 0);
+              const liveOverallPct = playlistItems.length > 0
+                ? Math.min(100, Math.round(sum / playlistItems.length))
+                : (overallWatchPct || 0);
 
               return (
                 <div className="mc-watch-progress-box">
@@ -2508,16 +2587,24 @@ export default function MicrocredentialWatchPage({
                       currentPlaylist.map((item, idx) => {
                         const isActive = idx === activeLectureIdx && !selectedPdf;
                         const itemVid = item.ytId || getYouTubeVideoId(item.videoUrl) || item.id;
-                        const rawSavedPct = videoProgressMap[itemVid]?.percentageWatched || 0;
+                        const rawData = videoProgressMap[itemVid];
+                        let itemProgress = 0;
 
-                        let itemProgress = rawSavedPct;
                         if (isActive) {
-                          const activeDur = videoDuration || item.videoDuration || 1;
+                          const activeDur = videoDuration > 0
+                            ? videoDuration
+                            : (item.videoDuration > 0 ? item.videoDuration : (rawData?.totalDuration > 0 ? rawData.totalDuration : 0));
                           const liveSec = Math.max(currentTime, maxWatchedTime);
-                          const livePct = activeDur > 0
+                          itemProgress = activeDur > 0
                             ? (liveSec >= activeDur ? 100 : Math.min(99, Math.floor((liveSec / activeDur) * 100)))
-                            : 0;
-                          itemProgress = Math.max(livePct, rawSavedPct);
+                            : (rawData?.percentageWatched || 0);
+                        } else if (rawData) {
+                          if (rawData.totalDuration > 0 && rawData.watchedSeconds >= 0) {
+                            const isDone = rawData.watchedSeconds >= rawData.totalDuration;
+                            itemProgress = isDone ? 100 : Math.min(99, Math.floor((rawData.watchedSeconds / rawData.totalDuration) * 100));
+                          } else {
+                            itemProgress = rawData.percentageWatched || 0;
+                          }
                         }
 
                         return (
