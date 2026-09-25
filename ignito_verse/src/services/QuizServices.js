@@ -108,6 +108,56 @@ export function resolveStudentId(studentId = 0) {
     return getLoggedInStudentId() || 0;
 }
 
+/**
+ * Resolves valid quiz ID from input, fallback to session/localStorage/URL.
+ * @param {number|string} [quizId=0]
+ * @returns {number}
+ */
+export function resolveActiveQuizId(quizId = 0) {
+    const parsed = Number(quizId);
+    if (!isNaN(parsed) && parsed > 0) {
+        return parsed;
+    }
+    if (typeof window !== 'undefined') {
+        try {
+            const storageKeys = [
+                'MicrocredentialQuizId',
+                'quizId',
+                'QuizId',
+                'activeQuizId',
+                'microcredentialQuizId',
+                'ignito_recent_quiz_id'
+            ];
+            for (const key of storageKeys) {
+                const sVal = Number(window.sessionStorage?.getItem(key) || window.localStorage?.getItem(key));
+                if (!isNaN(sVal) && sVal > 0) return sVal;
+            }
+            const storedStr = window.sessionStorage?.getItem('ignito_selected_course') || 
+                              window.localStorage?.getItem('ignito_selected_course');
+            if (storedStr) {
+                const stored = JSON.parse(storedStr);
+                const cQuizId = Number(
+                    stored?.quizId || 
+                    stored?.QuizId || 
+                    stored?.microcredentialQuizId || 
+                    stored?.MicrocredentialQuizId || 
+                    stored?.quizMasterId || 
+                    stored?.QuizMasterId
+                );
+                if (!isNaN(cQuizId) && cQuizId > 0) return cQuizId;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const uQuizId = Number(urlParams.get('quizId') || urlParams.get('QuizId') || urlParams.get('qId'));
+            if (!isNaN(uQuizId) && uQuizId > 0) return uQuizId;
+
+            const winQuizId = Number(window.__activeQuizId || window.activeQuizId);
+            if (!isNaN(winQuizId) && winQuizId > 0) return winQuizId;
+        } catch (_) {}
+    }
+    return 0;
+}
+
 // ============================================================================
 // 1. CHECK STUDENT'S QUIZ ATTEMPT STATUS
 // ============================================================================
@@ -363,10 +413,13 @@ export const microcredentialQuizAttemptGetById = getQuizAttemptById;
 export async function saveQuizAttempt(attemptData = {}) {
     try {
         const studentId = resolveStudentId(attemptData.studentId || attemptData.StudentId);
+        const quizId = resolveActiveQuizId(attemptData.quizId || attemptData.QuizId);
         const normalizedData = {
             ...attemptData,
             StudentId: studentId,
-            studentId
+            studentId,
+            QuizId: quizId,
+            quizId
         };
 
         const inputDto = buildMicrocredentialQuizAttemptSaveInput(normalizedData);
@@ -403,9 +456,11 @@ export const microcredentialQuizAttemptSave = saveQuizAttempt;
  * @returns {Promise<object>}
  */
 export async function autoSaveQuizTimer(quizId, lastActivityTime, totalTimeAllowed = 0, attemptNumber = 0, studentId = 0) {
+    const finalQuizId = resolveActiveQuizId(quizId);
     return saveQuizAttempt({
         StudentId: resolveStudentId(studentId),
-        QuizId: Number(quizId) || 0,
+        QuizId: finalQuizId,
+        quizId: finalQuizId,
         TotalTimeAllowed: Number(totalTimeAllowed) || 0,
         LastActivityTime: Number(lastActivityTime) || 0,
         Answers: [],
@@ -446,10 +501,12 @@ export async function saveQuestionAnswer({
 }) {
     const type = Number(degreeQuestionType);
     const qId = Number(questionId);
+    const finalQuizId = resolveActiveQuizId(quizId);
 
     const payload = {
         StudentId: resolveStudentId(studentId),
-        QuizId: Number(quizId) || 0,
+        QuizId: finalQuizId,
+        quizId: finalQuizId,
         TotalTimeAllowed: Number(totalTimeAllowed) || 0,
         LastActivityTime: Number(lastActivityTime) || 0,
         Answers: [],
@@ -770,6 +827,7 @@ export const commonUploadFile = uploadQuizAttachment;
 export default {
     QUESTION_TYPES,
     resolveStudentId,
+    resolveActiveQuizId,
     checkStudentQuizAttemptStatus,
     microcredentialQuizChekStudentMicrocredentialQuizAttempts,
     getStudentAttemptList,

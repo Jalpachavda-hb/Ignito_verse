@@ -600,15 +600,74 @@ export async function microcredentialQuizStudentAttemptDetail(
     microcredentialModuleMasterId = 0
 ) {
     try {
-        let finalStudentId = Number(studentId) || 0;
+        let finalCourseId = 0;
+        let finalStudentId = 0;
+        let finalModuleId = 0;
+
+        if (typeof microcredentialCourseId === 'object' && microcredentialCourseId !== null) {
+            finalCourseId = Number(
+                microcredentialCourseId.microcredentialCourseId || 
+                microcredentialCourseId.MicrocredentialCourseId || 
+                microcredentialCourseId.courseId || 
+                microcredentialCourseId.id
+            ) || 0;
+            finalStudentId = Number(
+                microcredentialCourseId.studentId || 
+                microcredentialCourseId.StudentId
+            ) || 0;
+            finalModuleId = Number(
+                microcredentialCourseId.microcredentialModuleMasterId || 
+                microcredentialCourseId.MicrocredentialModuleMasterId || 
+                microcredentialCourseId.selectedModuleMasterId || 
+                microcredentialCourseId.selectedModuleId || 
+                microcredentialCourseId.moduleId
+            ) || 0;
+        } else {
+            finalCourseId = Number(microcredentialCourseId) || 0;
+            finalStudentId = Number(studentId) || 0;
+            finalModuleId = Number(microcredentialModuleMasterId) || 0;
+        }
+
         if (!finalStudentId || finalStudentId === 0) {
             finalStudentId = getLoggedInStudentId();
         }
 
+        // Fallback: recover moduleMasterId from sessionStorage if 0
+        if (finalModuleId === 0 && typeof window !== 'undefined') {
+            try {
+                const storedCourse = JSON.parse(sessionStorage.getItem('ignito_selected_course') || '{}');
+                finalModuleId = Number(
+                    storedCourse.microcredentialModuleMasterId ||
+                    storedCourse.MicrocredentialModuleMasterId ||
+                    storedCourse.selectedModuleMasterId ||
+                    storedCourse.selectedModuleId ||
+                    storedCourse.moduleId ||
+                    sessionStorage.getItem('MicrocredentialModuleMasterId') ||
+                    localStorage.getItem('MicrocredentialModuleMasterId') ||
+                    0
+                ) || 0;
+            } catch (e) {}
+        }
+
+        // If still 0 and finalCourseId > 0, fetch modules for the course as resilient fallback
+        if (finalModuleId === 0 && finalCourseId > 0) {
+            try {
+                const modRes = await getMicrocredentialModuleByCourseId(finalCourseId);
+                if (modRes && Array.isArray(modRes.microcredentialModuleList) && modRes.microcredentialModuleList.length > 0) {
+                    finalModuleId = Number(modRes.microcredentialModuleList[0].microcredentialModuleMasterId) || 0;
+                    if (typeof window !== 'undefined' && finalModuleId > 0) {
+                        try {
+                            sessionStorage.setItem('MicrocredentialModuleMasterId', String(finalModuleId));
+                        } catch (e) {}
+                    }
+                }
+            } catch (e) {}
+        }
+
         const inputDto = buildMicrocredentialQuizStudentAttemptDetailInput(
-            microcredentialCourseId, 
+            finalCourseId, 
             finalStudentId,
-            microcredentialModuleMasterId
+            finalModuleId
         );
         const response = await apiClient('api/StudentMicrocredentialQuizAPI/MicrocredentialQuizStudentAttemptDetail', {
             method: 'POST',

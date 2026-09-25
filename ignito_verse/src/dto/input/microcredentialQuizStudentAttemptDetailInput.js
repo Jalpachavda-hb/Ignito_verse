@@ -11,9 +11,50 @@ export function buildMicrocredentialQuizStudentAttemptDetailInput(
     studentId = 0,
     microcredentialModuleMasterId = 0
 ) {
-    const cId = Number(microcredentialCourseId) || 0;
-    const sId = Number(studentId) || 0;
-    const mId = Number(microcredentialModuleMasterId) || 0;
+    let cId = 0;
+    let sId = 0;
+    let mId = 0;
+
+    if (typeof microcredentialCourseId === 'object' && microcredentialCourseId !== null) {
+        cId = Number(
+            microcredentialCourseId.microcredentialCourseId || 
+            microcredentialCourseId.MicrocredentialCourseId || 
+            microcredentialCourseId.courseId || 
+            microcredentialCourseId.id
+        ) || 0;
+        sId = Number(
+            microcredentialCourseId.studentId || 
+            microcredentialCourseId.StudentId
+        ) || 0;
+        mId = Number(
+            microcredentialCourseId.microcredentialModuleMasterId || 
+            microcredentialCourseId.MicrocredentialModuleMasterId || 
+            microcredentialCourseId.selectedModuleMasterId || 
+            microcredentialCourseId.selectedModuleId || 
+            microcredentialCourseId.moduleId
+        ) || 0;
+    } else {
+        cId = Number(microcredentialCourseId) || 0;
+        sId = Number(studentId) || 0;
+        mId = Number(microcredentialModuleMasterId) || 0;
+    }
+
+    // Fallback: recover moduleMasterId from sessionStorage if not passed or passed as 0
+    if (mId === 0 && typeof window !== 'undefined') {
+        try {
+            const stored = JSON.parse(sessionStorage.getItem('ignito_selected_course') || '{}');
+            mId = Number(
+                stored.microcredentialModuleMasterId ||
+                stored.MicrocredentialModuleMasterId ||
+                stored.selectedModuleMasterId ||
+                stored.selectedModuleId ||
+                stored.moduleId ||
+                sessionStorage.getItem('MicrocredentialModuleMasterId') ||
+                localStorage.getItem('MicrocredentialModuleMasterId') ||
+                0
+            ) || 0;
+        } catch (e) {}
+    }
 
     return {
         headers: {

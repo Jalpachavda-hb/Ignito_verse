@@ -76,18 +76,28 @@ export default function QuizPage({
 
   const courseTitle = currentCourse.title || currentCourse.microcredentialCourseName || 'Microcredential Course';
   
+  const initialQuizId = Number(
+    currentCourse.quizId || 
+    currentCourse.QuizId || 
+    currentCourse.microcredentialQuizId || 
+    currentCourse.MicrocredentialQuizId || 
+    sessionStorage.getItem('MicrocredentialQuizId') || 
+    sessionStorage.getItem('QuizId') || 
+    0
+  );
+
   // Page View Modes: 'loading' | 'attemptList' | 'quiz' | 'scoreSummary'
   const [viewMode, setViewMode] = useState('loading');
   const [error, setError] = useState(null);
 
   // Attempt History & Finalized State
   const [attemptList, setAttemptList] = useState([]);
-  const [activeQuizId, setActiveQuizId] = useState(0);
+  const [activeQuizId, setActiveQuizId] = useState(initialQuizId);
   const [isQuizFinalized, setIsQuizFinalized] = useState(false);
 
   // Backend Quiz Metadata (Step 2B & 3)
   const [quizMetadata, setQuizMetadata] = useState({
-    quizId: 0,
+    quizId: initialQuizId,
     attemptId: 0,
     quizName: 'Course Assessment',
     quizDescription: '',
@@ -138,13 +148,19 @@ export default function QuizPage({
       const statusRes = await checkStudentQuizAttemptStatus(courseId, studentId, 2, moduleMasterId);
 
       if (statusRes && statusRes.isSuccess) {
-        const quizId = statusRes.quizId || 0;
-        setActiveQuizId(quizId);
+        const quizId = Number(statusRes.quizId || 0);
+        if (quizId > 0) {
+          setActiveQuizId(quizId);
+          setQuizMetadata(prev => ({ ...prev, quizId }));
+          try {
+            sessionStorage.setItem('MicrocredentialQuizId', String(quizId));
+          } catch (_) {}
+        }
 
         // Branching Condition:
         if (statusRes.isAttemptedFlag === 1) {
           // STEP 2A: Already Attempted -> Fetch Attempt List
-          await loadAttemptList(quizId, studentId);
+          await loadAttemptList(quizId || initialQuizId, studentId);
         } else {
           // STEP 2B: Not Attempted -> Load Quiz Preview Data & Resume/Start
           await startQuizExecution(courseId, studentId, moduleMasterId);
@@ -206,9 +222,25 @@ export default function QuizPage({
       const previewRes = await getQuizPreviewData(cId, sId, 2, mId);
 
       if (previewRes && (previewRes.success || previewRes.isSuccess || (previewRes.questions && previewRes.questions.length > 0))) {
-        const qId = previewRes.quizId || 0;
+        const qId = Number(
+          previewRes.quizId || 
+          activeQuizId || 
+          initialQuizId || 
+          currentCourse?.quizId || 
+          currentCourse?.QuizId || 
+          currentCourse?.microcredentialQuizId || 
+          previewRes.questions?.[0]?.quizId || 
+          sessionStorage.getItem('MicrocredentialQuizId') || 
+          sessionStorage.getItem('QuizId') || 
+          0
+        );
         const attId = previewRes.attemptId || 0;
-        setActiveQuizId(qId);
+        if (qId > 0) {
+          setActiveQuizId(qId);
+          try {
+            sessionStorage.setItem('MicrocredentialQuizId', String(qId));
+          } catch (_) {}
+        }
 
         const remainingAttempts = previewRes.remainingAttempts !== undefined ? previewRes.remainingAttempts : 10;
         const attemptsAllowed = previewRes.attemptsAllowed || 10;
@@ -368,9 +400,21 @@ export default function QuizPage({
       [currentIndex]: optionId
     }));
 
+    const targetQuizId = Number(
+      quizMetadata.quizId || 
+      activeQuizId || 
+      currentQ.quizId || 
+      initialQuizId ||
+      currentCourse?.quizId || 
+      currentCourse?.QuizId || 
+      sessionStorage.getItem('MicrocredentialQuizId') || 
+      sessionStorage.getItem('QuizId') || 
+      0
+    );
+
     // STEP 4: Real-time Auto-Save Single Question Answer to Server
     saveQuestionAnswer({
-      quizId: quizMetadata.quizId,
+      quizId: targetQuizId,
       questionId: currentQ.questionId,
       degreeQuestionType: currentQ.degreeQuestionType,
       answerData: {

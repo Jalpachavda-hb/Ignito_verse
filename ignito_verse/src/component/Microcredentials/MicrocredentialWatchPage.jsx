@@ -61,6 +61,7 @@ import {
   getManyMicroCourseDiscussionQuestionReply,
   microcredentialQuizStudentAttemptDetail,
   getMicrocredentialCourseDetail,
+  getMicrocredentialModuleByCourseId,
   addUpdateMicrocredentialVideoNote,
   getMicrocredentialVideoNotes,
   deleteMicrocredentialVideoNote
@@ -243,6 +244,12 @@ export default function MicrocredentialWatchPage({
             moduleMasterId = Number(stored.microcredentialModuleMasterId) || 0;
           }
         }
+      } catch (e) {}
+    }
+
+    if (moduleMasterId > 0) {
+      try {
+        sessionStorage.setItem('MicrocredentialModuleMasterId', String(moduleMasterId));
       } catch (e) {}
     }
 
@@ -661,16 +668,30 @@ export default function MicrocredentialWatchPage({
       const rawId = currentCourse.microcredentialCourseId || currentCourse.courseId || currentCourse.id || 0;
       const courseId = Number(rawId) || 0;
       if (courseId <= 0) return;
-      const rawModuleMasterId = currentCourse?.microcredentialModuleMasterId ||
+      let rawModuleMasterId = currentCourse?.microcredentialModuleMasterId ||
+        currentCourse?.MicrocredentialModuleMasterId ||
         currentCourse?.selectedModuleMasterId ||
         currentCourse?.selectedModuleId ||
         currentCourse?.microcredentialModuleId ||
         currentCourse?.moduleId ||
         currentCourse?.rawData?.microcredentialModuleMasterId ||
         course?.microcredentialModuleMasterId ||
+        course?.MicrocredentialModuleMasterId ||
         course?.selectedModuleMasterId ||
+        sessionStorage.getItem('MicrocredentialModuleMasterId') ||
         0;
-      const moduleMasterId = Number(rawModuleMasterId) || 0;
+      let moduleMasterId = Number(rawModuleMasterId) || 0;
+      if (moduleMasterId <= 0 && courseId > 0) {
+        try {
+          const modRes = await getMicrocredentialModuleByCourseId(courseId);
+          if (modRes && Array.isArray(modRes.microcredentialModuleList) && modRes.microcredentialModuleList.length > 0) {
+            moduleMasterId = Number(modRes.microcredentialModuleList[0].microcredentialModuleMasterId) || 0;
+            if (moduleMasterId > 0) {
+              sessionStorage.setItem('MicrocredentialModuleMasterId', String(moduleMasterId));
+            }
+          }
+        } catch (e) {}
+      }
       const res = await getMicrocredentialStudentWatchVideoData(studentId, courseId, moduleMasterId);
       if (res && res.success) {
         setIsQuizEligible(Boolean(res.isQuizOpen));
@@ -763,12 +784,69 @@ export default function MicrocredentialWatchPage({
     if (courseId <= 0) return;
     const studentId = getLoggedInStudentId();
 
+    const curLecture = activeLectureRef.current || activeLecture;
+    let storedModuleId = 0;
+    try {
+      const stored = JSON.parse(sessionStorage.getItem('ignito_selected_course') || '{}');
+      storedModuleId = Number(
+        stored.microcredentialModuleMasterId ||
+        stored.MicrocredentialModuleMasterId ||
+        stored.selectedModuleMasterId ||
+        stored.selectedModuleId ||
+        stored.moduleId ||
+        0
+      );
+    } catch (e) {}
+
+    let rawModuleMasterId = 
+      curLecture?.microcredentialModuleMasterId ||
+      curLecture?.rawData?.microcredentialModuleMasterId ||
+      currentCourse?.microcredentialModuleMasterId ||
+      currentCourse?.MicrocredentialModuleMasterId ||
+      currentCourse?.selectedModuleMasterId ||
+      currentCourse?.selectedModuleId ||
+      currentCourse?.microcredentialModuleId ||
+      currentCourse?.moduleId ||
+      currentCourse?.rawData?.microcredentialModuleMasterId ||
+      course?.microcredentialModuleMasterId ||
+      course?.MicrocredentialModuleMasterId ||
+      course?.selectedModuleMasterId ||
+      course?.selectedModuleId ||
+      course?.microcredentialModuleId ||
+      course?.moduleId ||
+      course?.rawData?.microcredentialModuleMasterId ||
+      playlist.find(p => Number(p.microcredentialModuleMasterId) > 0)?.microcredentialModuleMasterId ||
+      playlist.find(p => Number(p.rawData?.microcredentialModuleMasterId) > 0)?.rawData?.microcredentialModuleMasterId ||
+      storedModuleId ||
+      Number(sessionStorage.getItem('MicrocredentialModuleMasterId')) ||
+      Number(localStorage.getItem('MicrocredentialModuleMasterId')) ||
+      0;
+
+    let moduleMasterId = Number(rawModuleMasterId) || 0;
+
+    if (moduleMasterId <= 0 && courseId > 0) {
+      try {
+        const modRes = await getMicrocredentialModuleByCourseId(courseId);
+        if (modRes && Array.isArray(modRes.microcredentialModuleList) && modRes.microcredentialModuleList.length > 0) {
+          moduleMasterId = Number(modRes.microcredentialModuleList[0].microcredentialModuleMasterId) || 0;
+        }
+      } catch (e) {
+        console.warn('Could not auto-fetch course module master ID:', e);
+      }
+    }
+
+    if (moduleMasterId > 0) {
+      try {
+        sessionStorage.setItem('MicrocredentialModuleMasterId', String(moduleMasterId));
+      } catch (e) {}
+    }
+
     setShowQuizModal(true);
     setQuizAttemptLoading(true);
     setQuizAttemptError('');
 
     try {
-      const res = await microcredentialQuizStudentAttemptDetail(courseId, studentId);
+      const res = await microcredentialQuizStudentAttemptDetail(courseId, studentId, moduleMasterId);
       if (res && res.success) {
         setQuizAttemptData(res);
       } else {
@@ -785,7 +863,47 @@ export default function MicrocredentialWatchPage({
   const handleStartQuiz = (detail) => {
     setShowQuizModal(false);
     if (onNavigate) {
-      onNavigate('quiz', currentCourse);
+      const curLecture = activeLectureRef.current || activeLecture;
+      const targetModuleId = Number(
+        sessionStorage.getItem('MicrocredentialModuleMasterId') ||
+        curLecture?.microcredentialModuleMasterId ||
+        currentCourse?.microcredentialModuleMasterId ||
+        currentCourse?.selectedModuleMasterId ||
+        0
+      );
+      const targetQuizId = Number(
+        detail?.quizId ||
+        detail?.QuizId ||
+        detail?.microcredentialQuizId ||
+        detail?.MicrocredentialQuizId ||
+        detail?.studentAttemptDetail?.quizId ||
+        detail?.studentAttemptDetail?.QuizId ||
+        quizAttemptData?.quizId ||
+        quizAttemptData?.QuizId ||
+        quizAttemptData?.studentAttemptDetail?.quizId ||
+        quizAttemptData?.studentAttemptDetail?.QuizId ||
+        quizAttemptData?.rawData?.quizId ||
+        quizAttemptData?.rawData?.QuizId ||
+        sessionStorage.getItem('MicrocredentialQuizId') ||
+        sessionStorage.getItem('QuizId') ||
+        currentCourse?.quizId ||
+        currentCourse?.QuizId ||
+        0
+      );
+      if (targetQuizId > 0) {
+        try {
+          sessionStorage.setItem('MicrocredentialQuizId', String(targetQuizId));
+        } catch (_) {}
+      }
+      onNavigate('quiz', {
+        ...currentCourse,
+        quizId: targetQuizId || currentCourse?.quizId,
+        QuizId: targetQuizId || currentCourse?.QuizId,
+        microcredentialQuizId: targetQuizId || currentCourse?.microcredentialQuizId,
+        microcredentialModuleMasterId: targetModuleId || currentCourse?.microcredentialModuleMasterId,
+        selectedModuleMasterId: targetModuleId || currentCourse?.selectedModuleMasterId,
+        moduleMasterId: targetModuleId || currentCourse?.moduleMasterId
+      });
     }
   };
 

@@ -241,7 +241,21 @@ export function parseGetStudentMicroQuizByMicrocredentialCourseIdOutput(rawJson 
         }))
         : [];
 
-    const resolvedQuizId = Number(rawJson?.quizId ?? rawJson?.QuizId ?? questions?.[0]?.quizId ?? 0);
+    const resolvedQuizId = Number(
+        rawJson?.quizId ?? 
+        rawJson?.QuizId ?? 
+        rawJson?.microcredentialQuizId ?? 
+        rawJson?.MicrocredentialQuizId ?? 
+        rawJson?.microcredentialQuizMasterId ?? 
+        rawJson?.MicrocredentialQuizMasterId ?? 
+        rawJson?.quizMasterId ?? 
+        rawJson?.QuizMasterId ?? 
+        rawJson?.data?.quizId ?? 
+        rawJson?.data?.QuizId ?? 
+        rawJson?.data?.microcredentialQuizId ?? 
+        questions?.[0]?.quizId ?? 
+        0
+    );
     const availabilityRaw = rawJson?.availability || rawJson?.Availability || {};
     const availability = {
         isWithinTime: Boolean(availabilityRaw?.isWithinTime ?? availabilityRaw?.IsWithinTime ?? true),
