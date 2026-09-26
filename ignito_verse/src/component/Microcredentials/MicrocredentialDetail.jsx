@@ -449,10 +449,13 @@ export default function MicrocredentialDetail({
     }
 
     let text = String(rawContent).trim();
+    // Clean up any internal selection anchors or editor metadata spans
+    text = text.replace(/<span[^>]*class="[^"]*selectionAnchor[^"]*"[^>]*>[\s\S]*?<\/span>/gi, '');
 
     // Normalize potential HTML breaks/paragraphs to check for bullet formats
     const cleanForBullets = text
-      .replace(/<\/?p>/gi, '\n')
+      .replace(/<p[^>]*>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/&bull;/gi, '•')
       .replace(/&#8226;/gi, '•');
@@ -748,9 +751,12 @@ export default function MicrocredentialDetail({
                 </div>
 
                 {/* Course Subtitle / Tagline */}
-                <p className="mc-hero-tagline-text">
-                  {course.description || course.about || 'Learn practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life.'}
-                </p>
+                <div className="mc-hero-tagline-text">
+                  {renderFormattedContent(
+                    course.description || course.about,
+                    'Learn practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life.'
+                  )}
+                </div>
               </div>
 
               {/* Right Video Thumbnail Card (Side-by-side on mobile / header) */}
@@ -1331,7 +1337,7 @@ export default function MicrocredentialDetail({
                               </h4>
                               {(item.moduleDescription || item.description) && (
                                 <p className="mc-module-desc-sub">
-                                  {item.moduleDescription || item.description}
+                                  {String(item.moduleDescription || item.description).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}
                                 </p>
                               )}
                             </div>
@@ -1450,7 +1456,7 @@ export default function MicrocredentialDetail({
 
                               {(meeting.description || meeting.meetingDescription) && (
                                 <p style={{ margin: '0 0 10px 0', fontSize: '0.84rem', color: '#64748b', lineHeight: 1.48 }}>
-                                  {meeting.description || meeting.meetingDescription}
+                                  {String(meeting.description || meeting.meetingDescription).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}
                                 </p>
                               )}
 

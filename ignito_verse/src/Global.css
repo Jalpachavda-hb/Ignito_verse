@@ -6834,6 +6834,24 @@ body.modal-open {
   max-width: 720px;
 }
 
+.mc-hero-tagline-text .mc-rich-html-content,
+.mc-hero-tagline-text p {
+  font-size: 0.92rem;
+  line-height: 1.62;
+  color: #475569;
+  margin: 0 0 10px 0;
+}
+
+.mc-hero-tagline-text .mc-rich-html-content p:last-child,
+.mc-hero-tagline-text p:last-child {
+  margin-bottom: 0;
+}
+
+.mc-hero-tagline-text strong {
+  color: #00385E;
+  font-weight: 700;
+}
+
 /* ========================================================
    INTEGRATED LUXURY TOP BAR (NAVIGATION TABS)
    ======================================================== */
