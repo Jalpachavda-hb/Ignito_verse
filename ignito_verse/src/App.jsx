@@ -15,6 +15,7 @@ import { microcredentialsData } from './data/microcredentials';
 import { getSavedUserSession, logoutUser } from './services/authService';
 import { getLoggedInStudentId } from './services/microcredentialService';
 import Chatbot from './component/Chatbot/Chatbot';
+import { initGlobalModalWatcher } from './utils/modalWatcher';
 import './Global.css';
 
 /**
@@ -162,6 +163,14 @@ export default function App() {
     duration: '',
     videoUrl: ''
   });
+
+  // Lock background scroll whenever any modal opens on the whole website
+  useEffect(() => {
+    const cleanupModalWatcher = initGlobalModalWatcher();
+    return () => {
+      cleanupModalWatcher();
+    };
+  }, []);
 
   // Synchronize route and handle browser Back/Forward & URL changes across page refreshes
   useEffect(() => {

@@ -4740,6 +4740,13 @@ a {
 /* ==========================================================================
    SECTION 19: MODALS (BOOK A DEMO, VIDEO PREVIEW, LOGIN)
    ========================================================================== */
+html.modal-open,
+body.modal-open {
+  overflow: hidden !important;
+  height: 100% !important;
+  overscroll-behavior: none !important;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -4751,6 +4758,7 @@ a {
   align-items: center;
   justify-content: center;
   padding: 20px;
+  overscroll-behavior: contain;
 }
 
 .modal-backdrop {
@@ -4761,6 +4769,7 @@ a {
   height: 100%;
   background: rgba(15, 23, 42, 0.75);
   backdrop-filter: blur(6px);
+  touch-action: none;
 }
 
 .modal-container {

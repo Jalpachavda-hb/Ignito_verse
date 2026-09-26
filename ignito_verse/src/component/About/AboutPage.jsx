@@ -3,7 +3,7 @@ import React from 'react';
 import { ShieldCheck, Target, Award, Users2, Sparkles, Building2, BookOpen, ArrowRight } from 'lucide-react';
 import { impactStats } from '../../data/enterpriseData';
 
-export default function AboutPage({ onBookDemo = () => {}, onExploreCatalog = () => {} }) {
+export default function AboutPage({ onExploreCatalog = () => {} }) {
   return (
     <div className="about-page-wrapper">
       {/* About Hero */}

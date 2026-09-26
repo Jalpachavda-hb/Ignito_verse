@@ -434,7 +434,17 @@ export async function saveQuizAttempt(attemptData = {}) {
             return parseMicrocredentialQuizAttemptSaveErrorOutput(response.data, response.status);
         }
 
-        return parseMicrocredentialQuizAttemptSaveOutput(response.data, response.status);
+        const parsedOutput = parseMicrocredentialQuizAttemptSaveOutput(response.data, response.status);
+
+        // Cache the attemptId for subsequent operations (such as final submit)
+        if (parsedOutput?.attemptId > 0 && typeof window !== 'undefined') {
+            try {
+                window.sessionStorage?.setItem('ActiveQuizAttemptId', String(parsedOutput.attemptId));
+                window.sessionStorage?.setItem('attemptId', String(parsedOutput.attemptId));
+            } catch (_) {}
+        }
+
+        return parsedOutput;
     } catch (error) {
         console.error('Error in saveQuizAttempt:', error);
         return parseMicrocredentialQuizAttemptSaveErrorOutput({ message: error.message }, 500);
@@ -458,19 +468,18 @@ export const microcredentialQuizAttemptSave = saveQuizAttempt;
 export async function autoSaveQuizTimer(quizId, lastActivityTime, totalTimeAllowed = 0, attemptNumber = 0, studentId = 0) {
     const finalQuizId = resolveActiveQuizId(quizId);
     return saveQuizAttempt({
-        StudentId: resolveStudentId(studentId),
-        QuizId: finalQuizId,
+        studentId: resolveStudentId(studentId),
         quizId: finalQuizId,
-        TotalTimeAllowed: Number(totalTimeAllowed) || 0,
-        LastActivityTime: Number(lastActivityTime) || 0,
-        Answers: [],
-        BlankAnswers: [],
-        MatchingAnswers: [],
-        OrderingAnswers: [],
-        NumericAnswers: [],
-        LikertAnswers: [],
-        IsFinalSubmission: false,
-        AttemptNumber: Number(attemptNumber) || 0
+        totalTimeAllowed: Number(totalTimeAllowed) || 0,
+        lastActivityTime: Number(lastActivityTime) || 0,
+        attemptNumber: Number(attemptNumber) || 0,
+        answers: [],
+        blankAnswers: [],
+        matchingAnswers: [],
+        orderingAnswers: [],
+        numericAnswers: [],
+        likertAnswers: [],
+        isFinalSubmission: false
     });
 }
 
@@ -504,42 +513,41 @@ export async function saveQuestionAnswer({
     const finalQuizId = resolveActiveQuizId(quizId);
 
     const payload = {
-        StudentId: resolveStudentId(studentId),
-        QuizId: finalQuizId,
+        studentId: resolveStudentId(studentId),
         quizId: finalQuizId,
-        TotalTimeAllowed: Number(totalTimeAllowed) || 0,
-        LastActivityTime: Number(lastActivityTime) || 0,
-        Answers: [],
-        BlankAnswers: [],
-        MatchingAnswers: [],
-        OrderingAnswers: [],
-        NumericAnswers: [],
-        LikertAnswers: [],
-        IsFinalSubmission: false,
-        AttemptNumber: Number(attemptNumber) || 0
+        totalTimeAllowed: Number(totalTimeAllowed) || 0,
+        lastActivityTime: Number(lastActivityTime) || 0,
+        attemptNumber: Number(attemptNumber) || 0,
+        answers: [],
+        blankAnswers: [],
+        matchingAnswers: [],
+        orderingAnswers: [],
+        numericAnswers: [],
+        likertAnswers: [],
+        isFinalSubmission: false
     };
 
     switch (type) {
         // MCQ / True-False
         case QUESTION_TYPES.MULTIPLE_CHOICE:
         case QUESTION_TYPES.TRUE_FALSE:
-            payload.Answers.push({
-                QuestionId: qId,
-                DegreeQuestionType: type,
-                AnswerText: '',
-                SelectedOptionIds: String(answerData?.selectedOptionId || answerData || ''),
-                TimeSpentInSeconds: Number(answerData?.timeSpentInSeconds || 0)
+            payload.answers.push({
+                questionId: qId,
+                degreeQuestionType: type,
+                answerText: '',
+                selectedOptionIds: String(answerData?.selectedOptionId || answerData || ''),
+                timeSpentInSeconds: Number(answerData?.timeSpentInSeconds || 0)
             });
             break;
 
         // Multi-Select
         case QUESTION_TYPES.MULTI_SELECT:
-            payload.Answers.push({
-                QuestionId: qId,
-                DegreeQuestionType: type,
-                AnswerText: '',
-                SelectedOptionIds: Array.isArray(answerData) ? answerData.join(',') : String(answerData?.selectedOptionIds || answerData || ''),
-                TimeSpentInSeconds: Number(answerData?.timeSpentInSeconds || 0)
+            payload.answers.push({
+                questionId: qId,
+                degreeQuestionType: type,
+                answerText: '',
+                selectedOptionIds: Array.isArray(answerData) ? answerData.join(',') : String(answerData?.selectedOptionIds || answerData || ''),
+                timeSpentInSeconds: Number(answerData?.timeSpentInSeconds || 0)
             });
             break;
 
@@ -548,25 +556,25 @@ export async function saveQuestionAnswer({
         case QUESTION_TYPES.SHORT_ANSWER:
         case QUESTION_TYPES.MULTI_SHORT_ANSWER:
             if (Array.isArray(answerData)) {
-                payload.BlankAnswers = answerData.map((b, idx) => ({
-                    TempAnswerKey: qId,
-                    BlankIndex: b?.blankIndex ?? idx,
-                    AnswerText: b?.answerText ?? b?.text ?? String(b || ''),
-                    BlankNumber: b?.blankNumber ?? (idx + 1)
+                payload.blankAnswers = answerData.map((b, idx) => ({
+                    tempAnswerKey: qId,
+                    blankIndex: Number(b?.blankIndex ?? idx),
+                    answerText: String(b?.answerText ?? b?.text ?? b ?? ''),
+                    blankNumber: Number(b?.blankNumber ?? (idx + 1))
                 }));
             } else if (typeof answerData === 'object' && answerData !== null) {
-                payload.BlankAnswers = [{
-                    TempAnswerKey: qId,
-                    BlankIndex: answerData.blankIndex ?? 0,
-                    AnswerText: answerData.answerText ?? answerData.text ?? '',
-                    BlankNumber: answerData.blankNumber ?? 1
+                payload.blankAnswers = [{
+                    tempAnswerKey: qId,
+                    blankIndex: Number(answerData.blankIndex ?? 0),
+                    answerText: String(answerData.answerText ?? answerData.text ?? ''),
+                    blankNumber: Number(answerData.blankNumber ?? 1)
                 }];
             } else {
-                payload.BlankAnswers = [{
-                    TempAnswerKey: qId,
-                    BlankIndex: 0,
-                    AnswerText: String(answerData || ''),
-                    BlankNumber: 1
+                payload.blankAnswers = [{
+                    tempAnswerKey: qId,
+                    blankIndex: 0,
+                    answerText: String(answerData || ''),
+                    blankNumber: 1
                 }];
             }
             break;
@@ -574,16 +582,16 @@ export async function saveQuestionAnswer({
         // Matching
         case QUESTION_TYPES.MATCHING:
             if (Array.isArray(answerData)) {
-                payload.MatchingAnswers = answerData.map((m, idx) => ({
-                    TempAnswerKey: qId,
-                    PromptIndex: m?.promptIndex ?? idx,
-                    SelectedChoiceId: Number(m?.selectedChoiceId || m?.choiceId || 0)
+                payload.matchingAnswers = answerData.map((m, idx) => ({
+                    tempAnswerKey: qId,
+                    promptIndex: Number(m?.promptIndex ?? idx),
+                    selectedChoiceId: Number(m?.selectedChoiceId || m?.choiceId || 0)
                 }));
             } else {
-                payload.MatchingAnswers = [{
-                    TempAnswerKey: qId,
-                    PromptIndex: answerData?.promptIndex ?? 0,
-                    SelectedChoiceId: Number(answerData?.selectedChoiceId || 0)
+                payload.matchingAnswers = [{
+                    tempAnswerKey: qId,
+                    promptIndex: Number(answerData?.promptIndex ?? 0),
+                    selectedChoiceId: Number(answerData?.selectedChoiceId || 0)
                 }];
             }
             break;
@@ -591,11 +599,11 @@ export async function saveQuestionAnswer({
         // Ordering
         case QUESTION_TYPES.ORDERING:
             if (Array.isArray(answerData)) {
-                payload.OrderingAnswers = answerData.map((o, idx) => ({
-                    TempAnswerKey: qId,
-                    ItemIndex: o?.itemIndex ?? idx,
-                    ItemValue: o?.itemValue || o?.value || String(o || ''),
-                    OriginalItemIndex: o?.originalItemIndex ?? idx
+                payload.orderingAnswers = answerData.map((o, idx) => ({
+                    tempAnswerKey: qId,
+                    itemIndex: Number(o?.itemIndex ?? idx),
+                    itemValue: String(o?.itemValue || o?.value || o || ''),
+                    originalItemIndex: Number(o?.originalItemIndex ?? idx)
                 }));
             }
             break;
@@ -603,39 +611,39 @@ export async function saveQuestionAnswer({
         // Arithmetic & Significant Figures
         case QUESTION_TYPES.ARITHMETIC:
         case QUESTION_TYPES.SIGNIFICANT_FIGURES:
-            payload.NumericAnswers = [{
-                TempAnswerKey: qId,
-                NumericValue: Number(answerData?.numericValue ?? answerData?.value ?? answerData ?? 0),
-                UnitText: answerData?.unitText || answerData?.unit || '',
-                ExponentValue: Number(answerData?.exponentValue ?? 0)
+            payload.numericAnswers = [{
+                tempAnswerKey: qId,
+                numericValue: Number(answerData?.numericValue ?? answerData?.value ?? answerData ?? 0),
+                unitText: String(answerData?.unitText || answerData?.unit || ''),
+                exponentValue: Number(answerData?.exponentValue ?? 0)
             }];
             break;
 
         // Likert Scale
         case QUESTION_TYPES.LIKERT_SCALE:
             if (Array.isArray(answerData)) {
-                payload.LikertAnswers = answerData.map((l, idx) => ({
-                    TempAnswerKey: qId,
-                    StatementIndex: l?.statementIndex ?? idx,
-                    SelectedScaleValue: Number(l?.selectedScaleValue || l?.value || 0)
+                payload.likertAnswers = answerData.map((l, idx) => ({
+                    tempAnswerKey: qId,
+                    statementIndex: Number(l?.statementIndex ?? idx),
+                    selectedScaleValue: Number(l?.selectedScaleValue || l?.value || 0)
                 }));
             } else {
-                payload.LikertAnswers = [{
-                    TempAnswerKey: qId,
-                    StatementIndex: answerData?.statementIndex ?? 0,
-                    SelectedScaleValue: Number(answerData?.selectedScaleValue || 0)
+                payload.likertAnswers = [{
+                    tempAnswerKey: qId,
+                    statementIndex: Number(answerData?.statementIndex ?? 0),
+                    selectedScaleValue: Number(answerData?.selectedScaleValue || 0)
                 }];
             }
             break;
 
         // Written Response / Default Text Answer
         default:
-            payload.Answers.push({
-                QuestionId: qId,
-                DegreeQuestionType: type,
-                AnswerText: typeof answerData === 'string' ? answerData : JSON.stringify(answerData || ''),
-                SelectedOptionIds: '',
-                TimeSpentInSeconds: Number(answerData?.timeSpentInSeconds || 0)
+            payload.answers.push({
+                questionId: qId,
+                degreeQuestionType: type,
+                answerText: typeof answerData === 'string' ? answerData : JSON.stringify(answerData || ''),
+                selectedOptionIds: '',
+                timeSpentInSeconds: Number(answerData?.timeSpentInSeconds || 0)
             });
             break;
     }
@@ -656,10 +664,38 @@ export async function saveQuestionAnswer({
  * @param {number} [studentId=0] - Student ID (defaults to active logged-in student)
  * @returns {Promise<object>} Parsed response containing `{ success, isSuccess, scoreMessage, message, status, rawData }`
  */
-export async function submitQuizFinal(attemptId, studentId = 0) {
+export async function submitQuizFinal(attemptIdOrData, studentId = 0) {
     try {
-        const finalStudentId = resolveStudentId(studentId);
-        const finalAttemptId = Number(attemptId) || 0;
+        let finalAttemptId = 0;
+        let finalStudentId = resolveStudentId(studentId);
+
+        if (typeof attemptIdOrData === 'object' && attemptIdOrData !== null) {
+            finalAttemptId = Number(
+                attemptIdOrData.attemptId || 
+                attemptIdOrData.AttemptId || 
+                attemptIdOrData.rawData?.attemptId || 
+                attemptIdOrData.rawData?.AttemptId || 
+                0
+            );
+            if (!finalStudentId) {
+                finalStudentId = resolveStudentId(attemptIdOrData.studentId || attemptIdOrData.StudentId || 0);
+            }
+        } else {
+            finalAttemptId = Number(attemptIdOrData) || 0;
+        }
+
+        if (!finalAttemptId && typeof window !== 'undefined') {
+            try {
+                finalAttemptId = Number(
+                    window.sessionStorage?.getItem('ActiveQuizAttemptId') ||
+                    window.sessionStorage?.getItem('attemptId') ||
+                    window.sessionStorage?.getItem('AttemptId') ||
+                    window.localStorage?.getItem('ActiveQuizAttemptId') ||
+                    window.localStorage?.getItem('attemptId') ||
+                    0
+                );
+            } catch (_) {}
+        }
 
         const inputDto = buildMicrocredentialQuizStudentFinalSubmitInput(finalAttemptId, finalStudentId);
 

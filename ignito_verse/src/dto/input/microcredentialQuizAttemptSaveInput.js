@@ -195,8 +195,88 @@ function resolveStudentId(data = {}, directVal = 0) {
 }
 
 /**
+ * Helper formatters to guarantee array items conform strictly to API schema
+ */
+function formatAnswers(items) {
+    if (!Array.isArray(items)) return [];
+    return items.map(item => ({
+        questionId: Number(item?.questionId ?? item?.QuestionId ?? 0) || 0,
+        degreeQuestionType: Number(item?.degreeQuestionType ?? item?.DegreeQuestionType ?? 0) || 0,
+        answerText: item?.answerText != null ? String(item.answerText) : (item?.AnswerText != null ? String(item.AnswerText) : ''),
+        selectedOptionIds: Array.isArray(item?.selectedOptionIds ?? item?.SelectedOptionIds)
+            ? (item?.selectedOptionIds ?? item?.SelectedOptionIds).join(',')
+            : (item?.selectedOptionIds != null ? String(item.selectedOptionIds) : (item?.SelectedOptionIds != null ? String(item.SelectedOptionIds) : '')),
+        timeSpentInSeconds: Number(item?.timeSpentInSeconds ?? item?.TimeSpentInSeconds ?? 0) || 0
+    }));
+}
+
+function formatBlankAnswers(items) {
+    if (!Array.isArray(items)) return [];
+    return items.map(item => ({
+        tempAnswerKey: Number(item?.tempAnswerKey ?? item?.TempAnswerKey ?? item?.questionId ?? item?.QuestionId ?? 0) || 0,
+        blankIndex: Number(item?.blankIndex ?? item?.BlankIndex ?? 0) || 0,
+        answerText: item?.answerText != null ? String(item.answerText) : (item?.AnswerText != null ? String(item.AnswerText) : (item?.text != null ? String(item.text) : '')),
+        blankNumber: Number(item?.blankNumber ?? item?.BlankNumber ?? 0) || 0
+    }));
+}
+
+function formatMatchingAnswers(items) {
+    if (!Array.isArray(items)) return [];
+    return items.map(item => ({
+        tempAnswerKey: Number(item?.tempAnswerKey ?? item?.TempAnswerKey ?? item?.questionId ?? item?.QuestionId ?? 0) || 0,
+        promptIndex: Number(item?.promptIndex ?? item?.PromptIndex ?? 0) || 0,
+        selectedChoiceId: Number(item?.selectedChoiceId ?? item?.SelectedChoiceId ?? item?.choiceId ?? 0) || 0
+    }));
+}
+
+function formatOrderingAnswers(items) {
+    if (!Array.isArray(items)) return [];
+    return items.map(item => ({
+        tempAnswerKey: Number(item?.tempAnswerKey ?? item?.TempAnswerKey ?? item?.questionId ?? item?.QuestionId ?? 0) || 0,
+        itemIndex: Number(item?.itemIndex ?? item?.ItemIndex ?? 0) || 0,
+        itemValue: item?.itemValue != null ? String(item.itemValue) : (item?.ItemValue != null ? String(item.ItemValue) : (item?.value != null ? String(item.value) : '')),
+        originalItemIndex: Number(item?.originalItemIndex ?? item?.OriginalItemIndex ?? 0) || 0
+    }));
+}
+
+function formatNumericAnswers(items) {
+    if (!Array.isArray(items)) return [];
+    return items.map(item => ({
+        tempAnswerKey: Number(item?.tempAnswerKey ?? item?.TempAnswerKey ?? item?.questionId ?? item?.QuestionId ?? 0) || 0,
+        numericValue: Number(item?.numericValue ?? item?.NumericValue ?? item?.value ?? 0) || 0,
+        unitText: item?.unitText != null ? String(item.unitText) : (item?.UnitText != null ? String(item.UnitText) : (item?.unit != null ? String(item.unit) : '')),
+        exponentValue: Number(item?.exponentValue ?? item?.ExponentValue ?? 0) || 0
+    }));
+}
+
+function formatLikertAnswers(items) {
+    if (!Array.isArray(items)) return [];
+    return items.map(item => ({
+        tempAnswerKey: Number(item?.tempAnswerKey ?? item?.TempAnswerKey ?? item?.questionId ?? item?.QuestionId ?? 0) || 0,
+        statementIndex: Number(item?.statementIndex ?? item?.StatementIndex ?? 0) || 0,
+        selectedScaleValue: Number(item?.selectedScaleValue ?? item?.SelectedScaleValue ?? item?.value ?? 0) || 0
+    }));
+}
+
+/**
  * INPUT PARAMETER FILE: Microcredential Quiz Attempt Save Input DTO Builder
  * Builds input parameter body for MicrocredentialQuizAttemptSave POST request.
+ * 
+ * Generates exact payload structure matching:
+ * {
+ *   "studentId": 0,
+ *   "quizId": 0,
+ *   "totalTimeAllowed": 0,
+ *   "lastActivityTime": 0,
+ *   "attemptNumber": 0,
+ *   "answers": [{ "questionId": 0, "degreeQuestionType": 0, "answerText": "string", "selectedOptionIds": "string", "timeSpentInSeconds": 0 }],
+ *   "blankAnswers": [{ "tempAnswerKey": 0, "blankIndex": 0, "answerText": "string", "blankNumber": 0 }],
+ *   "matchingAnswers": [{ "tempAnswerKey": 0, "promptIndex": 0, "selectedChoiceId": 0 }],
+ *   "orderingAnswers": [{ "tempAnswerKey": 0, "itemIndex": 0, "itemValue": "string", "originalItemIndex": 0 }],
+ *   "numericAnswers": [{ "tempAnswerKey": 0, "numericValue": 0, "unitText": "string", "exponentValue": 0 }],
+ *   "likertAnswers": [{ "tempAnswerKey": 0, "statementIndex": 0, "selectedScaleValue": 0 }],
+ *   "isFinalSubmission": true
+ * }
  * 
  * Supports both full attempt payload objects and individual field parameter passing.
  * 
@@ -212,7 +292,7 @@ function resolveStudentId(data = {}, directVal = 0) {
  * @param {boolean} [isFinalSubmission=false] - Final submission flag
  * @param {number} [attemptNumber=0] - Attempt number
  * @param {number} [studentId=0] - Student ID
- * @returns {object} Formatted request headers and JSON stringified body payload
+ * @returns {object} Formatted request headers, JSON stringified body, and payload object
  */
 export function buildMicrocredentialQuizAttemptSaveInput(
     attemptDataOrQuizId = {},
@@ -241,36 +321,36 @@ export function buildMicrocredentialQuizAttemptSaveInput(
         );
 
         payload = {
-            StudentId: resolvedStudentId,
-            QuizId: resolvedQuizId,
-            TotalTimeAllowed: Number(attemptDataOrQuizId.totalTimeAllowed ?? attemptDataOrQuizId.TotalTimeAllowed ?? 0),
-            LastActivityTime: Number(attemptDataOrQuizId.lastActivityTime ?? attemptDataOrQuizId.LastActivityTime ?? 0),
-            Answers: Array.isArray(attemptDataOrQuizId.answers ?? attemptDataOrQuizId.Answers) ? (attemptDataOrQuizId.answers ?? attemptDataOrQuizId.Answers) : [],
-            BlankAnswers: Array.isArray(attemptDataOrQuizId.blankAnswers ?? attemptDataOrQuizId.BlankAnswers) ? (attemptDataOrQuizId.blankAnswers ?? attemptDataOrQuizId.BlankAnswers) : [],
-            MatchingAnswers: Array.isArray(attemptDataOrQuizId.matchingAnswers ?? attemptDataOrQuizId.MatchingAnswers) ? (attemptDataOrQuizId.matchingAnswers ?? attemptDataOrQuizId.MatchingAnswers) : [],
-            OrderingAnswers: Array.isArray(attemptDataOrQuizId.orderingAnswers ?? attemptDataOrQuizId.OrderingAnswers) ? (attemptDataOrQuizId.orderingAnswers ?? attemptDataOrQuizId.OrderingAnswers) : [],
-            NumericAnswers: Array.isArray(attemptDataOrQuizId.numericAnswers ?? attemptDataOrQuizId.NumericAnswers) ? (attemptDataOrQuizId.numericAnswers ?? attemptDataOrQuizId.NumericAnswers) : [],
-            LikertAnswers: Array.isArray(attemptDataOrQuizId.likertAnswers ?? attemptDataOrQuizId.LikertAnswers) ? (attemptDataOrQuizId.likertAnswers ?? attemptDataOrQuizId.LikertAnswers) : [],
-            IsFinalSubmission: Boolean(attemptDataOrQuizId.isFinalSubmission ?? attemptDataOrQuizId.IsFinalSubmission ?? false),
-            AttemptNumber: Number(attemptDataOrQuizId.attemptNumber ?? attemptDataOrQuizId.AttemptNumber ?? 0)
+            studentId: resolvedStudentId,
+            quizId: resolvedQuizId,
+            totalTimeAllowed: Number(attemptDataOrQuizId.totalTimeAllowed ?? attemptDataOrQuizId.TotalTimeAllowed ?? 0) || 0,
+            lastActivityTime: Number(attemptDataOrQuizId.lastActivityTime ?? attemptDataOrQuizId.LastActivityTime ?? 0) || 0,
+            attemptNumber: Number(attemptDataOrQuizId.attemptNumber ?? attemptDataOrQuizId.AttemptNumber ?? 0) || 0,
+            answers: formatAnswers(attemptDataOrQuizId.answers ?? attemptDataOrQuizId.Answers),
+            blankAnswers: formatBlankAnswers(attemptDataOrQuizId.blankAnswers ?? attemptDataOrQuizId.BlankAnswers),
+            matchingAnswers: formatMatchingAnswers(attemptDataOrQuizId.matchingAnswers ?? attemptDataOrQuizId.MatchingAnswers),
+            orderingAnswers: formatOrderingAnswers(attemptDataOrQuizId.orderingAnswers ?? attemptDataOrQuizId.OrderingAnswers),
+            numericAnswers: formatNumericAnswers(attemptDataOrQuizId.numericAnswers ?? attemptDataOrQuizId.NumericAnswers),
+            likertAnswers: formatLikertAnswers(attemptDataOrQuizId.likertAnswers ?? attemptDataOrQuizId.LikertAnswers),
+            isFinalSubmission: Boolean(attemptDataOrQuizId.isFinalSubmission ?? attemptDataOrQuizId.IsFinalSubmission ?? false)
         };
     } else {
         const resolvedQuizId = resolveQuizId(attemptDataOrQuizId, attemptDataOrQuizId);
         const resolvedStudentId = resolveStudentId({}, studentId);
 
         payload = {
-            StudentId: resolvedStudentId,
-            QuizId: resolvedQuizId,
-            TotalTimeAllowed: Number(totalTimeAllowed) || 0,
-            LastActivityTime: Number(lastActivityTime) || 0,
-            Answers: Array.isArray(answers) ? answers : [],
-            BlankAnswers: Array.isArray(blankAnswers) ? blankAnswers : [],
-            MatchingAnswers: Array.isArray(matchingAnswers) ? matchingAnswers : [],
-            OrderingAnswers: Array.isArray(orderingAnswers) ? orderingAnswers : [],
-            NumericAnswers: Array.isArray(numericAnswers) ? numericAnswers : [],
-            LikertAnswers: Array.isArray(likertAnswers) ? likertAnswers : [],
-            IsFinalSubmission: Boolean(isFinalSubmission),
-            AttemptNumber: Number(attemptNumber) || 0
+            studentId: resolvedStudentId,
+            quizId: resolvedQuizId,
+            totalTimeAllowed: Number(totalTimeAllowed) || 0,
+            lastActivityTime: Number(lastActivityTime) || 0,
+            attemptNumber: Number(attemptNumber) || 0,
+            answers: formatAnswers(answers),
+            blankAnswers: formatBlankAnswers(blankAnswers),
+            matchingAnswers: formatMatchingAnswers(matchingAnswers),
+            orderingAnswers: formatOrderingAnswers(orderingAnswers),
+            numericAnswers: formatNumericAnswers(numericAnswers),
+            likertAnswers: formatLikertAnswers(likertAnswers),
+            isFinalSubmission: Boolean(isFinalSubmission)
         };
     }
 
@@ -279,6 +359,7 @@ export function buildMicrocredentialQuizAttemptSaveInput(
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        payload
     };
 }

@@ -1,5 +1,4 @@
-// ignitoverse: Quiz Attempt Details & History Modal (Exact Match to Design Mockup)
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   X, 
   Calendar, 
@@ -11,6 +10,7 @@ import {
   BarChart2, 
   AlertCircle 
 } from 'lucide-react';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import './quizAttemptModal.css';
 
 export default function QuizAttemptDetailsModal({
@@ -22,6 +22,21 @@ export default function QuizAttemptDetailsModal({
   courseTitle = 'Testing',
   attemptData = null
 }) {
+  useBodyScrollLock(isOpen, 'QuizAttemptDetailsModal');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const detail = attemptData?.studentAttemptDetail || {

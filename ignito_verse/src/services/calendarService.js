@@ -7,10 +7,11 @@ import { apiClient } from './apiClient';
 import {
   getLoggedInStudentId,
   getMicrocredentialLiveMeetingsByCourse,
+  getStudentMicrocredentialEvents,
   getStudentEnrolledMicrocredentialCourse
 } from './microcredentialService';
 
-export { getMicrocredentialLiveMeetingsByCourse };
+export { getMicrocredentialLiveMeetingsByCourse, getStudentMicrocredentialEvents };
 
 export const INITIAL_CALENDAR_EVENTS = [];
 
@@ -45,100 +46,25 @@ export function calculateEventMetrics(events = []) {
 }
 
 /**
- * Fetches calendar events dynamically by querying live meetings for student's enrolled courses.
- * API: POST /api/StudentMicrocredentialCalendarAPI/GetMicrocredentialLiveMeetingsByCourse
+ * Fetches calendar events dynamically using GetStudentMicrocredentialEvents API.
+ * API: POST /api/StudentMicrocredentialCalendarAPI/GetStudentMicrocredentialEvents
  */
-export async function getStudentCalendarEvents(studentId = 0, passedCourses = null) {
+export async function getStudentCalendarEvents(studentId = 0, options = {}) {
   try {
     let finalStudentId = Number(studentId) || 0;
     if (!finalStudentId) {
       finalStudentId = getLoggedInStudentId() || 0;
     }
 
-    let allMeetings = [];
-    let courseList = Array.isArray(passedCourses) ? passedCourses : null;
+    const pageNo = typeof options === 'object' && options?.pageNo ? Number(options.pageNo) : 1;
+    const pageSize = typeof options === 'object' && options?.pageSize ? Number(options.pageSize) : 50;
+    const searchInput = typeof options === 'object' && options?.searchInput ? String(options.searchInput) : '';
 
-    // 1. Fetch student's enrolled courses if not passed
-    if (!courseList && finalStudentId > 0) {
-      try {
-        const enrolledRes = await getStudentEnrolledMicrocredentialCourse(finalStudentId, 1);
-        courseList = (enrolledRes?.success && Array.isArray(enrolledRes?.getStudentEnrolledMicrocredentialCourseList))
-          ? enrolledRes.getStudentEnrolledMicrocredentialCourseList
-          : [];
-      } catch (err) {
-        console.warn('Could not load enrolled courses for calendar:', err);
-        courseList = [];
-      }
+    const res = await getStudentMicrocredentialEvents(finalStudentId, pageNo, pageSize, searchInput);
+    if (res?.success && Array.isArray(res.events)) {
+      return res.events;
     }
-
-    // 2. Query live meetings for enrolled courses, or fallback to courseId=0 if none
-    if (courseList && courseList.length > 0) {
-      const promises = courseList.map(c => {
-        const courseId = Number(c.microcredentialCourseId || c.courseId || c.id) || 0;
-        return getMicrocredentialLiveMeetingsByCourse(courseId, finalStudentId)
-          .then(res => (res?.success && Array.isArray(res.liveMeetings) ? res.liveMeetings : []))
-          .catch(() => []);
-      });
-      const meetingBatches = await Promise.all(promises);
-      meetingBatches.forEach(batch => {
-        allMeetings.push(...batch);
-      });
-    } else if (Array.isArray(passedCourses) && passedCourses.length === 0) {
-      // Student has no purchased/enrolled courses - do not return any meetings
-      allMeetings = [];
-    } else {
-      // Only fallback to 0 if student has no specific enrolled courses loaded
-      try {
-        const directRes = await getMicrocredentialLiveMeetingsByCourse(0, finalStudentId);
-        if (directRes?.success && Array.isArray(directRes.liveMeetings)) {
-          allMeetings = directRes.liveMeetings;
-        }
-      } catch (err) {
-        console.warn('Direct live meetings query fallback:', err);
-      }
-    }
-
-    // 3. Deduplicate meetings by meetingId
-    const seenIds = new Set();
-    const uniqueMeetings = [];
-    allMeetings.forEach(m => {
-      const key = m.meetingId || `${m.microcredentialCourseId}_${m.title}_${m.startDateTime}`;
-      if (!seenIds.has(key)) {
-        seenIds.add(key);
-        uniqueMeetings.push(m);
-      }
-    });
-
-    // 4. Map meetings to calendar event format
-    const events = uniqueMeetings.map((item, idx) => {
-      const srcUpper = (item.sourceType || '').toUpperCase();
-      const isZoom = srcUpper === 'ZOOM';
-      const isMeet = srcUpper === 'GOOGLE_MEET';
-      const startIso = item.startDateTime ? item.startDateTime.replace(' ', 'T') : '';
-      const endIso = item.endDateTime ? item.endDateTime.replace(' ', 'T') : '';
-
-      return {
-        id: item.meetingId || idx + 1,
-        title: item.title || 'Live Meeting',
-        sourceType: isZoom ? 'zoom' : (isMeet ? 'google_meet' : 'google_calendar'),
-        sourceLabel: isZoom ? 'Zoom Meeting' : (isMeet ? 'Google Meet' : 'Google Calendar'),
-        subType: isZoom ? 'meeting' : 'meeting',
-        category: isZoom ? 'zoom_meeting' : (isMeet ? 'google_meeting' : 'default'),
-        startDate: startIso,
-        endDate: endIso,
-        displayStart: item.startDateTime || '',
-        displayEnd: item.endDateTime || '',
-        programName: item.microcredentialCourseName || item.courseName || '',
-        programSub: item.description || item.title || '',
-        joinUrl: item.joinLink || '',
-        createdDate: item.startDateTime || '',
-        description: item.description || '',
-        liveStatus: item.liveStatus || 'Upcoming',
-        color: isZoom ? '#2563eb' : (isMeet ? '#f59e0b' : '#475569')
-      };
-    });
-
-    return events;
+    return [];
   } catch (err) {
     console.error('Error in getStudentCalendarEvents:', err);
     return [];

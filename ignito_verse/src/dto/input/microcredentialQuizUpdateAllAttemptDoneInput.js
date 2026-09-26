@@ -7,14 +7,19 @@
  * @returns {object} Formatted request headers and JSON stringified body payload
  */
 export function buildMicrocredentialQuizUpdateAllAttemptDoneInput(quizId = 0, studentId = 0) {
+    const qId = Number(quizId) || 0;
+    const sId = Number(studentId) || 0;
+
     return {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            QuizId: Number(quizId) || 0,
-            StudentId: Number(studentId) || 0
+            QuizId: qId,
+            StudentId: sId,
+            quizId: qId,
+            studentId: sId
         })
     };
 }

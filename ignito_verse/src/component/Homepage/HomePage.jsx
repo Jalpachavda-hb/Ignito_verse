@@ -48,22 +48,11 @@ export default function HomePage({
         onSelectCategory={onSelectCategory}
       /> */}
 
-      {/* 7. Why Enterprises Choose Us (Bulk SSO, Dashboards, Compliance, Custom Paths) */}
-      {/* <WhyEnterprises 
-        onBookDemo={onBookDemo}
-      /> */}
-
       {/* 8. Stats / Impact Band */}
       <ImpactBand />
 
       {/* 9. Testimonials (Quotes from L&D leaders) */}
       <Testimonials />
-
-      {/* 10. Enterprise Conversion CTA Banner */}
-      {/* <CtaBanner 
-        onBookDemo={onBookDemo}
-        onContact={onContact}
-      /> */}
     </div>
   );
 }

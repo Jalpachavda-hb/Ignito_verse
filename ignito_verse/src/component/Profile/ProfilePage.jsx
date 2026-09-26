@@ -579,9 +579,6 @@ export default function ProfilePage({
                     e.currentTarget.src = staticAvatarImg;
                   }}
                 />
-                <button type="button" className="profile-avatar-camera-btn" title="Update Profile Photo">
-                  <Camera size={13} />
-                </button>
               </div>
 
               <div className="profile-user-info-ss">
@@ -599,58 +596,6 @@ export default function ProfilePage({
                     <Building2 size={13} color="#64748b" />
                     <span>{user?.company || 'IgnitoVerse Enterprise'}</span>
                   </span>
-                </div>
-
-                <div className="user-quote-line-ss">
-                  <span>"Learning today, leading tomorrow."</span>
-                  <button type="button" className="quote-edit-btn" title="Edit Motto">
-                    <Pencil size={11} />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="hero-vertical-divider" />
-
-            {/* Right: 4 Stat KPI Cards */}
-            <div className="profile-hero-stats-grid-ss">
-              <div className="hero-stat-card-ss" onClick={() => setActiveTab('courses')}>
-                <div className="stat-icon-square blue">
-                  <BookOpen size={18} />
-                </div>
-                <div className="stat-text-col-ss">
-                  <span className="stat-big-num-ss">{baseCourses.length}</span>
-                  <span className="stat-sub-label-ss">Enrolled Courses</span>
-                </div>
-              </div>
-
-              <div className="hero-stat-card-ss" onClick={() => setActiveTab('quiz')}>
-                <div className="stat-icon-square amber">
-                  <Award size={18} />
-                </div>
-                <div className="stat-text-col-ss">
-                  <span className="stat-big-num-ss">{filteredQuizList.length}</span>
-                  <span className="stat-sub-label-ss">Assessments</span>
-                </div>
-              </div>
-
-              <div className="hero-stat-card-ss" onClick={() => setActiveTab('calendar')}>
-                <div className="stat-icon-square green">
-                  <Calendar size={18} />
-                </div>
-                <div className="stat-text-col-ss">
-                  <span className="stat-big-num-ss">{calendarEventsCount}</span>
-                  <span className="stat-sub-label-ss">Calendar Events</span>
-                </div>
-              </div>
-
-              <div className="hero-stat-card-ss">
-                <div className="stat-icon-square purple">
-                  <BarChart2 size={18} />
-                </div>
-                <div className="stat-text-col-ss">
-                  <span className="stat-big-num-ss">{overallProgress}%</span>
-                  <span className="stat-sub-label-ss">Overall Progress</span>
                 </div>
               </div>
             </div>

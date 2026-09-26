@@ -55,3 +55,47 @@ a {
   text-decoration: none;
   color: inherit;
 }
+
+/* ==========================================================================
+   UNIVERSAL MODAL SCROLL LOCK (Locks background screen from scrolling)
+   ========================================================================== */
+html.modal-open,
+body.modal-open {
+  overflow: hidden !important;
+  height: 100% !important;
+  overscroll-behavior: none !important;
+}
+
+/* Modal containers retain internal scroll if content exceeds screen height */
+.modal-container,
+.quiz-modal-container,
+.quiz-result-modal-card,
+.quiz-confirm-modal-card,
+.calendar-modal-dialog,
+.mc-modal-card {
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+}
+
+/* Prevent scroll chaining on overlays and backdrops */
+.modal-overlay,
+.modal-backdrop,
+.qr-modal-overlay,
+.qr-modal-backdrop,
+.mc-modal-overlay,
+.quiz-modal-overlay,
+.quiz-modal-backdrop,
+.quiz-result-modal-overlay,
+.quiz-confirm-modal-overlay,
+.calendar-modal-backdrop,
+[role="dialog"][aria-modal="true"] {
+  overscroll-behavior: contain;
+}
+
+.modal-backdrop,
+.qr-modal-backdrop,
+.quiz-modal-backdrop,
+.calendar-modal-backdrop {
+  touch-action: none;
+}
+

@@ -20,7 +20,8 @@ import {
   FileCheck2,
   CheckSquare,
   Lock,
-  ShieldCheck
+  ShieldCheck,
+  AlertTriangle
 } from 'lucide-react';
 import { 
   checkStudentQuizAttemptStatus,
@@ -117,6 +118,9 @@ export default function QuizPage({
   const [selectedAnswers, setSelectedAnswers] = useState({}); // { [questionIndex]: optionId / answerValue }
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [showConfirmFinalAttempt, setShowConfirmFinalAttempt] = useState(false);
+  const [showFinalSubmitAlert, setShowFinalSubmitAlert] = useState(false);
+  const [showPostSubmitModal, setShowPostSubmitModal] = useState(false);
+  const [finalizingAttempt, setFinalizingAttempt] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [scoreSummary, setScoreSummary] = useState(null);
 
@@ -242,9 +246,17 @@ export default function QuizPage({
           } catch (_) {}
         }
 
-        const remainingAttempts = previewRes.remainingAttempts !== undefined ? previewRes.remainingAttempts : 10;
-        const attemptsAllowed = previewRes.attemptsAllowed || 10;
-        const attemptsDone = previewRes.attemptsDone || 0;
+        const attemptsAllowed = Number(previewRes.attemptsAllowed ?? previewRes.AttemptsAllowed ?? 10) || 10;
+        const currentAttemptNumber = Number(previewRes.currentAttemptNumber ?? previewRes.CurrentAttemptNumber ?? 1) || 1;
+        const attemptsDone = Number(previewRes.attemptsDone ?? previewRes.AttemptsDone ?? (currentAttemptNumber - 1));
+        
+        let remainingAttempts = attemptsAllowed - attemptsDone;
+        if (previewRes.remainingAttempts !== undefined && Number(previewRes.remainingAttempts) > 0) {
+          remainingAttempts = Number(previewRes.remainingAttempts);
+        } else if (previewRes.RemainingAttempts !== undefined && Number(previewRes.RemainingAttempts) > 0) {
+          remainingAttempts = Number(previewRes.RemainingAttempts);
+        }
+        remainingAttempts = Math.max(0, remainingAttempts);
 
         if (remainingAttempts <= 0 && attemptsDone > 0) {
           setIsQuizFinalized(true);
@@ -380,7 +392,18 @@ export default function QuizPage({
           totalDurationSeconds,
           quizMetadata.currentAttemptNumber,
           resolveStudentId()
-        ).catch(e => console.warn('Periodic timer save skipped:', e));
+        ).then(res => {
+          if (res?.attemptId > 0) {
+            setQuizMetadata(prev => ({
+              ...prev,
+              attemptId: res.attemptId
+            }));
+            try {
+              sessionStorage.setItem('ActiveQuizAttemptId', String(res.attemptId));
+              sessionStorage.setItem('attemptId', String(res.attemptId));
+            } catch (_) {}
+          }
+        }).catch(e => console.warn('Periodic timer save skipped:', e));
       }
     }, 30000);
 
@@ -425,6 +448,17 @@ export default function QuizPage({
       totalTimeAllowed: totalDurationSeconds,
       attemptNumber: quizMetadata.currentAttemptNumber,
       studentId: resolveStudentId()
+    }).then(res => {
+      if (res?.attemptId > 0) {
+        setQuizMetadata(prev => ({
+          ...prev,
+          attemptId: res.attemptId
+        }));
+        try {
+          sessionStorage.setItem('ActiveQuizAttemptId', String(res.attemptId));
+          sessionStorage.setItem('attemptId', String(res.attemptId));
+        } catch (_) {}
+      }
     }).catch(err => {
       console.warn('Real-time answer save error:', err);
     });
@@ -444,27 +478,27 @@ export default function QuizPage({
 
     try {
       const studentId = resolveStudentId();
-      const attemptId = quizMetadata.attemptId || 0;
+      const attemptId = Number(
+        quizMetadata.attemptId || 
+        sessionStorage.getItem('ActiveQuizAttemptId') || 
+        sessionStorage.getItem('attemptId') || 
+        0
+      );
       const qId = quizMetadata.quizId || activeQuizId;
 
-      // STEP 6A/6B: Final submit API call
+      // STEP 6A/6B: Final submit API call (Submits THIS attempt)
       const submitRes = await submitQuizFinal(attemptId, studentId);
 
-      // Lock attempts on backend
-      try {
-        if (qId > 0) {
-          await markAllAttemptsAsDone(qId, studentId);
-        }
-      } catch (e) {
-        console.warn('Could not update all attempts done status on server:', e);
-      }
+      // Calculate attempt counts (DO NOT call markAllAttemptsAsDone here!)
+      const currentRemaining = quizMetadata.remainingAttempts !== undefined ? quizMetadata.remainingAttempts : 10;
+      const newRemaining = Math.max(0, currentRemaining - 1);
+      const newAttemptsDone = (quizMetadata.attemptsDone || 0) + 1;
 
-      // Mark quiz as finalized locally so user can never start again
-      setIsQuizFinalized(true);
       setQuizMetadata(prev => ({
         ...prev,
-        remainingAttempts: 0,
-        attemptsDone: prev.attemptsAllowed
+        remainingAttempts: newRemaining,
+        attemptsDone: newAttemptsDone,
+        currentAttemptNumber: prev.currentAttemptNumber + 1
       }));
 
       // Calculate score summary
@@ -496,14 +530,19 @@ export default function QuizPage({
         passed,
         scoreMessage: submitRes?.scoreMessage || submitRes?.message || '',
         timeTaken: totalDurationSeconds - timeLeft,
-        isAutoExpiry
+        isAutoExpiry,
+        attemptId: attemptId,
+        remainingAttempts: newRemaining,
+        attemptsDone: newAttemptsDone,
+        attemptNumber: quizMetadata.currentAttemptNumber
       });
 
       setShowConfirmSubmit(false);
       setViewMode('scoreSummary');
+      // Step 6B on success: prompt user with score & choices (Start Next Attempt or OK -> Step 7)
+      setShowPostSubmitModal(true);
     } catch (err) {
       console.error('Error during quiz final submit:', err);
-      setIsQuizFinalized(true);
       setShowConfirmSubmit(false);
       setViewMode('scoreSummary');
     } finally {
@@ -511,25 +550,106 @@ export default function QuizPage({
     }
   };
 
-  // ==========================================================================
-  // STEP 7 — CONFIRM FINAL ATTEMPT (Mark All Attempts As Done)
-  // ==========================================================================
-  const handleConfirmFinalAttempt = async () => {
+  // Helper to start the next attempt without locking the quiz
+  const handleStartNextAttempt = async () => {
+    setSelectedAnswers({});
+    setCurrentIndex(0);
+    setScoreSummary(null);
+    setShowConfirmSubmit(false);
+    setShowConfirmFinalAttempt(false);
     try {
+      sessionStorage.removeItem('ActiveQuizAttemptId');
+      sessionStorage.removeItem('attemptId');
+    } catch (_) {}
+    await startQuizExecution(courseId, resolveStudentId(), moduleMasterId);
+  };
+
+  // ==========================================================================
+  // SUBMISSION PATH A: Submit Attempt & Redirect to Watch Video Page for Next Attempt
+  // ==========================================================================
+  const handleSubmitForNextAttempt = async () => {
+    try {
+      setSubmitting(true);
       const studentId = resolveStudentId();
-      const qId = quizMetadata.quizId || activeQuizId;
-      
-      await markAllAttemptsAsDone(qId, studentId);
-      setIsQuizFinalized(true);
-      setShowConfirmFinalAttempt(false);
-      
-      // Reload Attempt List to reflect final completed status
-      await loadAttemptList(qId, studentId);
-    } catch (err) {
-      console.error('Error marking all attempts done:', err);
-      setIsQuizFinalized(true);
+      const attemptId = Number(
+        quizMetadata.attemptId || 
+        sessionStorage.getItem('ActiveQuizAttemptId') || 
+        sessionStorage.getItem('attemptId') || 
+        0
+      );
+
+      // Submit current attempt via Step 6B API
+      if (attemptId > 0) {
+        await submitQuizFinal(attemptId, studentId);
+      }
+
+      // Clear cached attempt id so next attempt starts fresh
+      try {
+        sessionStorage.removeItem('ActiveQuizAttemptId');
+        sessionStorage.removeItem('attemptId');
+      } catch (_) {}
+
+      // Redirect directly to watch video page as requested
       onBack();
+    } catch (err) {
+      console.error('Error submitting attempt for next attempt:', err);
+      onBack();
+    } finally {
+      setSubmitting(false);
+      setShowConfirmSubmit(false);
+      setShowPostSubmitModal(false);
     }
+  };
+
+  // ==========================================================================
+  // SUBMISSION PATH B: Confirm Final Submit (Calls Step 7 UpdateAllAttemptDone API)
+  // ==========================================================================
+  const handleConfirmFinalSubmit = async () => {
+    try {
+      setFinalizingAttempt(true);
+      const studentId = resolveStudentId();
+      const attemptId = Number(
+        quizMetadata.attemptId || 
+        sessionStorage.getItem('ActiveQuizAttemptId') || 
+        sessionStorage.getItem('attemptId') || 
+        0
+      );
+      const qId = quizMetadata.quizId || activeQuizId;
+
+      // 1. Submit current attempt first if not yet finalized
+      try {
+        if (attemptId > 0) {
+          await submitQuizFinal(attemptId, studentId);
+        }
+      } catch (e) {
+        console.warn('Attempt save error:', e);
+      }
+
+      // 2. Call Final Submit API (Step 7: MicrocredentialQuizUpdateAllAttemptDone)
+      if (qId > 0) {
+        await markAllAttemptsAsDone(qId, studentId);
+      }
+
+      setIsQuizFinalized(true);
+      // Back on watch video page as requested
+      onBack();
+    } catch (err) {
+      console.error('Error in final submit:', err);
+      onBack();
+    } finally {
+      setFinalizingAttempt(false);
+      setShowFinalSubmitAlert(false);
+      setShowConfirmFinalAttempt(false);
+      setShowConfirmSubmit(false);
+      setShowPostSubmitModal(false);
+    }
+  };
+
+  // Cancel Final Submit: "andd no than back on watch vidio page"
+  const handleCancelFinalSubmit = () => {
+    setShowFinalSubmitAlert(false);
+    setShowConfirmFinalAttempt(false);
+    onBack();
   };
 
   // ==========================================================================
@@ -653,14 +773,27 @@ export default function QuizPage({
                   <span>Assessment Finalized</span>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  className="btn-start-new-attempt"
-                  onClick={() => startQuizExecution()}
-                >
-                  <Play size={16} fill="#ffffff" />
-                  <span>Start New Attempt</span>
-                </button>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  {attemptList && attemptList.length > 0 && (
+                    <button
+                      type="button"
+                      className="btn-result-attempts"
+                      style={{ borderColor: '#ef4444', color: '#dc2626', padding: '8px 16px', fontSize: '0.9rem' }}
+                      onClick={() => setShowConfirmFinalAttempt(true)}
+                    >
+                      <Lock size={15} />
+                      <span>Mark as Final</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="btn-start-new-attempt"
+                    onClick={() => startQuizExecution()}
+                  >
+                    <Play size={16} fill="#ffffff" />
+                    <span>Start New Attempt</span>
+                  </button>
+                </div>
               )}
             </div>
 
@@ -830,6 +963,44 @@ export default function QuizPage({
                   )}
                 </div>
 
+              </div>
+            </div>
+          )}
+
+          {/* STEP 7: CONFIRM FINAL ATTEMPT MODAL */}
+          {showConfirmFinalAttempt && (
+            <div className="quiz-confirm-modal-overlay">
+              <div className="quiz-confirm-modal-card">
+                <div className="modal-icon-alert" style={{ background: '#fef2f2', color: '#ef4444' }}>
+                  <AlertTriangle size={32} />
+                </div>
+                <h3 className="modal-confirm-title">
+                  Mark Attempt as Final?
+                </h3>
+                <p className="modal-confirm-desc">
+                  Are you sure you want to mark this attempt as final?
+                  <span style={{ display: 'block', marginTop: 10, fontWeight: 600, color: '#dc2626' }}>
+                    ⚠️ This will lock all further attempts for this quiz. You will not be able to retake or start another attempt.
+                  </span>
+                </p>
+                
+                <div className="modal-confirm-actions">
+                  <button
+                    type="button"
+                    className="btn-modal-back"
+                    onClick={() => setShowConfirmFinalAttempt(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-modal-confirm-submit"
+                    style={{ background: '#dc2626', borderColor: '#dc2626' }}
+                    onClick={handleConfirmFinalAttempt}
+                  >
+                    Yes, Mark as Final
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -1088,12 +1259,12 @@ export default function QuizPage({
           {/* STEP 6B: CONFIRMATION MODAL BEFORE MANUAL SUBMISSION */}
           {showConfirmSubmit && (
             <div className="quiz-confirm-modal-overlay">
-              <div className="quiz-confirm-modal-card">
+              <div className="quiz-confirm-modal-card" style={{ maxWidth: '520px' }}>
                 <div className="modal-icon-alert">
-                  <CheckCircle2 size={30} />
+                  <CheckCircle2 size={32} />
                 </div>
-                <h3 className="modal-confirm-title">
-                  Submit Assessment?
+                <h3 className="modal-confirm-title" style={{ fontSize: '1.35rem', marginBottom: '8px' }}>
+                  Submit Quiz Assessment?
                 </h3>
                 <p className="modal-confirm-desc">
                   You have answered <strong>{answeredCount}</strong> out of <strong>{totalQuestions}</strong> questions. 
@@ -1102,33 +1273,116 @@ export default function QuizPage({
                       ⚠️ You still have {totalQuestions - answeredCount} unanswered question{totalQuestions - answeredCount > 1 ? 's' : ''}!
                     </span>
                   )}
-                  <span style={{ display: 'block', marginTop: 10, fontSize: '0.85rem', color: '#94a3b8' }}>
-                    Note: Once submitted, this assessment will be finalized and cannot be restarted.
+                  <span style={{ display: 'block', marginTop: 10, fontSize: '0.9rem', color: '#64748b' }}>
+                    How would you like to proceed with your submission?
                   </span>
                 </p>
                 
-                <div className="modal-confirm-actions">
-                  <button
-                    type="button"
-                    className="btn-modal-back"
-                    disabled={submitting}
-                    onClick={() => setShowConfirmSubmit(false)}
-                  >
-                    Continue Review
-                  </button>
+                <div className="modal-confirm-actions" style={{ flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
+                  {/* Button 1: Next Attempt -> Submit & redirect to watch video page */}
                   <button
                     type="button"
                     className="btn-modal-confirm-submit"
-                    disabled={submitting}
-                    onClick={() => finalizeSubmission(false)}
+                    style={{ background: '#1d68f0', borderColor: '#1d68f0', width: '100%', padding: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    disabled={submitting || finalizingAttempt}
+                    onClick={handleSubmitForNextAttempt}
                   >
                     {submitting ? (
+                      <>
+                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                        <span>Submitting attempt...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play size={16} fill="#ffffff" />
+                        <span>Next Attempt (Back to Video)</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Button 2: Continue to Final Submit -> Opens Alert Popup */}
+                  <button
+                    type="button"
+                    className="btn-modal-confirm-submit"
+                    style={{
+                      background: '#ffffff',
+                      color: '#dc2626',
+                      border: '1.5px solid #dc2626',
+                      width: '100%',
+                      padding: '13px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                    disabled={submitting || finalizingAttempt}
+                    onClick={() => {
+                      setShowConfirmSubmit(false);
+                      setShowFinalSubmitAlert(true);
+                    }}
+                  >
+                    <Lock size={16} />
+                    <span>Continue to Final Submit</span>
+                  </button>
+
+                  {/* Button 3: Continue Review */}
+                  <button
+                    type="button"
+                    className="btn-modal-back"
+                    style={{ width: '100%', padding: '10px' }}
+                    disabled={submitting || finalizingAttempt}
+                    onClick={() => setShowConfirmSubmit(false)}
+                  >
+                    Continue Review (Cancel)
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 7: ALERT POPUP - ARE YOU SURE YOU WANT TO FINAL SUBMIT? */}
+          {showFinalSubmitAlert && (
+            <div className="quiz-confirm-modal-overlay">
+              <div className="quiz-confirm-modal-card" style={{ maxWidth: '480px', textAlign: 'center' }}>
+                <div className="modal-icon-alert" style={{ background: '#fef2f2', color: '#dc2626', margin: '0 auto 16px' }}>
+                  <AlertTriangle size={36} />
+                </div>
+                
+                <h3 className="modal-confirm-title" style={{ fontSize: '1.35rem', color: '#0f172a', marginBottom: '10px' }}>
+                  Are you sure you want to final submit?
+                </h3>
+                
+                <p className="modal-confirm-desc" style={{ fontSize: '0.95rem', color: '#475569', lineHeight: 1.5 }}>
+                  If you do this, then this quiz is final submitted and all remaining attempts will be closed.
+                </p>
+
+                <div className="modal-confirm-actions" style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                  {/* No button: redirects back to watch video page */}
+                  <button
+                    type="button"
+                    className="btn-modal-back"
+                    style={{ flex: 1, padding: '12px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#334155', fontWeight: 600 }}
+                    disabled={finalizingAttempt}
+                    onClick={handleCancelFinalSubmit}
+                  >
+                    No (Back to Video)
+                  </button>
+
+                  {/* Yes button: calls final submit API */}
+                  <button
+                    type="button"
+                    className="btn-modal-confirm-submit"
+                    style={{ flex: 1, padding: '12px', background: '#dc2626', borderColor: '#dc2626', color: '#ffffff', fontWeight: 700 }}
+                    disabled={finalizingAttempt}
+                    onClick={handleConfirmFinalSubmit}
+                  >
+                    {finalizingAttempt ? (
                       <>
                         <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
                         <span>Submitting...</span>
                       </>
                     ) : (
-                      <span>Confirm & Submit</span>
+                      <span>Yes, Final Submit</span>
                     )}
                   </button>
                 </div>
@@ -1210,26 +1464,70 @@ export default function QuizPage({
             </div>
           </div>
 
-          {/* Final Submission Lock Notice Banner */}
-          <div className="final-submit-lock-notice">
-            <div className="lock-notice-icon-box">
-              <ShieldCheck size={22} color="#16a34a" />
+          {/* Banner: Active Attempts Left vs Finalized */}
+          {!isQuizFinalized && (scoreSummary?.remainingAttempts > 0 || quizMetadata.remainingAttempts > 0) ? (
+            <div className="final-submit-lock-notice" style={{ background: '#f0fdf4', borderColor: '#bbf7d0' }}>
+              <div className="lock-notice-icon-box" style={{ background: '#dcfce7' }}>
+                <CheckCircle2 size={22} color="#16a34a" />
+              </div>
+              <div className="lock-notice-text-wrap">
+                <h4 className="lock-notice-title" style={{ color: '#166534' }}>
+                  Attempt #{scoreSummary?.attemptNumber || quizMetadata.currentAttemptNumber} Submitted Successfully!
+                </h4>
+                <p className="lock-notice-desc" style={{ color: '#15803d' }}>
+                  You have <strong>{scoreSummary?.remainingAttempts ?? quizMetadata.remainingAttempts}</strong> attempt(s) remaining. 
+                  You can start your next attempt to improve your score, or mark this attempt as your final submission.
+                </p>
+              </div>
             </div>
-            <div className="lock-notice-text-wrap">
-              <h4 className="lock-notice-title">Assessment Submission Finalized</h4>
-              <p className="lock-notice-desc">
-                Your assessment has been officially submitted and recorded. Retaking or restarting this quiz is disabled.
-              </p>
+          ) : (
+            <div className="final-submit-lock-notice">
+              <div className="lock-notice-icon-box">
+                <ShieldCheck size={22} color="#16a34a" />
+              </div>
+              <div className="lock-notice-text-wrap">
+                <h4 className="lock-notice-title">Assessment Submission Finalized</h4>
+                <p className="lock-notice-desc">
+                  Your assessment has been officially finalized and recorded. Retaking or restarting this quiz is disabled.
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Action Buttons (No Retake / Restart options) */}
+          {/* Action Buttons */}
           <div className="result-actions-tray">
+            {/* Start Next Attempt Button */}
+            {!isQuizFinalized && (scoreSummary?.remainingAttempts > 0 || quizMetadata.remainingAttempts > 0) && (
+              <button
+                type="button"
+                className="btn-start-new-attempt"
+                style={{ padding: '12px 24px', fontSize: '0.95rem' }}
+                onClick={handleStartNextAttempt}
+              >
+                <Play size={17} fill="#ffffff" />
+                <span>Start Next Attempt ({scoreSummary?.remainingAttempts ?? quizMetadata.remainingAttempts} Left)</span>
+              </button>
+            )}
+
+            {/* Mark as Final Attempt Button */}
+            {!isQuizFinalized && (
+              <button
+                type="button"
+                className="btn-result-attempts"
+                style={{ borderColor: '#ef4444', color: '#dc2626' }}
+                onClick={() => setShowConfirmFinalAttempt(true)}
+              >
+                <Lock size={16} />
+                <span>Mark as Final Attempt</span>
+              </button>
+            )}
+
+            {/* Review Detailed Breakdown Button (Step 8) */}
             <button
               type="button"
               className="btn-result-breakdown"
               onClick={() => handleViewAttemptResult({
-                attemptId: quizMetadata.attemptId,
+                attemptId: quizMetadata.attemptId || scoreSummary?.attemptId,
                 quizId: quizMetadata.quizId || activeQuizId
               })}
             >
@@ -1237,6 +1535,7 @@ export default function QuizPage({
               <span>Review Detailed Breakdown</span>
             </button>
 
+            {/* View All Past Attempts Button (Step 2A) */}
             <button
               type="button"
               className="btn-result-attempts"
@@ -1246,6 +1545,7 @@ export default function QuizPage({
               <span>View All Past Attempts</span>
             </button>
 
+            {/* Back to Course Button */}
             <button
               type="button"
               className="btn-result-return"
@@ -1340,6 +1640,147 @@ export default function QuizPage({
                 )}
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {/* STEP 6B: POST-SUBMISSION PROMPT (Shows Score & Offers Next Attempt vs OK) */}
+        {showPostSubmitModal && (
+          <div className="quiz-confirm-modal-overlay">
+            <div className="quiz-confirm-modal-card" style={{ maxWidth: '480px' }}>
+              <div className="modal-icon-alert" style={{ background: '#eff6ff', color: '#1d68f0' }}>
+                <Trophy size={36} color="#1d68f0" />
+              </div>
+              
+              <h3 className="modal-confirm-title" style={{ fontSize: '1.3rem', marginBottom: '8px' }}>
+                {scoreSummary?.isAutoExpiry ? "Time's Up!" : "Assessment Attempt Submitted!"}
+              </h3>
+
+              <div style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '16px',
+                margin: '16px 0',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2.2rem', fontWeight: 800, color: scoreSummary?.passed ? '#16a34a' : '#1d68f0' }}>
+                  {scoreSummary?.percentage}%
+                </div>
+                <div style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '4px' }}>
+                  {scoreSummary?.earnedPoints} of {scoreSummary?.totalPoints} marks • {scoreSummary?.correctCount} correct
+                </div>
+                {scoreSummary?.scoreMessage && (
+                  <p style={{ margin: '8px 0 0', fontSize: '0.9rem', fontWeight: 600, color: '#334155' }}>
+                    {scoreSummary.scoreMessage}
+                  </p>
+                )}
+              </div>
+
+              <p className="modal-confirm-desc" style={{ marginBottom: '20px' }}>
+                {(scoreSummary?.remainingAttempts ?? quizMetadata.remainingAttempts) > 0 ? (
+                  <span>
+                    You have <strong>{scoreSummary?.remainingAttempts ?? quizMetadata.remainingAttempts}</strong> attempt(s) remaining.
+                    <br />
+                    Would you like to start your next attempt to improve your score, or confirm this as your final submission?
+                  </span>
+                ) : (
+                  <span>
+                    You have completed all available attempts for this assessment. Click <strong>OK</strong> to finalize your assessment.
+                  </span>
+                )}
+              </p>
+
+              <div className="modal-confirm-actions" style={{ flexDirection: 'column', gap: '10px' }}>
+                {(scoreSummary?.remainingAttempts ?? quizMetadata.remainingAttempts) > 0 && (
+                  <button
+                    type="button"
+                    className="btn-modal-confirm-submit"
+                    style={{ background: '#1d68f0', borderColor: '#1d68f0', width: '100%', padding: '12px' }}
+                    onClick={() => {
+                      setShowPostSubmitModal(false);
+                      handleStartNextAttempt();
+                    }}
+                  >
+                    <Play size={16} fill="#ffffff" style={{ marginRight: '8px' }} />
+                    <span>Start Next Attempt</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  className="btn-modal-confirm-submit"
+                  style={{
+                    background: (scoreSummary?.remainingAttempts ?? quizMetadata.remainingAttempts) > 0 ? '#ffffff' : '#1d68f0',
+                    color: (scoreSummary?.remainingAttempts ?? quizMetadata.remainingAttempts) > 0 ? '#334155' : '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    width: '100%',
+                    padding: '12px'
+                  }}
+                  onClick={() => {
+                    setShowPostSubmitModal(false);
+                    setShowConfirmFinalAttempt(true);
+                  }}
+                >
+                  <Check size={16} style={{ marginRight: '8px' }} />
+                  <span>OK (Mark as Final Attempt)</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-modal-back"
+                  style={{ width: '100%', padding: '10px' }}
+                  onClick={() => setShowPostSubmitModal(false)}
+                >
+                  Review Score Details
+                </button>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* STEP 7: ALERT POPUP - ARE YOU SURE YOU WANT TO FINAL SUBMIT? */}
+        {(showFinalSubmitAlert || showConfirmFinalAttempt) && (
+          <div className="quiz-confirm-modal-overlay">
+            <div className="quiz-confirm-modal-card" style={{ maxWidth: '480px', textAlign: 'center' }}>
+              <div className="modal-icon-alert" style={{ background: '#fef2f2', color: '#dc2626', margin: '0 auto 16px' }}>
+                <AlertTriangle size={36} />
+              </div>
+              <h3 className="modal-confirm-title" style={{ fontSize: '1.35rem', color: '#0f172a', marginBottom: '10px' }}>
+                Are you sure you want to final submit?
+              </h3>
+              <p className="modal-confirm-desc" style={{ fontSize: '0.95rem', color: '#475569', lineHeight: 1.5 }}>
+                If you do this, then this quiz is final submitted and all remaining attempts will be closed.
+              </p>
+              
+              <div className="modal-confirm-actions" style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                <button
+                  type="button"
+                  className="btn-modal-back"
+                  style={{ flex: 1, padding: '12px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#334155', fontWeight: 600 }}
+                  disabled={finalizingAttempt}
+                  onClick={handleCancelFinalSubmit}
+                >
+                  No (Back to Video)
+                </button>
+                <button
+                  type="button"
+                  className="btn-modal-confirm-submit"
+                  disabled={finalizingAttempt}
+                  style={{ flex: 1, padding: '12px', background: '#dc2626', borderColor: '#dc2626', color: '#ffffff', fontWeight: 700 }}
+                  onClick={handleConfirmFinalSubmit}
+                >
+                  {finalizingAttempt ? (
+                    <>
+                      <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <span>Yes, Final Submit</span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}

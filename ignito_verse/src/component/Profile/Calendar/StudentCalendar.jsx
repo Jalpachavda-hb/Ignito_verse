@@ -11,7 +11,7 @@ import {
   calculateEventMetrics
 } from '../../../services/calendarService';
 import {
-  getMicrocredentialMeetingRecordings,
+  getMicrocredentialLiveMeetingsByCourse,
   downloadEventIcs
 } from '../../../services/microcredentialService';
 import './StudentCalendar.css';
@@ -55,11 +55,11 @@ export default function StudentCalendar({
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
 
-  // Dynamic Recordings list & loading states
-  const [recordingsList, setRecordingsList] = useState([]);
-  const [loadingRecordings, setLoadingRecordings] = useState(false);
-  const [recordingSearchQuery, setRecordingSearchQuery] = useState('');
-  const [recordingSourceFilter, setRecordingSourceFilter] = useState('ALL');
+  // Dynamic Live Meetings list & loading states (from GetMicrocredentialLiveMeetingsByCourse)
+  const [liveMeetingsList, setLiveMeetingsList] = useState([]);
+  const [loadingLiveMeetings, setLoadingLiveMeetings] = useState(false);
+  const [liveMeetingSearchQuery, setLiveMeetingSearchQuery] = useState('');
+  const [liveMeetingSourceFilter, setLiveMeetingSourceFilter] = useState('ALL');
 
   // State for .ics calendar export download
   const [downloadingIcsId, setDownloadingIcsId] = useState(null);
@@ -89,19 +89,38 @@ export default function StudentCalendar({
     }
   };
 
-  // Fetch dynamic calendar events and recordings from API
+  // Tab switch handler: when switching to 'liveEvents', refresh live meetings from GetMicrocredentialLiveMeetingsByCourse
+  const handleTabSwitch = async (tab) => {
+    setMainTab(tab);
+    if (tab === 'liveEvents') {
+      const studentId = user?.studentId || user?.id || 0;
+      setLoadingLiveMeetings(true);
+      try {
+        const liveRes = await getMicrocredentialLiveMeetingsByCourse(0, studentId);
+        if (liveRes?.success && Array.isArray(liveRes.liveMeetings)) {
+          setLiveMeetingsList(liveRes.liveMeetings);
+        }
+      } catch (err) {
+        console.error('Error fetching live meetings on click:', err);
+      } finally {
+        setLoadingLiveMeetings(false);
+      }
+    }
+  };
+
+  // Fetch dynamic calendar events (GetStudentMicrocredentialEvents) and live meetings (GetMicrocredentialLiveMeetingsByCourse)
   useEffect(() => {
     let isMounted = true;
     async function fetchCalendarData() {
       setLoadingEvents(true);
-      setLoadingRecordings(true);
+      setLoadingLiveMeetings(true);
       try {
         const studentId = user?.studentId || user?.id || 0;
         
-        // Fetch events & recordings concurrently
-        const [eventsData, recordingsData] = await Promise.all([
-          getStudentCalendarEvents(studentId, enrolledCourses).catch(() => []),
-          getMicrocredentialMeetingRecordings(0, studentId).catch(() => ({ recordings: [] }))
+        // Fetch events & live meetings concurrently without calling recordings API
+        const [eventsData, liveMeetingsData] = await Promise.all([
+          getStudentCalendarEvents(studentId).catch(() => []),
+          getMicrocredentialLiveMeetingsByCourse(0, studentId).catch(() => ({ liveMeetings: [] }))
         ]);
 
         if (isMounted) {
@@ -110,10 +129,10 @@ export default function StudentCalendar({
             onEventsCountChange(eventsData?.length || 0);
           }
 
-          if (recordingsData?.success && Array.isArray(recordingsData.recordings)) {
-            setRecordingsList(recordingsData.recordings);
+          if (liveMeetingsData?.success && Array.isArray(liveMeetingsData.liveMeetings)) {
+            setLiveMeetingsList(liveMeetingsData.liveMeetings);
           } else {
-            setRecordingsList([]);
+            setLiveMeetingsList([]);
           }
 
           if (eventsData && eventsData.length > 0) {
@@ -130,11 +149,11 @@ export default function StudentCalendar({
           }
         }
       } catch (err) {
-        console.error('Error loading calendar events and recordings:', err);
+        console.error('Error loading calendar events and live meetings:', err);
       } finally {
         if (isMounted) {
           setLoadingEvents(false);
-          setLoadingRecordings(false);
+          setLoadingLiveMeetings(false);
         }
       }
     }
@@ -164,18 +183,18 @@ export default function StudentCalendar({
     });
   }, [events, filterEventType, searchQuery]);
 
-  // Filtered Recordings List
-  const filteredRecordings = useMemo(() => {
-    return recordingsList.filter(rec => {
-      const matchSource = recordingSourceFilter === 'ALL' || rec.sourceType === recordingSourceFilter;
-      const q = recordingSearchQuery.toLowerCase();
+  // Filtered Live Meetings List
+  const filteredLiveMeetings = useMemo(() => {
+    return liveMeetingsList.filter(rec => {
+      const matchSource = liveMeetingSourceFilter === 'ALL' || (rec.sourceType || '').toUpperCase() === liveMeetingSourceFilter;
+      const q = liveMeetingSearchQuery.toLowerCase();
       const matchQuery = !q ||
-        rec.title.toLowerCase().includes(q) ||
+        (rec.title || '').toLowerCase().includes(q) ||
         (rec.microcredentialCourseName && rec.microcredentialCourseName.toLowerCase().includes(q)) ||
         (rec.description && rec.description.toLowerCase().includes(q));
       return matchSource && matchQuery;
     });
-  }, [recordingsList, recordingSearchQuery, recordingSourceFilter]);
+  }, [liveMeetingsList, liveMeetingSearchQuery, liveMeetingSourceFilter]);
 
   // Metric stats
   const metrics = useMemo(() => calculateEventMetrics(events), [events]);
@@ -319,21 +338,21 @@ export default function StudentCalendar({
 
         <button
           type="button"
-          className={`calendar-tab-pill-btn ${mainTab === 'recordings' ? 'active' : ''}`}
-          onClick={() => setMainTab('recordings')}
+          className={`calendar-tab-pill-btn ${mainTab === 'liveEvents' ? 'active' : ''}`}
+          onClick={() => handleTabSwitch('liveEvents')}
         >
-          <Download size={15} />
-          <span>Session Recordings & Downloads</span>
-          {recordingsList.length > 0 && (
+          <Video size={15} />
+          <span>Show Live Event</span>
+          {liveMeetingsList.length > 0 && (
             <span style={{
               fontSize: '0.74rem',
               fontWeight: 800,
               padding: '2px 8px',
               borderRadius: '999px',
-              background: mainTab === 'recordings' ? 'rgba(255,255,255,0.25)' : '#e2e8f0',
-              color: mainTab === 'recordings' ? '#ffffff' : '#00385E'
+              background: mainTab === 'liveEvents' ? 'rgba(255,255,255,0.25)' : '#e2e8f0',
+              color: mainTab === 'liveEvents' ? '#ffffff' : '#00385E'
             }}>
-              {recordingsList.length}
+              {liveMeetingsList.length}
             </span>
           )}
         </button>
@@ -812,19 +831,19 @@ export default function StudentCalendar({
       )}
 
       {/* ------------------------------------------------------------------
-          3B. TAB CONTENT: SESSION RECORDINGS & DOWNLOADS
+          3B. TAB CONTENT: SHOW LIVE EVENT
           ------------------------------------------------------------------ */}
-      {mainTab === 'recordings' && (
+      {mainTab === 'liveEvents' && (
         <div className="recordings-view-card">
-          {/* Recordings Toolbar & Filters */}
+          {/* Live Meetings Toolbar & Filters */}
           <div className="recordings-toolbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #e2e8f0' }}>
             <div style={{ position: 'relative', minWidth: '260px', flex: 1 }}>
               <input
                 type="text"
                 className="filter-input"
-                placeholder="Search recorded lectures or courses..."
-                value={recordingSearchQuery}
-                onChange={(e) => setRecordingSearchQuery(e.target.value)}
+                placeholder="Search live events or courses..."
+                value={liveMeetingSearchQuery}
+                onChange={(e) => setLiveMeetingSearchQuery(e.target.value)}
                 style={{ width: '100%', paddingRight: '32px' }}
               />
               <Search size={15} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
@@ -834,24 +853,24 @@ export default function StudentCalendar({
               <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569' }}>Platform:</span>
               <button
                 type="button"
-                className={`btn-view-mode ${recordingSourceFilter === 'ALL' ? 'active' : ''}`}
-                onClick={() => setRecordingSourceFilter('ALL')}
+                className={`btn-view-mode ${liveMeetingSourceFilter === 'ALL' ? 'active' : ''}`}
+                onClick={() => setLiveMeetingSourceFilter('ALL')}
                 style={{ padding: '6px 14px', fontSize: '0.82rem', fontWeight: 700 }}
               >
                 All Platforms
               </button>
               <button
                 type="button"
-                className={`btn-view-mode ${recordingSourceFilter === 'GOOGLE_MEET' ? 'active' : ''}`}
-                onClick={() => setRecordingSourceFilter('GOOGLE_MEET')}
+                className={`btn-view-mode ${liveMeetingSourceFilter === 'GOOGLE_MEET' ? 'active' : ''}`}
+                onClick={() => setLiveMeetingSourceFilter('GOOGLE_MEET')}
                 style={{ padding: '6px 14px', fontSize: '0.82rem', fontWeight: 700 }}
               >
                 Google Meet
               </button>
               <button
                 type="button"
-                className={`btn-view-mode ${recordingSourceFilter === 'ZOOM' ? 'active' : ''}`}
-                onClick={() => setRecordingSourceFilter('ZOOM')}
+                className={`btn-view-mode ${liveMeetingSourceFilter === 'ZOOM' ? 'active' : ''}`}
+                onClick={() => setLiveMeetingSourceFilter('ZOOM')}
                 style={{ padding: '6px 14px', fontSize: '0.82rem', fontWeight: 700 }}
               >
                 Zoom
@@ -859,25 +878,26 @@ export default function StudentCalendar({
             </div>
           </div>
 
-          {/* Recordings Grid / List */}
-          {loadingRecordings ? (
+          {/* Live Meetings Grid / List */}
+          {loadingLiveMeetings ? (
             <div style={{ textAlign: 'center', padding: '3.5rem 1rem', color: '#00385E', fontWeight: 700 }}>
               <RefreshCw size={24} className="spinner" style={{ animation: 'spin 1s linear infinite', marginBottom: '8px' }} />
-              <div>Loading meeting recordings & cloud downloads...</div>
+              <div>Loading live events & sessions...</div>
             </div>
-          ) : filteredRecordings.length === 0 ? (
+          ) : filteredLiveMeetings.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3.5rem 1rem', color: '#64748b' }}>
-              <Film size={36} style={{ color: '#cbd5e1', marginBottom: '10px' }} />
-              <div style={{ fontWeight: 700, fontSize: '0.96rem', color: '#334155' }}>No Session Recordings Available</div>
+              <Video size={36} style={{ color: '#cbd5e1', marginBottom: '10px' }} />
+              <div style={{ fontWeight: 700, fontSize: '0.96rem', color: '#334155' }}>No Live Events Available</div>
               <p style={{ margin: '4px 0 0 0', fontSize: '0.84rem' }}>
-                Recorded lectures from your live masterclasses and meetings will appear here once ready.
+                Live expert sessions and workshops scheduled for your microcredential courses will appear here.
               </p>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1.25rem', padding: '1.25rem 0' }}>
-              {filteredRecordings.map((rec) => {
-                const isGoogle = rec.sourceType === 'GOOGLE_MEET';
-                const isZoom = rec.sourceType === 'ZOOM';
+              {filteredLiveMeetings.map((rec) => {
+                const isGoogle = (rec.sourceType || '').toUpperCase() === 'GOOGLE_MEET';
+                const isZoom = (rec.sourceType || '').toUpperCase() === 'ZOOM';
+                const isEnded = rec.liveStatus === 'Ended' || rec.liveStatus === 'Completed';
 
                 return (
                   <div
@@ -896,7 +916,7 @@ export default function StudentCalendar({
                     }}
                   >
                     <div>
-                      {/* Platform & Duration Tags */}
+                      {/* Platform & Status Tags */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                         <span style={{
                           display: 'inline-flex',
@@ -914,18 +934,17 @@ export default function StudentCalendar({
                           {isGoogle ? 'Google Meet' : (isZoom ? 'Zoom Cloud' : rec.sourceType)}
                         </span>
 
-                        {rec.duration && (
-                          <span style={{
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            color: '#475569',
-                            background: '#f1f5f9',
-                            padding: '3px 8px',
-                            borderRadius: '6px'
-                          }}>
-                            {rec.duration}
-                          </span>
-                        )}
+                        <span style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          color: isEnded ? '#475569' : '#166534',
+                          background: isEnded ? '#f1f5f9' : '#dcfce7',
+                          border: isEnded ? '1px solid #e2e8f0' : '1px solid #bbf7d0',
+                          padding: '3px 8px',
+                          borderRadius: '6px'
+                        }}>
+                          {rec.liveStatus || (isEnded ? 'Completed' : 'Upcoming')}
+                        </span>
                       </div>
 
                       {/* Course Title Badge */}
@@ -933,7 +952,7 @@ export default function StudentCalendar({
                         {rec.microcredentialCourseName || 'Microcredential Course'}
                       </div>
 
-                      {/* Recording Title */}
+                      {/* Meeting Title */}
                       <h4 style={{ margin: '0 0 6px 0', fontSize: '0.98rem', fontWeight: 800, color: '#00385E', lineHeight: 1.35 }}>
                         {rec.title}
                       </h4>
@@ -948,96 +967,111 @@ export default function StudentCalendar({
                       {/* Date & Time */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', color: '#64748b', fontWeight: 600 }}>
                         <Clock size={13} style={{ color: '#0284C7', flexShrink: 0 }} />
-                        <span>{rec.meetingDate || 'Recorded Session'}</span>
+                        <span>{rec.startDateTime || rec.meetingDate || 'Scheduled Live Session'}</span>
                       </div>
                     </div>
 
-                    {/* Download & Watch Actions */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
-                      {rec.recordingUrls && rec.recordingUrls.length > 0 ? (
-                        rec.recordingUrls.map((rUrl, uIdx) => (
-                          <div key={uIdx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <a
-                              href={rUrl.fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              download
-                              style={{
-                                flex: 1,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px',
-                                padding: '8px 12px',
-                                fontSize: '0.8rem',
-                                fontWeight: 800,
-                                color: '#ffffff',
-                                background: 'linear-gradient(135deg, #00385E 0%, #005a96 100%)',
-                                borderRadius: '7px',
-                                textDecoration: 'none',
-                                boxShadow: '0 2px 6px rgba(0, 56, 94, 0.18)',
-                                transition: 'all 0.2s ease'
-                              }}
-                            >
-                              <Download size={14} />
-                              <span>Download Recording</span>
-                            </a>
-
-                            <a
-                              href={rUrl.fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '5px',
-                                padding: '8px 12px',
-                                fontSize: '0.8rem',
-                                fontWeight: 700,
-                                color: '#00385E',
-                                background: '#f0f7fc',
-                                border: '1px solid #c9dfef',
-                                borderRadius: '7px',
-                                textDecoration: 'none',
-                                transition: 'all 0.2s ease'
-                              }}
-                              title="Watch Stream in Browser"
-                            >
-                              <PlayCircle size={14} />
-                              <span>Watch</span>
-                            </a>
-                          </div>
-                        ))
-                      ) : rec.mainUrl ? (
+                    {/* Show Live Event & Details Actions */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                      {rec.joinLink ? (
                         <a
-                          href={rec.mainUrl}
+                          href={rec.joinLink}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
+                            flex: 1,
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '6px',
-                            padding: '8px 12px',
-                            fontSize: '0.8rem',
+                            padding: '9px 14px',
+                            fontSize: '0.82rem',
                             fontWeight: 800,
                             color: '#ffffff',
                             background: 'linear-gradient(135deg, #00385E 0%, #005a96 100%)',
-                            borderRadius: '7px',
+                            borderRadius: '8px',
                             textDecoration: 'none',
-                            boxShadow: '0 2px 6px rgba(0, 56, 94, 0.18)'
+                            boxShadow: '0 2px 6px rgba(0, 56, 94, 0.18)',
+                            transition: 'all 0.2s ease'
                           }}
                         >
-                          <PlayCircle size={14} />
-                          <span>Watch / Access Recording</span>
+                          <Video size={14} />
+                          <span>Show Live Event</span>
                           <ExternalLink size={13} />
                         </a>
                       ) : (
-                        <div style={{ fontSize: '0.78rem', color: '#94a3b8', fontStyle: 'italic', textAlign: 'center' }}>
-                          Recording processing in progress
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedEvent({
+                            id: rec.meetingId,
+                            title: rec.title,
+                            sourceType: isZoom ? 'zoom' : (isGoogle ? 'google_meet' : 'google_calendar'),
+                            sourceLabel: isGoogle ? 'Google Meet' : (isZoom ? 'Zoom Cloud' : rec.sourceType),
+                            displayStart: rec.startDateTime,
+                            displayEnd: rec.endDateTime,
+                            programName: rec.microcredentialCourseName,
+                            programSub: rec.description,
+                            description: rec.description,
+                            joinUrl: rec.joinLink,
+                            liveStatus: rec.liveStatus
+                          })}
+                          style={{
+                            flex: 1,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            padding: '9px 14px',
+                            fontSize: '0.82rem',
+                            fontWeight: 800,
+                            color: '#ffffff',
+                            background: 'linear-gradient(135deg, #00385E 0%, #005a96 100%)',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 6px rgba(0, 56, 94, 0.18)'
+                          }}
+                        >
+                          <Video size={14} />
+                          <span>Show Live Event</span>
+                        </button>
                       )}
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedEvent({
+                          id: rec.meetingId,
+                          title: rec.title,
+                          sourceType: isZoom ? 'zoom' : (isGoogle ? 'google_meet' : 'google_calendar'),
+                          sourceLabel: isGoogle ? 'Google Meet' : (isZoom ? 'Zoom Cloud' : rec.sourceType),
+                          displayStart: rec.startDateTime,
+                          displayEnd: rec.endDateTime,
+                          programName: rec.microcredentialCourseName,
+                          programSub: rec.description,
+                          description: rec.description,
+                          joinUrl: rec.joinLink,
+                          liveStatus: rec.liveStatus
+                        })}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '5px',
+                          padding: '9px 12px',
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          color: '#00385E',
+                          background: '#f0f7fc',
+                          border: '1px solid #c9dfef',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                        title="View Details"
+                      >
+                        <Info size={14} />
+                        <span>Details</span>
+                      </button>
                     </div>
 
                   </div>

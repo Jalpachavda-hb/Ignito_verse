@@ -1,6 +1,6 @@
-// ignitoverse: Video Player Preview Modal with Auto-Open & Backdrop Transitions
 import React, { useEffect } from 'react';
 import { X, ShieldCheck, Clock } from 'lucide-react';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 function getYouTubeEmbedUrl(url) {
   if (!url) return '';
@@ -17,12 +17,12 @@ export default function VideoModal({
   videoUrl, 
   poster 
 }) {
-  // Lock body scroll when modal is open and handle ESC key
+  // Lock background scroll across entire page when video modal is open
+  useBodyScrollLock(isOpen, 'VideoModal');
+
+  // Handle ESC key to close modal
   useEffect(() => {
     if (!isOpen) return;
-
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -33,7 +33,6 @@ export default function VideoModal({
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);

@@ -51,6 +51,8 @@ import { buildGetMicrocredentialLiveMeetingsByCourseInput } from '../dto/input/g
 import { parseGetMicrocredentialLiveMeetingsByCourseOutput, parseGetMicrocredentialLiveMeetingsByCourseErrorOutput } from '../dto/output/getMicrocredentialLiveMeetingsByCourseOutput';
 import { buildGetMicrocredentialMeetingRecordingsInput } from '../dto/input/getMicrocredentialMeetingRecordingsInput';
 import { parseGetMicrocredentialMeetingRecordingsOutput, parseGetMicrocredentialMeetingRecordingsErrorOutput } from '../dto/output/getMicrocredentialMeetingRecordingsOutput';
+import { buildGetStudentMicrocredentialEventsInput } from '../dto/input/getStudentMicrocredentialEventsInput';
+import { parseGetStudentMicrocredentialEventsOutput, parseGetStudentMicrocredentialEventsErrorOutput } from '../dto/output/getStudentMicrocredentialEventsOutput';
 import { buildExportMicrocredentialEventIcsInput } from '../dto/input/exportMicrocredentialEventIcsInput';
 import { parseExportMicrocredentialEventIcsOutput, parseExportMicrocredentialEventIcsErrorOutput } from '../dto/output/exportMicrocredentialEventIcsOutput';
 
@@ -1195,6 +1197,35 @@ export async function getMicrocredentialMeetingRecordings(microcredentialCourseI
     } catch (error) {
         console.error('Error in getMicrocredentialMeetingRecordings:', error);
         return parseGetMicrocredentialMeetingRecordingsErrorOutput({ message: error.message }, 500);
+    }
+}
+
+/**
+ * Fetches student microcredential calendar events (Google Calendar, Google Meet, Zoom).
+ * API: POST /api/StudentMicrocredentialCalendarAPI/GetStudentMicrocredentialEvents
+ */
+export async function getStudentMicrocredentialEvents(studentId = 0, pageNo = 1, pageSize = 50, searchInput = '') {
+    try {
+        let finalStudentId = Number(studentId) || 0;
+        if (!finalStudentId) {
+            finalStudentId = getLoggedInStudentId() || 0;
+        }
+
+        const inputDto = buildGetStudentMicrocredentialEventsInput(finalStudentId, pageNo, pageSize, searchInput);
+        const response = await apiClient('api/StudentMicrocredentialCalendarAPI/GetStudentMicrocredentialEvents', {
+            method: 'POST',
+            headers: inputDto.headers,
+            body: inputDto.body
+        });
+
+        if (!response.ok && response.status !== 200) {
+            return parseGetStudentMicrocredentialEventsErrorOutput(response.data, response.status);
+        }
+
+        return parseGetStudentMicrocredentialEventsOutput(response.data, response.status);
+    } catch (error) {
+        console.error('Error in getStudentMicrocredentialEvents:', error);
+        return parseGetStudentMicrocredentialEventsErrorOutput({ message: error.message }, 500);
     }
 }
 

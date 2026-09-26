@@ -81,20 +81,11 @@ export async function studentMicrocredentialsQuizAttemptList(
             searchInput,
             finalStudentId
         );
-        let response = await apiClient('api/StudentMyProfileAPI/GetMicroStudentQuizAttemptList', {
+        const response = await apiClient('api/StudentMyProfileAPI/StudentMicrocredentialsQuizAttemptList', {
             method: 'POST',
             headers: inputDto.headers,
             body: inputDto.body
         });
-
-        // Fallback to legacy endpoint name if 404
-        if (response.status === 404 || (!response.ok && !response.data)) {
-            response = await apiClient('api/StudentMyProfileAPI/StudentMicrocredentialsQuizAttemptList', {
-                method: 'POST',
-                headers: inputDto.headers,
-                body: inputDto.body
-            });
-        }
 
         if (!response.ok && response.status !== 200) {
             return parseStudentMicrocredentialsQuizAttemptListErrorOutput(response.data, response.status);
