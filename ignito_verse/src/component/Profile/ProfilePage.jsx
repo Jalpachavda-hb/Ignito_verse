@@ -214,9 +214,36 @@ export default function ProfilePage({
       const studentId = getSessionStudentId();
       const res = await getStudentAttemptList(quizId, studentId);
       if (res?.success && Array.isArray(res.quizAttemptList) && res.quizAttemptList.length > 0) {
+        // Sort chronologically ascending (first attempt at top, latest at bottom)
+        const sortedList = [...res.quizAttemptList].sort((a, b) => {
+          const numA = Number(a.attemptNumber || a.attemptNo || 0);
+          const numB = Number(b.attemptNumber || b.attemptNo || 0);
+          if (numA > 0 && numB > 0 && numA !== numB) {
+            return numA - numB;
+          }
+          const timeA = a.attemptDate ? new Date(a.attemptDate).getTime() : 0;
+          const timeB = b.attemptDate ? new Date(b.attemptDate).getTime() : 0;
+          if (timeA && timeB && timeA !== timeB) {
+            return timeA - timeB;
+          }
+          const idA = Number(a.attemptId) || 0;
+          const idB = Number(b.attemptId) || 0;
+          if (idA && idB && idA !== idB) {
+            return idA - idB;
+          }
+          return 0;
+        });
+
+        // Assign clean sequential attempt number: 1, 2, 3...
+        const sequencedList = sortedList.map((item, idx) => ({
+          ...item,
+          attemptNumber: idx + 1,
+          displayAttemptNumber: idx + 1
+        }));
+
         setAttemptsByQuiz(prev => ({
           ...prev,
-          [quizId]: res.quizAttemptList
+          [quizId]: sequencedList
         }));
       } else {
         // Fallback: generate synthesized attempt rows based on totalAttempt count
@@ -920,7 +947,19 @@ export default function ProfilePage({
                 filteredQuizList.map((quiz, idx) => {
                 const qId = quiz.quizId || quiz.id || idx;
                 const isExpanded = expandedQuizId === qId;
-                const attempts = attemptsByQuiz[qId] || quiz.attempts || [];
+                const rawAttempts = attemptsByQuiz[qId] || quiz.attempts || [];
+                const attempts = [...rawAttempts].sort((a, b) => {
+                  const numA = Number(a.displayAttemptNumber || a.attemptNumber || a.attemptNo || 0);
+                  const numB = Number(b.displayAttemptNumber || b.attemptNumber || b.attemptNo || 0);
+                  if (numA > 0 && numB > 0 && numA !== numB) return numA - numB;
+                  const timeA = a.attemptDate ? new Date(a.attemptDate).getTime() : 0;
+                  const timeB = b.attemptDate ? new Date(b.attemptDate).getTime() : 0;
+                  if (timeA && timeB && timeA !== timeB) return timeA - timeB;
+                  const idA = Number(a.attemptId) || 0;
+                  const idB = Number(b.attemptId) || 0;
+                  if (idA && idB && idA !== idB) return idA - idB;
+                  return 0;
+                });
 
                 return (
                   <React.Fragment key={qId}>
@@ -931,7 +970,7 @@ export default function ProfilePage({
                           <div className="ss-quiz-heading">{quiz.quizName}</div>
                           {quiz.moduleName && (
                             <div style={{ fontSize: '0.78rem', color: '#00385E', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span>📌</span> {quiz.moduleName}
+                           {quiz.moduleName}
                             </div>
                           )}
                           <div className="ss-quiz-last-attempt">
@@ -981,7 +1020,7 @@ export default function ProfilePage({
                           <tbody>
                             {attempts.map((att, attIdx) => (
                               <tr key={att.attemptId || attIdx}>
-                                <td>{att.attemptNumber || att.attemptNo || attIdx + 1}</td>
+                                <td>{att.displayAttemptNumber || (attIdx + 1)}</td>
                                 <td className="color-purple">{att.score ?? 1}</td>
                                 <td>{att.totalMarks ?? 20}</td>
                                 <td>{att.percentage ?? 5}%</td>

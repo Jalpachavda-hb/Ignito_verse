@@ -34,7 +34,8 @@ import {
   BarChart2,
   Radio,
   ExternalLink,
-  Users
+  Users,
+  Edit3
 } from 'lucide-react';
 import AuthRequiredModal from '../modals/AuthRequiredModal';
 import {
@@ -65,6 +66,7 @@ export default function MicrocredentialDetail({
   const [activeTab, setActiveTab] = useState('info');
   const [topicsList, setTopicsList] = useState([]);
   const [reviewsList, setReviewsList] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [learnList, setLearnList] = useState([]);
   const [materialList, setMaterialList] = useState([]);
   const [liveMeetingsList, setLiveMeetingsList] = useState([]);
@@ -239,6 +241,7 @@ export default function MicrocredentialDetail({
           .catch(() => {});
       }
 
+      setReviewsLoading(true);
       getReviewByMicroCourseId(courseIdNum, currentStudentId)
         .then((rRes) => {
           if (!isMounted) return;
@@ -263,9 +266,16 @@ export default function MicrocredentialDetail({
             if (alreadyReviewed || localReviewed) {
               setHasSubmittedReview(true);
             }
+          } else {
+            setReviewsList([]);
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          if (isMounted) setReviewsList([]);
+        })
+        .finally(() => {
+          if (isMounted) setReviewsLoading(false);
+        });
 
       // 3. Fetch learn data items (Tab 1 What Will You Learn)
       getMicroCourseLearnData(courseIdNum)
@@ -710,15 +720,30 @@ export default function MicrocredentialDetail({
                 {/* Quick Rating Row */}
                 <div className="mc-hero-stats-row">
                   <div className="mc-hero-rating-clean">
-                    <Star size={16} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
-                    <span className="rating-bold-score">
-                      {reviewsList.length > 0
-                        ? (reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)
-                        : '5.0'}
-                    </span>
-                    <span className="rating-review-count">
-                      ({reviewsList.length > 0 ? reviewsList.length : 1} Verified {reviewsList.length === 1 || reviewsList.length === 0 ? 'Review' : 'Reviews'})
-                    </span>
+                    {reviewsList.length > 0 ? (
+                      <>
+                        <Star size={16} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+                        <span className="rating-bold-score">
+                          {(reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)}
+                        </span>
+                        <span className="rating-review-count">
+                          ({reviewsList.length} Verified {reviewsList.length === 1 ? 'Review' : 'Reviews'})
+                        </span>
+                      </>
+                    ) : courseData.rating && Number(courseData.rating) > 0 ? (
+                      <>
+                        <Star size={16} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+                        <span className="rating-bold-score">{Number(courseData.rating).toFixed(1)}</span>
+                        <span className="rating-review-count">Course Rating</span>
+                      </>
+                    ) : (
+                      <>
+                        <Star size={16} style={{ color: '#94a3b8' }} />
+                        <span className="rating-review-count" style={{ color: '#64748b', fontWeight: 600 }}>
+                          No reviews yet
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -866,170 +891,273 @@ export default function MicrocredentialDetail({
                       </div>
                       <div>
                         <h2 className="mc-card-header-title">Employee Reviews</h2>
-                        <p className="mc-card-header-subtitle">Verified employee feedback and rating breakdown</p>
+                        <p className="mc-card-header-subtitle">
+                          {reviewsList.length > 0
+                            ? `Verified employee feedback and rating breakdown (${reviewsList.length})`
+                            : 'Verified employee feedback and ratings'}
+                        </p>
                       </div>
                     </div>
-                    <div className={`mc-accordion-chevron ${collapsedSections.reviews ? 'collapsed' : ''}`}>
-                      <ChevronDown size={20} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {!hasSubmittedReview && (
+                        <button
+                          type="button"
+                          className="mc-btn-write-review"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleWriteReviewClick();
+                          }}
+                        >
+                          <Edit3 size={14} />
+                          <span>{showReviewForm ? 'Close Form' : 'Write a Review'}</span>
+                        </button>
+                      )}
+                      <div className={`mc-accordion-chevron ${collapsedSections.reviews ? 'collapsed' : ''}`}>
+                        <ChevronDown size={20} />
+                      </div>
                     </div>
                   </div>
 
                   {!collapsedSections.reviews && (
                     <div className="mc-accordion-content-body">
-                      {/* Rating Summary & Star Breakdown Grid */}
-                      <div className="mc-reviews-breakdown-grid">
-                        {/* Big Score Box */}
-                        <div className="mc-big-score-box">
-                          <div className="score-number-display">
-                            {reviewsList.length > 0
-                              ? (reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)
-                              : '5.0'}
-                          </div>
-                          <div className="score-stars-row">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                size={17}
-                                className="star-icon-filled"
-                                style={{ color: '#f59e0b', fill: '#f59e0b' }}
-                              />
-                            ))}
-                          </div>
-                          <span className="score-total-count">
-                            Total {reviewsList.length > 0 ? reviewsList.length : 1} Verified {reviewsList.length === 1 || reviewsList.length === 0 ? 'Rating' : 'Ratings'}
-                          </span>
+                      {/* Submission Feedback Message */}
+                      {reviewSubmitMessage && (
+                        <div className={`mc-review-status-alert ${hasSubmittedReview ? 'success' : 'error'}`}>
+                          {hasSubmittedReview ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                          <span>{reviewSubmitMessage}</span>
                         </div>
+                      )}
 
-                        {/* 5-Star Distribution Bars */}
-                        <div className="mc-rating-bars-stack">
-                          {(() => {
-                            const totalC = reviewsList.length > 0 ? reviewsList.length : 1;
-                            const c5 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 5).length : 1;
-                            const c4 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 4).length : 0;
-                            const c3 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 3).length : 0;
-                            const c2 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 2).length : 0;
-                            const c1 = reviewsList.length > 0 ? reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 1).length : 0;
+                      {/* Interactive Review Form */}
+                      {showReviewForm && !hasSubmittedReview && (
+                        <div className="mc-review-form-card">
+                          <div className="mc-review-form-header">
+                            <h4 className="mc-review-form-title">Write Your Review</h4>
+                            <span style={{ fontSize: '0.82rem', color: '#64748b' }}>Share your genuine feedback</span>
+                          </div>
 
-                            return [
-                              { stars: 5, pct: Math.round((c5 / totalC) * 100), count: `${c5} Ratings` },
-                              { stars: 4, pct: Math.round((c4 / totalC) * 100), count: `${c4} Ratings` },
-                              { stars: 3, pct: Math.round((c3 / totalC) * 100), count: `${c3} Ratings` },
-                              { stars: 2, pct: Math.round((c2 / totalC) * 100), count: `${c2} Ratings` },
-                              { stars: 1, pct: Math.round((c1 / totalC) * 100), count: `${c1} Ratings` }
-                            ].map((bar, bIdx) => (
-                              <div key={bIdx} className="mc-rating-bar-row">
-                                <span className="bar-star-label">★ {bar.stars}</span>
-                                <div className="bar-track-line">
-                                  <div className="bar-fill-line" style={{ width: `${bar.pct}%` }} />
-                                </div>
-                                <span className="bar-count-label">{bar.count}</span>
+                          <div className="mc-rating-star-selector">
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>Your Rating:</span>
+                            <div style={{ display: 'inline-flex', gap: '4px' }}>
+                              {[1, 2, 3, 4, 5].map((starVal) => (
+                                <button
+                                  type="button"
+                                  key={starVal}
+                                  className="mc-star-pick-btn"
+                                  onClick={() => setNewReviewStar(starVal)}
+                                  title={`${starVal} Star${starVal > 1 ? 's' : ''}`}
+                                >
+                                  <Star
+                                    size={20}
+                                    style={{
+                                      color: starVal <= newReviewStar ? '#f59e0b' : '#cbd5e1',
+                                      fill: starVal <= newReviewStar ? '#f59e0b' : 'none',
+                                      transition: 'all 0.15s ease'
+                                    }}
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                            <span className="mc-star-label-text">
+                              {newReviewStar === 5 && '5 - Excellent'}
+                              {newReviewStar === 4 && '4 - Very Good'}
+                              {newReviewStar === 3 && '3 - Good'}
+                              {newReviewStar === 2 && '2 - Fair'}
+                              {newReviewStar === 1 && '1 - Poor'}
+                            </span>
+                          </div>
+
+                          <textarea
+                            className="mc-review-textarea"
+                            rows={3}
+                            placeholder="Share your thoughts about this microcredential course, instructor, course materials, or practical skills gained..."
+                            value={newReviewText}
+                            onChange={(e) => setNewReviewText(e.target.value)}
+                          />
+
+                          <div className="mc-review-form-actions">
+                            <button
+                              type="button"
+                              className="mc-btn-cancel-review"
+                              onClick={() => setShowReviewForm(false)}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              className="mc-btn-submit-review"
+                              disabled={isSubmittingReview || !newReviewText.trim()}
+                              onClick={handleSubmitNewReview}
+                            >
+                              {isSubmittingReview ? (
+                                <>
+                                  <RefreshCw size={14} className="spinner" style={{ animation: 'spin 1s linear infinite' }} />
+                                  <span>Submitting...</span>
+                                </>
+                              ) : (
+                                <span>Submit Review</span>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {reviewsLoading ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '36px 20px', color: '#64748b', fontSize: '0.92rem' }}>
+                          <RefreshCw size={20} className="spinner" style={{ animation: 'spin 1s linear infinite', color: '#00385E' }} />
+                          <span>Loading reviews...</span>
+                        </div>
+                      ) : reviewsList.length > 0 ? (
+                        <>
+                          {/* Rating Summary & Star Breakdown Grid */}
+                          <div className="mc-reviews-breakdown-grid">
+                            {/* Big Score Box */}
+                            <div className="mc-big-score-box">
+                              <div className="score-number-display">
+                                {(reviewsList.reduce((acc, cur) => acc + (Number(cur.reviewInStar) || 5), 0) / reviewsList.length).toFixed(1)}
                               </div>
-                            ));
-                          })()}
-                        </div>
-                      </div>
+                              <div className="score-stars-row">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    size={17}
+                                    className="star-icon-filled"
+                                    style={{ color: '#f59e0b', fill: '#f59e0b' }}
+                                  />
+                                ))}
+                              </div>
+                              <span className="score-total-count">
+                                Total {reviewsList.length} Verified {reviewsList.length === 1 ? 'Rating' : 'Ratings'}
+                              </span>
+                            </div>
 
-                      {/* Verified Student Testimonial List */}
-                      {reviewsList.length > 0 ? (
-                        reviewsList.map((rev, rIdx) => {
-                          const revId = rev.microcredentialCourseReviewId || rev.id || rIdx;
-                          const revName = rev.studentName || 'Verified Employee';
-                          const initials = revName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'AS';
-                          const fullReviewText = rev.reviewDescription || "I am currently pursuing the Stress Management course on this LMS, and my learning experience has been excellent so far. The course content is well-structured, engaging, and easy to follow, with interactive lessons and assessments that enhance my understanding. I am learning practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life.";
-                          const isExpanded = Boolean(expandedReviews[revId]);
-                          const isLong = fullReviewText.length > 160;
+                            {/* 5-Star Distribution Bars */}
+                            <div className="mc-rating-bars-stack">
+                              {(() => {
+                                const totalC = reviewsList.length;
+                                const c5 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 5).length;
+                                const c4 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 4).length;
+                                const c3 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 3).length;
+                                const c2 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 2).length;
+                                const c1 = reviewsList.filter(r => (Number(r.reviewInStar) || 0) === 1).length;
 
-                          return (
-                            <div key={revId} className="mc-student-review-item">
-                              <div className="student-review-author-row">
-                                <div className="author-identity-group">
-                                  <div className="student-avatar-wrap">
-                                    <span className="student-avatar-initials">{initials}</span>
+                                return [
+                                  { stars: 5, pct: Math.round((c5 / totalC) * 100), count: `${c5} Ratings` },
+                                  { stars: 4, pct: Math.round((c4 / totalC) * 100), count: `${c4} Ratings` },
+                                  { stars: 3, pct: Math.round((c3 / totalC) * 100), count: `${c3} Ratings` },
+                                  { stars: 2, pct: Math.round((c2 / totalC) * 100), count: `${c2} Ratings` },
+                                  { stars: 1, pct: Math.round((c1 / totalC) * 100), count: `${c1} Ratings` }
+                                ].map((bar, bIdx) => (
+                                  <div key={bIdx} className="mc-rating-bar-row">
+                                    <span className="bar-star-label">★ {bar.stars}</span>
+                                    <div className="bar-track-line">
+                                      <div className="bar-fill-line" style={{ width: `${bar.pct}%` }} />
+                                    </div>
+                                    <span className="bar-count-label">{bar.count}</span>
                                   </div>
-                                  <div className="student-author-info">
-                                    <h4 className="student-name-heading">{revName}</h4>
-                                    <div className="student-stars-and-date">
-                                      <div className="student-mini-stars">
-                                        {[...Array(Number(rev.reviewInStar) || 5)].map((_, i) => (
-                                          <Star key={i} size={13} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
-                                        ))}
+                                ));
+                              })()}
+                            </div>
+                          </div>
+
+                          {/* Verified Student Testimonial List */}
+                          {reviewsList.map((rev, rIdx) => {
+                            const revId = rev.microcredentialCourseReviewId || rev.id || rIdx;
+                            const revName = rev.studentName || 'Verified Employee';
+                            const initials = revName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'VE';
+                            const fullReviewText = rev.reviewDescription || '';
+                            const isExpanded = Boolean(expandedReviews[revId]);
+                            const isLong = fullReviewText.length > 160;
+
+                            return (
+                              <div key={revId} className="mc-student-review-item">
+                                <div className="student-review-author-row">
+                                  <div className="author-identity-group">
+                                    <div className="student-avatar-wrap">
+                                      {rev.studentProfileImage ? (
+                                        <img
+                                          src={formatImageUrl(rev.studentProfileImage)}
+                                          alt={revName}
+                                          style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                                        />
+                                      ) : (
+                                        <span className="student-avatar-initials">{initials}</span>
+                                      )}
+                                    </div>
+                                    <div className="student-author-info">
+                                      <h4 className="student-name-heading">{revName}</h4>
+                                      <div className="student-stars-and-date">
+                                        <div className="student-mini-stars">
+                                          {[...Array(Number(rev.reviewInStar) || 5)].map((_, i) => (
+                                            <Star key={i} size={13} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+                                          ))}
+                                        </div>
+                                        <span className="review-timestamp">• {rev.createdOnText || 'Recently'}</span>
                                       </div>
-                                      <span className="review-timestamp">• {rev.createdOnText || '2 months ago'}</span>
                                     </div>
                                   </div>
                                 </div>
-                              </div>
 
-                              <p className="student-review-body-text">
-                                {isLong && !isExpanded ? `${fullReviewText.substring(0, 160)}...` : fullReviewText}
-                                {isLong && (
+                                {fullReviewText && (
+                                  <p className="student-review-body-text">
+                                    {isLong && !isExpanded ? `${fullReviewText.substring(0, 160)}...` : fullReviewText}
+                                    {isLong && (
+                                      <button
+                                        type="button"
+                                        className="mc-read-more-btn"
+                                        onClick={() => toggleReviewExpand(revId)}
+                                      >
+                                        {isExpanded ? ' Read less' : ' Read more'}
+                                      </button>
+                                    )}
+                                  </p>
+                                )}
+
+                                <div className="student-review-action-row">
                                   <button
                                     type="button"
-                                    className="mc-read-more-btn"
-                                    onClick={() => toggleReviewExpand(revId)}
+                                    className={`btn-like-pill ${hasLiked[revId] ? 'liked' : ''}`}
+                                    onClick={() => handleToggleLike(revId)}
                                   >
-                                    {isExpanded ? ' Read less' : ' Read more'}
+                                    <ThumbsUp size={13} fill={hasLiked[revId] ? 'currentColor' : 'none'} />
+                                    <span>Like ({likedReviews[revId] !== undefined ? likedReviews[revId] : (rev.reviewLikeCount || 0)})</span>
                                   </button>
-                                )}
-                              </p>
-
-                              <div className="student-review-action-row">
-                                <button
-                                  type="button"
-                                  className={`btn-like-pill ${hasLiked[revId] ? 'liked' : ''}`}
-                                  onClick={() => handleToggleLike(revId)}
-                                >
-                                  <ThumbsUp size={13} fill={hasLiked[revId] ? 'currentColor' : 'none'} />
-                                  <span>Like ({likedReviews[revId] !== undefined ? likedReviews[revId] : (rev.reviewLikeCount || 0)})</span>
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="mc-student-review-item">
-                          <div className="student-review-author-row">
-                            <div className="author-identity-group">
-                              <div className="student-avatar-wrap">
-                                <span className="student-avatar-initials">AS</span>
-                              </div>
-                              <div className="student-author-info">
-                                <h4 className="student-name-heading">Anjali Sharma</h4>
-                                <div className="student-stars-and-date">
-                                  <div className="student-mini-stars">
-                                    {[...Array(5)].map((_, i) => (
-                                      <Star key={i} size={13} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
-                                    ))}
-                                  </div>
-                                  <span className="review-timestamp">• 2 months ago</span>
                                 </div>
                               </div>
+                            );
+                          })}
+                        </>
+                      ) : (
+                        /* BEST UI NO REVIEWS FOUND EMPTY STATE */
+                        <div className="mc-no-reviews-card">
+                          <div className="mc-no-reviews-icon-circle">
+                            <Star size={30} strokeWidth={1.8} style={{ color: '#f59e0b' }} />
+                            <div className="mc-no-reviews-badge-sparkle">
+                              <Sparkles size={12} />
                             </div>
                           </div>
-
-                          <p className="student-review-body-text">
-                            {expandedReviews['sample-1']
-                              ? "I am currently pursuing the Stress Management course on this LMS, and my learning experience has been excellent so far. The course content is well-structured, engaging, and easy to follow, with interactive lessons and assessments that enhance my understanding. I am learning practical techniques to manage stress, improve focus, and maintain emotional well-being in both academic and professional life. Overall, this course is helping me build valuable skills that I can apply in my daily life."
-                              : "I am currently pursuing the Stress Management course on this LMS, and my learning experience has been excellent so far. The course content is well-structured, engaging, and easy to follow..."}
-                            <button
-                              type="button"
-                              className="mc-read-more-btn"
-                              onClick={() => toggleReviewExpand('sample-1')}
-                            >
-                              {expandedReviews['sample-1'] ? ' Read less' : ' Read more'}
-                            </button>
+                          <h3 className="mc-no-reviews-title">No Reviews Found Yet</h3>
+                          <p className="mc-no-reviews-desc">
+                            There are currently no reviews submitted for this microcredential course. Be the first learner to share your thoughts and rate your experience!
                           </p>
 
-                          <div className="student-review-action-row">
-                            <button
-                              type="button"
-                              className={`btn-like-pill ${hasLiked['sample-1'] ? 'liked' : ''}`}
-                              onClick={() => handleToggleLike('sample-1')}
-                            >
-                              <ThumbsUp size={13} fill={hasLiked['sample-1'] ? 'currentColor' : 'none'} />
-                              <span>Like ({likedReviews['sample-1'] !== undefined ? likedReviews['sample-1'] : 2})</span>
-                            </button>
-                          </div>
+                          {!hasSubmittedReview ? (
+                            !showReviewForm && (
+                              <button
+                                type="button"
+                                className="mc-btn-first-review"
+                                onClick={handleWriteReviewClick}
+                              >
+                                <Edit3 size={15} />
+                                <span>Write the First Review</span>
+                              </button>
+                            )
+                          ) : (
+                            <div className="mc-reviewed-done-badge">
+                              <CheckCircle2 size={16} />
+                              <span>You have already submitted a review for this course</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

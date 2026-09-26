@@ -30,6 +30,7 @@ export function buildMicroCourseTopicAddUpdateInput(data = {}) {
         },
         body: JSON.stringify({
             microcredentialCourseId: data?.microcredentialCourseId ?? data?.MicrocredentialCourseId ?? 0,
+            microcredentialModuleMasterId: data?.microcredentialModuleMasterId ?? data?.MicrocredentialModuleMasterId ?? 0,
             streamId: data?.streamId ?? data?.StreamId ?? 0,
             adminId: data?.adminId ?? data?.AdminId ?? 0,
             uploadMicroDocument: data?.uploadMicroDocument || data?.UploadMicroDocument || '',

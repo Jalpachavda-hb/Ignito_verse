@@ -7856,6 +7856,270 @@ body.modal-open {
   color: #0284c7;
 }
 
+/* Write Review Button in Header */
+.mc-btn-write-review {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #00385E;
+  color: #ffffff;
+  border: 1.5px solid #00385E;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 56, 94, 0.15);
+}
+
+.mc-btn-write-review:hover {
+  background: #002b48;
+  border-color: #002b48;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 56, 94, 0.22);
+}
+
+/* Review Submission Form Card */
+.mc-review-form-card {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin: 16px 0 20px;
+  box-shadow: 0 4px 14px rgba(0, 56, 94, 0.05);
+}
+
+.mc-review-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.mc-review-form-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #00385E;
+  margin: 0;
+}
+
+.mc-rating-star-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.mc-star-pick-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.15s ease;
+}
+
+.mc-star-pick-btn:hover {
+  transform: scale(1.15);
+}
+
+.mc-star-label-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f59e0b;
+  margin-left: 6px;
+}
+
+.mc-review-textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 12px 14px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #1e293b;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.mc-review-textarea:focus {
+  border-color: #00385E;
+  box-shadow: 0 0 0 3px rgba(0, 56, 94, 0.1);
+}
+
+.mc-review-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.mc-btn-submit-review {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #00385E;
+  color: #ffffff;
+  font-size: 0.86rem;
+  font-weight: 700;
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mc-btn-submit-review:hover:not(:disabled) {
+  background: #002844;
+}
+
+.mc-btn-submit-review:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mc-btn-cancel-review {
+  background: transparent;
+  color: #64748b;
+  font-size: 0.86rem;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mc-btn-cancel-review:hover {
+  background: #f8fafc;
+  color: #334155;
+}
+
+.mc-review-status-alert {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mc-review-status-alert.success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+.mc-review-status-alert.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+/* Premium Empty State: No Reviews Found Yet */
+.mc-no-reviews-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 44px 28px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 16px;
+  margin: 18px 0 10px;
+}
+
+.mc-no-reviews-icon-circle {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 8px 22px rgba(0, 56, 94, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f59e0b;
+  margin-bottom: 18px;
+  position: relative;
+}
+
+.mc-no-reviews-badge-sparkle {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #00385E;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 56, 94, 0.3);
+}
+
+.mc-no-reviews-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #00385E;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.2px;
+}
+
+.mc-no-reviews-desc {
+  font-size: 0.92rem;
+  color: #64748b;
+  max-width: 460px;
+  line-height: 1.6;
+  margin: 0 0 22px 0;
+}
+
+.mc-btn-first-review {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #00385E;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 11px 24px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 56, 94, 0.2);
+  transition: all 0.2s ease;
+}
+
+.mc-btn-first-review:hover {
+  background: #002b48;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 56, 94, 0.28);
+}
+
+.mc-reviewed-done-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ecfdf5;
+  border: 1.5px solid #a7f3d0;
+  color: #047857;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 999px;
+}
+
 /* ========================================================
    SECTION: FAQ ACCORDION LIST
    ======================================================== */
