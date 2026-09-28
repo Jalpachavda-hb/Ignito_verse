@@ -8,6 +8,7 @@ import {
 import captiqLogoImg from '../../assets/newlg.png';
 import loginBgImg from '../../assets/home/loginbg.png';
 import { sendStudentLoginOTP, validateStudentLoginOTP } from '../../services/authService';
+import DotBackground from './DotBackground';
 
 export default function LoginPage({ 
   onLoginSuccess = () => {}, 
@@ -170,6 +171,8 @@ export default function LoginPage({
 
   return (
     <div className="captiq-desk-viewport">
+      {/* Background Interactive Dot Canvas with Mouse Hover Animation */}
+      <DotBackground />
       
       {/* Top Navigation Bar: Back to Home */}
       <div className="captiq-desk-top-bar">
