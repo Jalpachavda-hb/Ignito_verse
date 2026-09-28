@@ -10,26 +10,42 @@
 export function buildMicrocredentialStudentReviewLikeInsertInput(
     microcredentialReviewId = 0,
     studentId = 0,
-    microcredentialCourseId = 0
+    microcredentialCourseId = 0,
+    isLike = undefined
 ) {
     const numReviewId = Number(microcredentialReviewId) || 0;
     const numStudentId = Number(studentId) || 0;
     const numCourseId = Number(microcredentialCourseId) || 0;
+
+    const payload = {
+        MicrocredentialReviewId: numReviewId,
+        microcredentialReviewId: numReviewId,
+        MicrocredentialCourseReviewId: numReviewId,
+        microcredentialCourseReviewId: numReviewId,
+        ReviewId: numReviewId,
+        reviewId: numReviewId,
+        StudentId: numStudentId,
+        studentId: numStudentId,
+        MicrocredentialCourseId: numCourseId,
+        microcredentialCourseId: numCourseId,
+        CourseId: numCourseId,
+        courseId: numCourseId,
+        MicroCourseId: numCourseId,
+        microCourseId: numCourseId
+    };
+
+    if (isLike !== undefined) {
+        payload.IsLike = Boolean(isLike);
+        payload.isLike = Boolean(isLike);
+        payload.IsLiked = Boolean(isLike);
+        payload.isLiked = Boolean(isLike);
+    }
 
     return {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
-        body: JSON.stringify({
-            MicrocredentialReviewId: numReviewId,
-            microcredentialReviewId: numReviewId,
-            MicrocredentialCourseReviewId: numReviewId,
-            microcredentialCourseReviewId: numReviewId,
-            StudentId: numStudentId,
-            studentId: numStudentId,
-            MicrocredentialCourseId: numCourseId,
-            microcredentialCourseId: numCourseId
-        })
+        body: JSON.stringify(payload)
     };
 }

@@ -13,21 +13,71 @@ export function parseGetReviewByMicroCourseIdOutput(rawJson = {}, status = 200) 
     const rawList = rawJson?.getReviewByMicroCourseList || rawJson?.GetReviewByMicroCourseList || [];
 
     const getReviewByMicroCourseList = Array.isArray(rawList)
-        ? rawList.map(item => ({
-            microcredentialCourseReviewId: item?.microcredentialCourseReviewId ?? item?.MicrocredentialCourseReviewId ?? 0,
-            studentId: item?.studentId ?? item?.StudentId ?? 0,
-            microcredentialCourseId: item?.microcredentialCourseId ?? item?.MicrocredentialCourseId ?? 0,
-            reviewInStar: item?.reviewInStar ?? item?.ReviewInStar ?? 0,
-            reviewDescription: item?.reviewDescription || item?.ReviewDescription || '',
-            studentName: item?.studentName || item?.StudentName || '',
-            studentProfileImage: item?.studentProfileImage || item?.StudentProfileImage || '',
-            createdOnText: item?.createdOnText || item?.CreatedOnText || '',
-            createdOn: item?.createdOn || item?.CreatedOn || '',
-            isLike: Boolean(item?.isLike ?? item?.IsLike ?? item?.isLiked ?? item?.IsLiked ?? item?.isReviewLikedByStudent ?? item?.IsReviewLikedByStudent ?? false),
-            isLiked: Boolean(item?.isLike ?? item?.IsLike ?? item?.isLiked ?? item?.IsLiked ?? item?.isReviewLikedByStudent ?? item?.IsReviewLikedByStudent ?? false),
-            isReviewLikedByStudent: Boolean(item?.isLike ?? item?.IsLike ?? item?.isLiked ?? item?.IsLiked ?? item?.isReviewLikedByStudent ?? item?.IsReviewLikedByStudent ?? false),
-            reviewLikeCount: item?.reviewLikeCount ?? item?.ReviewLikeCount ?? 0
-        }))
+        ? rawList.map(item => {
+            const reviewId = Number(
+                item?.microcredentialCourseReviewId ?? 
+                item?.MicrocredentialCourseReviewId ?? 
+                item?.microcredentialReviewId ?? 
+                item?.MicrocredentialReviewId ?? 
+                item?.reviewId ?? 
+                item?.ReviewId ?? 
+                item?.id ?? 
+                item?.Id ?? 
+                item?.microcredentialStudentReviewId ?? 
+                item?.MicrocredentialStudentReviewId ?? 
+                0
+            );
+
+            const rawLike = (
+                item?.isLike ?? 
+                item?.IsLike ?? 
+                item?.isLiked ?? 
+                item?.IsLiked ?? 
+                item?.isReviewLikedByStudent ?? 
+                item?.IsReviewLikedByStudent ?? 
+                item?.isLikedByStudent ?? 
+                item?.IsLikedByStudent ?? 
+                item?.liked ?? 
+                item?.Liked
+            );
+            const isLikeBool = rawLike === true || rawLike === 1 || rawLike === '1' || String(rawLike).toLowerCase() === 'true';
+
+            const rawCount = (
+                item?.reviewLikeCount ?? 
+                item?.ReviewLikeCount ?? 
+                item?.likeCount ?? 
+                item?.LikeCount ?? 
+                item?.totalLikes ?? 
+                item?.TotalLikes ?? 
+                item?.totalLikeCount ?? 
+                item?.TotalLikeCount ?? 
+                item?.likes ?? 
+                item?.Likes ?? 
+                0
+            );
+            const reviewLikeCount = Math.max(0, Number(rawCount) || 0);
+
+            return {
+                microcredentialCourseReviewId: reviewId,
+                microcredentialReviewId: reviewId,
+                reviewId: reviewId,
+                id: reviewId,
+                studentId: Number(item?.studentId ?? item?.StudentId ?? item?.applicantId ?? item?.ApplicantId ?? 0),
+                microcredentialCourseId: Number(item?.microcredentialCourseId ?? item?.MicrocredentialCourseId ?? item?.courseId ?? item?.CourseId ?? item?.microCourseId ?? item?.MicroCourseId ?? 0),
+                reviewInStar: Number(item?.reviewInStar ?? item?.ReviewInStar ?? item?.rating ?? item?.Rating ?? 5),
+                reviewDescription: item?.reviewDescription || item?.ReviewDescription || item?.description || item?.Description || '',
+                studentName: item?.studentName || item?.StudentName || item?.applicantFullName || item?.ApplicantFullName || item?.fullName || item?.FullName || '',
+                studentProfileImage: item?.studentProfileImage || item?.StudentProfileImage || item?.profileImage || item?.ProfileImage || '',
+                createdOnText: item?.createdOnText || item?.CreatedOnText || '',
+                createdOn: item?.createdOn || item?.CreatedOn || '',
+                isLike: isLikeBool,
+                isLiked: isLikeBool,
+                isReviewLikedByStudent: isLikeBool,
+                reviewLikeCount: reviewLikeCount,
+                likeCount: reviewLikeCount,
+                rawData: item
+            };
+        })
         : [];
 
     return {

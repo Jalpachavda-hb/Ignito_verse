@@ -10,12 +10,20 @@ export function parseMicrocredentialStudentReviewLikeInsertOutput(rawJson = {}, 
     const isHttpOk = status >= 200 && status < 300;
     const isSuccess = Boolean(rawJson?.isSuccess ?? rawJson?.IsSuccess ?? isHttpOk);
 
+    const rawLike = rawJson?.isLike ?? rawJson?.IsLike ?? rawJson?.isLiked ?? rawJson?.IsLiked;
+    const isLiked = rawLike !== undefined ? (rawLike === true || rawLike === 1 || rawLike === '1' || String(rawLike).toLowerCase() === 'true') : undefined;
+
+    const rawCount = rawJson?.reviewLikeCount ?? rawJson?.ReviewLikeCount ?? rawJson?.likeCount ?? rawJson?.LikeCount ?? rawJson?.totalLikes ?? rawJson?.TotalLikes;
+    const likeCount = rawCount !== undefined ? Math.max(0, Number(rawCount) || 0) : undefined;
+
     return {
         success: isSuccess,
         status,
         message: rawJson?.message || rawJson?.Message || '',
         errorDescription: rawJson?.errorDescription || rawJson?.ErrorDescription || '',
         errorNo: rawJson?.errorNo || rawJson?.ErrorNo || 0,
+        isLiked,
+        likeCount,
         rawData: rawJson
     };
 }

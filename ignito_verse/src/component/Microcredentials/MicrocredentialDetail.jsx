@@ -73,6 +73,7 @@ export default function MicrocredentialDetail({
   const [liveMeetingsLoading, setLiveMeetingsLoading] = useState(false);
   const [likedReviews, setLikedReviews] = useState({});
   const [hasLiked, setHasLiked] = useState({});
+  const [likeProcessingMap, setLikeProcessingMap] = useState({});
   const [failedModuleImages, setFailedModuleImages] = useState({});
 
   // Mobile UI & Accordion state
@@ -250,9 +251,9 @@ export default function MicrocredentialDetail({
             const initialLikes = {};
             const initialHasLiked = {};
             let alreadyReviewed = false;
-            rRes.getReviewByMicroCourseList.forEach((rev) => {
-              const rId = rev.microcredentialCourseReviewId || rev.id;
-              initialLikes[rId] = rev.reviewLikeCount || 0;
+            rRes.getReviewByMicroCourseList.forEach((rev, idx) => {
+              const rId = rev.microcredentialCourseReviewId || rev.microcredentialReviewId || rev.reviewId || rev.id || `rev_${idx}`;
+              initialLikes[rId] = Number(rev.reviewLikeCount ?? rev.likeCount ?? 0);
               const likeVal = rev.isLike !== undefined ? rev.isLike : (rev.isLiked !== undefined ? rev.isLiked : rev.isReviewLikedByStudent);
               initialHasLiked[rId] = likeVal === true || likeVal === 1 || likeVal === 'true' || likeVal === '1';
               const revStudentId = Number(rev.studentId ?? rev.StudentId ?? 0);
@@ -586,7 +587,7 @@ export default function MicrocredentialDetail({
     );
   }
 
-  const handleToggleLike = async (reviewId) => {
+  const handleToggleLike = async (rev, rIdx) => {
     const currentStudentId = getLoggedInStudentId();
     if (!currentStudentId || currentStudentId <= 0) {
       setAuthActionText('like or interact with reviews');
@@ -594,24 +595,118 @@ export default function MicrocredentialDetail({
       return;
     }
 
-    const isCurrentlyLiked = Boolean(hasLiked[reviewId]);
-    setHasLiked(prev => ({
-      ...prev,
-      [reviewId]: !isCurrentlyLiked
-    }));
-    setLikedReviews(prev => ({
-      ...prev,
-      [reviewId]: Math.max(0, (prev[reviewId] || 0) + (isCurrentlyLiked ? -1 : 1))
+    // Resolve review object and consistent key
+    const targetRev = (typeof rev === 'object' && rev !== null)
+      ? rev
+      : (reviewsList.find(r => (r.microcredentialCourseReviewId || r.id) === rev) || { id: rev });
+
+    const revId = targetRev.microcredentialCourseReviewId || 
+                  targetRev.microcredentialReviewId || 
+                  targetRev.reviewId || 
+                  targetRev.id || 
+                  (typeof rev === 'number' || typeof rev === 'string' ? rev : `rev_${rIdx}`);
+
+    if (likeProcessingMap[revId]) return;
+
+    // Determine current status
+    const currentIsLiked = hasLiked[revId] !== undefined
+      ? Boolean(hasLiked[revId])
+      : Boolean(targetRev.isLike || targetRev.isLiked || targetRev.isReviewLikedByStudent);
+
+    // Determine current count safely (never defaults to 0 if targetRev has a count)
+    const currentCount = likedReviews[revId] !== undefined
+      ? Number(likedReviews[revId])
+      : Number(targetRev.reviewLikeCount ?? targetRev.likeCount ?? 0);
+
+    const nextLiked = !currentIsLiked;
+    const nextCount = nextLiked ? (currentCount + 1) : Math.max(0, currentCount - 1);
+
+    // Optimistically update states
+    setHasLiked(prev => ({ ...prev, [revId]: nextLiked }));
+    setLikedReviews(prev => ({ ...prev, [revId]: nextCount }));
+
+    setReviewsList(prevList => prevList.map((item, idx) => {
+      const itemId = item.microcredentialCourseReviewId || item.microcredentialReviewId || item.reviewId || item.id || `rev_${idx}`;
+      if (itemId === revId || (rIdx !== undefined && idx === rIdx)) {
+        return {
+          ...item,
+          isLike: nextLiked,
+          isLiked: nextLiked,
+          isReviewLikedByStudent: nextLiked,
+          reviewLikeCount: nextCount,
+          likeCount: nextCount
+        };
+      }
+      return item;
     }));
 
+    setLikeProcessingMap(prev => ({ ...prev, [revId]: true }));
+
     try {
-      const numCourseId = Number(courseData?.microcredentialCourseId || initialCourse?.microcredentialCourseId) || 0;
-      const numReviewId = Number(reviewId) || 0;
+      const numCourseId = Number(
+        courseData?.microcredentialCourseId || 
+        courseData?.courseId || 
+        courseData?.id || 
+        initialCourse?.microcredentialCourseId || 
+        initialCourse?.courseId || 
+        initialCourse?.id || 
+        targetRev.microcredentialCourseId
+      ) || 0;
+
+      const numReviewId = Number(
+        targetRev.microcredentialCourseReviewId || 
+        targetRev.microcredentialReviewId || 
+        targetRev.reviewId || 
+        targetRev.id || 
+        (typeof revId === 'number' ? revId : 0)
+      ) || 0;
+
       if (numReviewId > 0 && numCourseId > 0) {
-        await microcredentialStudentReviewLikeInsert(numReviewId, currentStudentId, numCourseId);
+        const res = await microcredentialStudentReviewLikeInsert(numReviewId, currentStudentId, numCourseId, nextLiked);
+        if (res && res.success) {
+          if (res.likeCount !== undefined && !isNaN(res.likeCount)) {
+            setLikedReviews(prev => ({ ...prev, [revId]: res.likeCount }));
+            setReviewsList(prevList => prevList.map((item, idx) => {
+              const itemId = item.microcredentialCourseReviewId || item.microcredentialReviewId || item.reviewId || item.id || `rev_${idx}`;
+              if (itemId === revId || (rIdx !== undefined && idx === rIdx)) {
+                return { ...item, reviewLikeCount: res.likeCount, likeCount: res.likeCount };
+              }
+              return item;
+            }));
+          }
+          if (res.isLiked !== undefined) {
+            setHasLiked(prev => ({ ...prev, [revId]: res.isLiked }));
+            setReviewsList(prevList => prevList.map((item, idx) => {
+              const itemId = item.microcredentialCourseReviewId || item.microcredentialReviewId || item.reviewId || item.id || `rev_${idx}`;
+              if (itemId === revId || (rIdx !== undefined && idx === rIdx)) {
+                return { ...item, isLike: res.isLiked, isLiked: res.isLiked, isReviewLikedByStudent: res.isLiked };
+              }
+              return item;
+            }));
+          }
+        }
       }
     } catch (e) {
       console.warn('Like action error:', e);
+      // Revert on error
+      setHasLiked(prev => ({ ...prev, [revId]: currentIsLiked }));
+      setLikedReviews(prev => ({ ...prev, [revId]: currentCount }));
+      setReviewsList(prevList => prevList.map((item, idx) => {
+        const itemId = item.microcredentialCourseReviewId || item.microcredentialReviewId || item.reviewId || item.id || `rev_${idx}`;
+        if (itemId === revId || (rIdx !== undefined && idx === rIdx)) {
+          return {
+            ...item,
+            isLike: currentIsLiked,
+            isLiked: currentIsLiked,
+            isReviewLikedByStudent: currentIsLiked,
+            reviewLikeCount: currentCount,
+            likeCount: currentCount
+          };
+        }
+        return item;
+      }));
+    } finally {
+      setLikeProcessingMap(prev => ({ ...prev, [revId]: false }));
     }
   };
 
@@ -639,14 +734,26 @@ export default function MicrocredentialDetail({
     setIsSubmittingReview(true);
     setReviewSubmitMessage('');
 
-    const numCourseId = Number(courseData?.microcredentialCourseId || initialCourse?.microcredentialCourseId) || 0;
+    const numCourseId = Number(
+      courseData?.microcredentialCourseId || 
+      courseData?.courseId || 
+      courseData?.id || 
+      initialCourse?.microcredentialCourseId || 
+      initialCourse?.courseId || 
+      initialCourse?.id
+    ) || 0;
+
     try {
       const res = await ignitoMicroStudentReviewInsert(currentStudentId, numCourseId, newReviewStar, newReviewText.trim());
       if (res && res.success) {
         const studentName = localStorage.getItem('StudentName') || 'You (Employee)';
         const studentImage = localStorage.getItem('ProfileImage') || '';
+        const newRevId = Date.now();
         const newlyCreated = {
-          microcredentialCourseReviewId: Date.now(),
+          microcredentialCourseReviewId: newRevId,
+          microcredentialReviewId: newRevId,
+          reviewId: newRevId,
+          id: newRevId,
           studentId: currentStudentId,
           microcredentialCourseId: numCourseId,
           reviewInStar: newReviewStar,
@@ -654,10 +761,16 @@ export default function MicrocredentialDetail({
           studentName: studentName,
           studentProfileImage: studentImage,
           createdOnText: 'Just now',
+          createdOn: new Date().toISOString(),
+          isLike: false,
+          isLiked: false,
           isReviewLikedByStudent: false,
-          reviewLikeCount: 0
+          reviewLikeCount: 0,
+          likeCount: 0
         };
         setReviewsList(prev => [newlyCreated, ...prev]);
+        setLikedReviews(prev => ({ ...prev, [newRevId]: 0 }));
+        setHasLiked(prev => ({ ...prev, [newRevId]: false }));
         setNewReviewText('');
         setShowReviewForm(false);
         setHasSubmittedReview(true);
@@ -1068,12 +1181,20 @@ export default function MicrocredentialDetail({
 
                           {/* Verified Student Testimonial List */}
                           {reviewsList.map((rev, rIdx) => {
-                            const revId = rev.microcredentialCourseReviewId || rev.id || rIdx;
+                            const revId = rev.microcredentialCourseReviewId || rev.microcredentialReviewId || rev.reviewId || rev.id || `rev_${rIdx}`;
                             const revName = rev.studentName || 'Verified Employee';
                             const initials = revName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'VE';
                             const fullReviewText = rev.reviewDescription || '';
                             const isExpanded = Boolean(expandedReviews[revId]);
                             const isLong = fullReviewText.length > 160;
+
+                            const isLiked = hasLiked[revId] !== undefined
+                              ? Boolean(hasLiked[revId])
+                              : Boolean(rev.isLike || rev.isLiked || rev.isReviewLikedByStudent);
+
+                            const currentLikeCount = likedReviews[revId] !== undefined
+                              ? Number(likedReviews[revId])
+                              : Number(rev.reviewLikeCount ?? rev.likeCount ?? 0);
 
                             return (
                               <div key={revId} className="mc-student-review-item">
@@ -1122,11 +1243,13 @@ export default function MicrocredentialDetail({
                                 <div className="student-review-action-row">
                                   <button
                                     type="button"
-                                    className={`btn-like-pill ${hasLiked[revId] ? 'liked' : ''}`}
-                                    onClick={() => handleToggleLike(revId)}
+                                    className={`btn-like-pill ${isLiked ? 'liked' : ''}`}
+                                    onClick={() => handleToggleLike(rev, rIdx)}
+                                    disabled={Boolean(likeProcessingMap[revId])}
+                                    title={isLiked ? 'Unlike this review' : 'Like this review'}
                                   >
-                                    <ThumbsUp size={13} fill={hasLiked[revId] ? 'currentColor' : 'none'} />
-                                    <span>Like ({likedReviews[revId] !== undefined ? likedReviews[revId] : (rev.reviewLikeCount || 0)})</span>
+                                    <ThumbsUp size={13} fill={isLiked ? 'currentColor' : 'none'} />
+                                    <span>{isLiked ? 'Liked' : 'Like'} ({currentLikeCount})</span>
                                   </button>
                                 </div>
                               </div>

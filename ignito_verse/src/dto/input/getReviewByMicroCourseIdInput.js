@@ -20,6 +20,10 @@ export function buildGetReviewByMicroCourseIdInput(
         body: JSON.stringify({
             MicrocredentialCourseId: numCourseId,
             microcredentialCourseId: numCourseId,
+            CourseId: numCourseId,
+            courseId: numCourseId,
+            MicroCourseId: numCourseId,
+            microCourseId: numCourseId,
             StudentId: numStudentId,
             studentId: numStudentId
         })

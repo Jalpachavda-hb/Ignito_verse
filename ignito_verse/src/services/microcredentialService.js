@@ -374,13 +374,15 @@ export async function ignitoMicroStudentReviewInsert(
 export async function microcredentialStudentReviewLikeInsert(
     microcredentialReviewId = 0,
     studentId = 0,
-    microcredentialCourseId = 0
+    microcredentialCourseId = 0,
+    isLike = undefined
 ) {
     try {
         const inputDto = buildMicrocredentialStudentReviewLikeInsertInput(
             microcredentialReviewId,
             studentId,
-            microcredentialCourseId
+            microcredentialCourseId,
+            isLike
         );
         const response = await apiClient('api/IgnitoMicroCredencialAPI/MicrocredentialStudentReviewLikeInsert', {
             method: 'POST',
