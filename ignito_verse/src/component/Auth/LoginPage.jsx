@@ -8,7 +8,6 @@ import {
 import captiqLogoImg from '../../assets/newlg.png';
 import loginBgImg from '../../assets/home/loginbg.png';
 import { sendStudentLoginOTP, validateStudentLoginOTP } from '../../services/authService';
-import DotBackground from './DotBackground';
 
 export default function LoginPage({ 
   onLoginSuccess = () => {}, 
@@ -171,9 +170,6 @@ export default function LoginPage({
 
   return (
     <div className="captiq-desk-viewport">
-      {/* Background Interactive Dot Canvas with Mouse Hover Animation */}
-      <DotBackground />
-      
       {/* Top Navigation Bar: Back to Home */}
       <div className="captiq-desk-top-bar">
         <button 
@@ -267,6 +263,11 @@ export default function LoginPage({
             ======================================================== */}
         <div className="captiq-desk-col-right">
           
+          {/* Mobile Only: Top Brand Logo Header */}
+          <div className="captiq-mobile-brand-bar">
+            <img src={captiqLogoImg} alt="ignitoCaptiq" className="brand-logo-img" />
+          </div>
+
           <div className="captiq-form-header-bar" />
 
           {/* Title Area */}
@@ -454,6 +455,12 @@ export default function LoginPage({
               </button>
             </form>
           )}
+
+          {/* Mobile Only: Trust & Security Strip */}
+          <div className="captiq-mobile-trust-strip">
+            <ShieldCheck size={14} className="mobile-trust-icon" />
+            <span>Enterprise-grade authentication • Verified Credentials</span>
+          </div>
 
         </div>
 

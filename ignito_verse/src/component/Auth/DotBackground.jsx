@@ -1,14 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 
 /**
- * Interactive Dot Background Canvas
+ * Professional Interactive Constellation / Particle Network Background
+ * 
  * Features:
- * - Fluid, high-DPI responsive dot grid
- * - Interactive mouse hover repulsion & spring physics
- * - Glowing multi-colored gradient on hover (Brand Purple #7f489f, Pink #e11d48, Navy Blue)
- * - Soft ambient breathing wave
- * - Interactive cursor spotlight halo & subtle connective lines
- * - Interactive click ripple wave
+ * - Fluid, ambient drifting particles in brand-harmonized executive tones
+ * - Elegant, subtle connective lines between nearby dots (network mesh)
+ * - Dynamic mouse hover interaction:
+ *    * Lines smoothly connect cursor to all nearby dots
+ *    * Dots illuminate and gently gravitate toward the cursor
+ *    * Enhanced connection lines between dots in the cursor's field
+ *    * Smooth luminous nexus node at cursor position
+ * - Crisp High-DPI canvas rendering with butter-smooth 60/120fps animation
+ * - Graceful window resize and tab visibility handling
  */
 export default function DotBackground() {
   const canvasRef = useRef(null);
@@ -25,9 +29,14 @@ export default function DotBackground() {
     let height = 0;
     let dpr = window.devicePixelRatio || 1;
 
-    // Grid configuration
-    const spacing = 32; // Dot spacing in px
-    let dots = [];
+    // Elegant brand color palette: Ignito Purple, Deep Indigo, Vivid Violet, Soft Slate
+    const COLOR_PALETTES = [
+      { r: 127, g: 72,  b: 159 }, // #7f489f (Ignito Brand Purple)
+      { r: 99,  g: 102, b: 241 }, // #6366f1 (Indigo Accent)
+      { r: 168, g: 85,  b: 247 }, // #a855f7 (Bright Violet)
+      { r: 59,  g: 130, b: 246 }, // #3b82f6 (Sapphire Blue)
+      { r: 217, g: 70,  b: 239 }, // #d946ef (Soft Magenta)
+    ];
 
     // Mouse tracking state
     const mouse = {
@@ -36,134 +45,124 @@ export default function DotBackground() {
       targetX: -9999,
       targetY: -9999,
       isHovered: false,
-      radius: 160 // Interaction radius in px
+      radius: 175, // Radius within which mouse connects to dots
+      intensity: 0 // Smooth transition factor for mouse entering/leaving
     };
 
-    // Ripples on click
-    const ripples = [];
+    let particles = [];
+    const maxConnectDist = 125; // Distance threshold for dot-to-dot line connections
 
-    class Dot {
-      constructor(originX, originY) {
-        this.originX = originX;
-        this.originY = originY;
-        this.x = originX;
-        this.y = originY;
-        this.vx = 0;
-        this.vy = 0;
-        this.baseRadius = 1.6;
-        this.radius = 1.6;
-        this.alpha = 0.18;
-        this.color = '127, 72, 159'; // Brand purple default
+    class Particle {
+      constructor(w, h, isInitial = false) {
+        this.reset(w, h, isInitial);
       }
 
-      update(time) {
-        // 1. Calculate ambient gentle wave offset
-        const wave = Math.sin(time * 0.002 + this.originX * 0.015 + this.originY * 0.015) * 1.5;
-        let targetX = this.originX;
-        let targetY = this.originY + wave;
+      reset(w, h, isInitial = false) {
+        this.x = isInitial ? Math.random() * w : (Math.random() > 0.5 ? -10 : w + 10);
+        this.y = isInitial ? Math.random() * h : Math.random() * h;
+        
+        // Very gentle, ambient drifting speed (smooth & non-distracting)
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 0.28 + Math.random() * 0.42;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
 
-        // 2. Mouse interaction (Repulsion / Elastic Displacement)
-        const dx = this.x - mouse.x;
-        const dy = this.y - mouse.y;
-        const dist = Math.hypot(dx, dy);
+        // Size & visual characteristics
+        this.baseRadius = 1.8 + Math.random() * 1.5;
+        this.radius = this.baseRadius;
+        this.baseAlpha = 0.35 + Math.random() * 0.25;
+        this.alpha = this.baseAlpha;
 
-        let hoverFactor = 0;
-        if (mouse.isHovered && dist < mouse.radius && dist > 0) {
-          const raw = 1 - dist / mouse.radius;
-          hoverFactor = raw * raw * (3 - 2 * raw); // Smooth ease-in-out
+        // Palette assignment
+        const palette = COLOR_PALETTES[Math.floor(Math.random() * COLOR_PALETTES.length)];
+        this.r = palette.r;
+        this.g = palette.g;
+        this.b = palette.b;
 
-          // Repulsive push away from cursor
-          const angle = Math.atan2(dy, dx);
-          const pushDistance = hoverFactor * 18;
-          targetX += Math.cos(angle) * pushDistance;
-          targetY += Math.sin(angle) * pushDistance;
-        }
+        // Hover reaction state
+        this.hoverEffect = 0;
+      }
 
-        // 3. Ripple shockwaves
-        for (let i = ripples.length - 1; i >= 0; i--) {
-          const r = ripples[i];
-          const rdx = this.x - r.x;
-          const rdy = this.y - r.y;
-          const rdist = Math.hypot(rdx, rdy);
-          const diff = Math.abs(rdist - r.currentRadius);
-          
-          if (diff < r.thickness) {
-            const rippleForce = (1 - diff / r.thickness) * (1 - r.currentRadius / r.maxRadius);
-            const rAngle = Math.atan2(rdy, rdx);
-            targetX += Math.cos(rAngle) * rippleForce * 14;
-            targetY += Math.sin(rAngle) * rippleForce * 14;
-            hoverFactor = Math.max(hoverFactor, rippleForce * 0.8);
-          }
-        }
-
-        // 4. Spring Physics (Hooke's Law with damping)
-        const spring = 0.12;
-        const friction = 0.82;
-        this.vx += (targetX - this.x) * spring;
-        this.vy += (targetY - this.y) * spring;
-        this.vx *= friction;
-        this.vy *= friction;
+      update(w, h) {
+        // Natural ambient drift
         this.x += this.vx;
         this.y += this.vy;
 
-        // 5. Dynamic Sizing & Colors based on proximity
-        if (hoverFactor > 0.01) {
-          this.radius = this.baseRadius + hoverFactor * 2.4;
-          this.alpha = 0.2 + hoverFactor * 0.75;
+        // Wrap around borders with soft margin
+        const margin = 20;
+        if (this.x < -margin) this.x = w + margin;
+        if (this.x > w + margin) this.x = -margin;
+        if (this.y < -margin) this.y = h + margin;
+        if (this.y > h + margin) this.y = -margin;
 
-          // Gradient color shifting: Pink/Crimson (#e11d48) near center -> Violet/Purple (#7f489f) -> Sapphire (#3b82f6)
-          if (hoverFactor > 0.6) {
-            this.color = '225, 29, 72'; // Ignito pink
-          } else if (hoverFactor > 0.3) {
-            this.color = '127, 72, 159'; // Ignito brand purple
+        // Mouse hover interaction: gentle magnetic attraction & brightening
+        if (mouse.intensity > 0.01 && mouse.x > -500) {
+          const dx = mouse.x - this.x;
+          const dy = mouse.y - this.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist < mouse.radius && dist > 1) {
+            const factor = (1 - dist / mouse.radius) * mouse.intensity;
+            this.hoverEffect += (factor - this.hoverEffect) * 0.15;
+
+            // Gentle, smooth magnetic pull toward cursor (subtle, non-jarring)
+            const pullForce = factor * 0.65;
+            this.x += (dx / dist) * pullForce;
+            this.y += (dy / dist) * pullForce;
           } else {
-            this.color = '59, 130, 246'; // Vivid sapphire
+            this.hoverEffect += (0 - this.hoverEffect) * 0.08;
           }
         } else {
-          this.radius = this.baseRadius;
-          this.alpha = 0.18;
-          this.color = '127, 72, 159';
+          this.hoverEffect += (0 - this.hoverEffect) * 0.08;
         }
+
+        // Dynamic size & alpha based on hover proximity
+        this.radius = this.baseRadius + this.hoverEffect * 1.8;
+        this.alpha = Math.min(0.9, this.baseAlpha + this.hoverEffect * 0.5);
       }
 
       draw(context) {
+        // Soft outer glow when hovered
+        if (this.hoverEffect > 0.08) {
+          context.beginPath();
+          context.arc(this.x, this.y, this.radius * 2.2, 0, Math.PI * 2);
+          context.fillStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${this.hoverEffect * 0.22})`;
+          context.fill();
+        }
+
+        // Main particle dot
         context.beginPath();
         context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        context.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+        context.fillStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${this.alpha})`;
         context.fill();
       }
     }
 
-    // Initialize/Rebuild grid on resize
-    function initGrid() {
+    // Initialize or re-populate particles based on screen dimensions
+    function initParticles() {
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
       width = rect.width;
       height = rect.height;
       dpr = window.devicePixelRatio || 1;
 
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      dots = [];
-      const cols = Math.ceil(width / spacing) + 1;
-      const rows = Math.ceil(height / spacing) + 1;
-      const offsetX = (width - (cols - 1) * spacing) / 2;
-      const offsetY = (height - (rows - 1) * spacing) / 2;
+      // Balanced density: ~85 particles on 1080p, clamped between 50 and 110
+      const area = width * height;
+      const targetCount = Math.min(115, Math.max(50, Math.floor(area / 16000)));
 
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const ox = offsetX + c * spacing;
-          const oy = offsetY + r * spacing;
-          dots.push(new Dot(ox, oy));
-        }
+      particles = [];
+      for (let i = 0; i < targetCount; i++) {
+        particles.push(new Particle(width, height, true));
       }
     }
 
-    initGrid();
+    initParticles();
 
-    // Mouse movement event listener
+    // Event listeners for fluid mouse and touch tracking
     const handleMouseMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       mouse.targetX = e.clientX - rect.left;
@@ -173,27 +172,8 @@ export default function DotBackground() {
 
     const handleMouseLeave = () => {
       mouse.isHovered = false;
-      mouse.targetX = -9999;
-      mouse.targetY = -9999;
     };
 
-    const handleClick = (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const cx = e.clientX - rect.left;
-      const cy = e.clientY - rect.top;
-      if (cx >= 0 && cx <= width && cy >= 0 && cy <= height) {
-        ripples.push({
-          x: cx,
-          y: cy,
-          currentRadius: 0,
-          maxRadius: 220,
-          thickness: 45,
-          speed: 6
-        });
-      }
-    };
-
-    // Touch event support for tablets / touchscreens
     const handleTouchMove = (e) => {
       if (e.touches && e.touches[0]) {
         const rect = canvas.getBoundingClientRect();
@@ -205,92 +185,122 @@ export default function DotBackground() {
 
     const handleTouchEnd = () => {
       mouse.isHovered = false;
-      mouse.targetX = -9999;
-      mouse.targetY = -9999;
     };
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('mouseleave', handleMouseLeave);
-    window.addEventListener('click', handleClick, { passive: true });
     window.addEventListener('touchmove', handleTouchMove, { passive: true });
     window.addEventListener('touchend', handleTouchEnd);
 
-    // Resize observer to handle dynamic viewport changes
+    // Dynamic resize observer for responsive canvas adjustments
     const resizeObserver = new ResizeObserver(() => {
-      initGrid();
+      initParticles();
     });
     resizeObserver.observe(canvas);
 
-    // Animation render loop
-    let lastTime = performance.now();
-    const render = (time) => {
-      // Smooth mouse interpolation for buttery motion
+    // Main 60fps render loop
+    const render = () => {
+      // Smooth interpolation for mouse movement and enter/leave transitions
       if (mouse.isHovered) {
-        mouse.x += (mouse.targetX - mouse.x) * 0.18;
-        mouse.y += (mouse.targetY - mouse.y) * 0.18;
+        mouse.x += (mouse.targetX - mouse.x) * 0.16;
+        mouse.y += (mouse.targetY - mouse.y) * 0.16;
+        mouse.intensity += (1 - mouse.intensity) * 0.12;
       } else {
-        mouse.x = mouse.targetX;
-        mouse.y = mouse.targetY;
+        mouse.intensity += (0 - mouse.intensity) * 0.08;
       }
 
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Draw subtle interactive cursor spotlight glow
-      if (mouse.isHovered && mouse.x > -500) {
-        const spotlight = ctx.createRadialGradient(
-          mouse.x, mouse.y, 0,
-          mouse.x, mouse.y, mouse.radius * 1.15
-        );
-        spotlight.addColorStop(0, 'rgba(127, 72, 159, 0.08)');
-        spotlight.addColorStop(0.5, 'rgba(99, 102, 241, 0.04)');
-        spotlight.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.fillStyle = spotlight;
-        ctx.beginPath();
-        ctx.arc(mouse.x, mouse.y, mouse.radius * 1.15, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      // 1. Draw connective lines between nearby dots (constellation mesh)
+      const pLen = particles.length;
+      for (let i = 0; i < pLen; i++) {
+        const p1 = particles[i];
+        p1.update(width, height);
 
-      // 2. Update ripples
-      for (let i = ripples.length - 1; i >= 0; i--) {
-        const r = ripples[i];
-        r.currentRadius += r.speed;
-        if (r.currentRadius > r.maxRadius) {
-          ripples.splice(i, 1);
-        }
-      }
+        for (let j = i + 1; j < pLen; j++) {
+          const p2 = particles[j];
+          const dx = p1.x - p2.x;
+          const dy = p1.y - p2.y;
+          const dist = Math.hypot(dx, dy);
 
-      // 3. Update & Draw dots
-      const activeDots = [];
-      for (let i = 0; i < dots.length; i++) {
-        const dot = dots[i];
-        dot.update(time);
-        dot.draw(ctx);
+          if (dist < maxConnectDist) {
+            // Ambient line opacity
+            const baseFactor = 1 - dist / maxConnectDist;
+            let lineAlpha = baseFactor * 0.18;
 
-        if (dot.alpha > 0.3) {
-          activeDots.push(dot);
-        }
-      }
+            // If either particle is near the active mouse, illuminate the connective line
+            const boost = Math.max(p1.hoverEffect, p2.hoverEffect);
+            if (boost > 0.05) {
+              lineAlpha += boost * 0.28;
+            }
 
-      // 4. Subtle connective constellation lines between active dots near cursor
-      const maxConnectDist = spacing * 1.45;
-      ctx.lineWidth = 0.8;
-      for (let i = 0; i < activeDots.length; i++) {
-        for (let j = i + 1; j < activeDots.length; j++) {
-          const d1 = activeDots[i];
-          const d2 = activeDots[j];
-          const ldx = d1.x - d2.x;
-          const ldy = d1.y - d2.y;
-          const lineDist = Math.hypot(ldx, ldy);
-
-          if (lineDist < maxConnectDist) {
-            const lineAlpha = (1 - lineDist / maxConnectDist) * Math.min(d1.alpha, d2.alpha) * 0.45;
-            ctx.strokeStyle = `rgba(127, 72, 159, ${lineAlpha})`;
             ctx.beginPath();
-            ctx.moveTo(d1.x, d1.y);
-            ctx.lineTo(d2.x, d2.y);
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = `rgba(127, 72, 159, ${lineAlpha})`;
+            ctx.lineWidth = 0.75 + boost * 0.45;
             ctx.stroke();
           }
         }
+      }
+
+      // 2. Dynamic Mouse Connections: On mouse hover, connect lines from cursor to dots
+      if (mouse.intensity > 0.02 && mouse.x > -500) {
+        // Draw soft ambient aura at cursor center
+        const cursorGlow = ctx.createRadialGradient(
+          mouse.x, mouse.y, 0,
+          mouse.x, mouse.y, mouse.radius * 0.95
+        );
+        cursorGlow.addColorStop(0, `rgba(127, 72, 159, ${0.12 * mouse.intensity})`);
+        cursorGlow.addColorStop(0.5, `rgba(99, 102, 241, ${0.05 * mouse.intensity})`);
+        cursorGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        ctx.beginPath();
+        ctx.arc(mouse.x, mouse.y, mouse.radius * 0.95, 0, Math.PI * 2);
+        ctx.fillStyle = cursorGlow;
+        ctx.fill();
+
+        // Connect cursor to every dot within hover radius
+        for (let i = 0; i < pLen; i++) {
+          const p = particles[i];
+          const dx = mouse.x - p.x;
+          const dy = mouse.y - p.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist < mouse.radius) {
+            const factor = (1 - dist / mouse.radius) * mouse.intensity;
+            const lineAlpha = factor * 0.65; // Crisp, visible, premium connection
+
+            // Elegant gradient line connecting cursor to dot
+            const lineGrad = ctx.createLinearGradient(mouse.x, mouse.y, p.x, p.y);
+            lineGrad.addColorStop(0, `rgba(168, 85, 247, ${lineAlpha})`);
+            lineGrad.addColorStop(1, `rgba(${p.r}, ${p.g}, ${p.b}, ${lineAlpha * 0.75})`);
+
+            ctx.beginPath();
+            ctx.moveTo(mouse.x, mouse.y);
+            ctx.lineTo(p.x, p.y);
+            ctx.strokeStyle = lineGrad;
+            ctx.lineWidth = 1.0 + factor * 0.8;
+            ctx.stroke();
+          }
+        }
+
+        // Draw central interactive cursor nexus node
+        ctx.beginPath();
+        ctx.arc(mouse.x, mouse.y, 3.2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(127, 72, 159, ${0.85 * mouse.intensity})`;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(mouse.x, mouse.y, 5.5, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(168, 85, 247, ${0.45 * mouse.intensity})`;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      }
+
+      // 3. Draw all dots on top of the lines for crisp visual depth
+      for (let i = 0; i < pLen; i++) {
+        particles[i].draw(ctx);
       }
 
       animationFrameId = requestAnimationFrame(render);
@@ -302,7 +312,6 @@ export default function DotBackground() {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseleave', handleMouseLeave);
-      window.removeEventListener('click', handleClick);
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
       resizeObserver.disconnect();

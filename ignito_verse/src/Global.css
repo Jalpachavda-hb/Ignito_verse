@@ -5258,6 +5258,14 @@ body.modal-open {
   box-shadow: -15px 0 35px rgba(5, 39, 101, 0.04);
 }
 
+.captiq-mobile-brand-bar {
+  display: none;
+}
+
+.captiq-mobile-trust-strip {
+  display: none;
+}
+
 .captiq-form-header-bar {
   width: 32px;
   height: 3.5px;
@@ -5622,31 +5630,254 @@ body.modal-open {
   margin-top: 4px;
 }
 
-/* Responsive Handling */
-@media (max-width: 1120px) {
+/* ==========================================================================
+   IGNITOCAPTIQ FULLY RESPONSIVE DESIGN (Desktop, Laptop, Tablet, Mobile)
+   ========================================================================== */
+
+/* 1. Large Laptops / Small Desktops (max-width: 1200px) */
+@media (max-width: 1200px) {
   .captiq-desk-card {
-    flex-direction: column;
-    padding: 36px 28px;
-    background-size: cover;
-    background-position: top center;
-    gap: 32px;
+    max-width: 1040px;
+    min-height: 550px;
   }
 
-  .captiq-desk-col-left,
+  .captiq-desk-col-left {
+    width: 300px;
+    padding: 36px 0 36px 36px;
+  }
+
   .captiq-desk-col-right {
+    width: 400px;
+    padding: 38px 36px;
+  }
+
+  .captiq-people-title {
+    font-size: 1.95rem;
+  }
+}
+
+/* 2. Tablets Landscape (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .captiq-desk-viewport {
+    padding: 24px 20px;
+  }
+
+  .captiq-desk-card {
+    max-width: 900px;
+    min-height: 520px;
+    background-position: 45% center;
+  }
+
+  .captiq-desk-col-left {
+    width: 270px;
+    padding: 30px 0 30px 28px;
+  }
+
+  .captiq-desk-col-right {
+    width: 370px;
+    padding: 32px 28px;
+  }
+
+  .captiq-people-title {
+    font-size: 1.75rem;
+  }
+
+  .captiq-right-title {
+    font-size: 1.95rem;
+  }
+}
+
+/* 3. Tablets Portrait & Mobile (< 880px): Switch to Clean Focused Card Layout */
+@media (max-width: 880px) {
+  .captiq-desk-viewport {
+    padding: 24px 16px 32px 16px;
+    min-height: 100dvh;
+    justify-content: flex-start;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Centered top bar matching mobile card width */
+  .captiq-desk-top-bar {
+    max-width: 460px;
     width: 100%;
-    max-width: 440px;
+    margin: 0 auto 12px auto;
+    padding: 0 4px;
+    box-sizing: border-box;
+  }
+
+  /* Single cohesive mobile card: remove stretched desk image, use pure clean white card */
+  .captiq-desk-card {
+    flex-direction: column;
+    max-width: 460px;
+    width: 100%;
+    min-height: auto;
+    background-image: none !important; /* Disables stretched photo */
+    background: #ffffff !important;
+    border-radius: 28px;
+    border: 1px solid rgba(226, 217, 243, 0.9);
+    box-shadow: 0 16px 45px -10px rgba(5, 39, 101, 0.1), 0 2px 10px rgba(0, 0, 0, 0.02);
     margin: 0 auto;
+    overflow: hidden;
+  }
+
+  /* Hide the desktop marketing left column on mobile to eliminate overlap & huge scrolling */
+  .captiq-desk-col-left {
+    display: none !important;
   }
 
   .captiq-desk-center-spacer {
-    display: none;
+    display: none !important;
   }
 
+  /* Right column expands to full card with clean mobile styling */
+  .captiq-desk-col-right {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 36px 30px 30px 30px;
+    border-radius: 28px;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  /* Show brand logo prominently at the top of the mobile card */
+  .captiq-mobile-brand-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: 22px;
+  }
+
+  .captiq-mobile-brand-bar .brand-logo-img {
+    height: 40px;
+    width: auto;
+    max-width: 190px;
+    object-fit: contain;
+  }
+
+  /* Headings */
+  .captiq-desk-form-heading {
+    margin-bottom: 20px;
+  }
+
+  .captiq-right-title {
+    font-size: 2rem;
+  }
+
+  .captiq-right-sub {
+    font-size: 0.88rem;
+  }
+
+  /* Show trust & security footer on mobile */
+  .captiq-mobile-trust-strip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid #f1f5f9;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #64748b;
+    text-align: center;
+  }
+
+  .captiq-mobile-trust-strip .mobile-trust-icon {
+    color: #af4bb8;
+    flex-shrink: 0;
+  }
+
+  /* Slogan placed neatly below card */
   .captiq-bottom-right-slogan {
     position: static;
-    margin-top: 20px;
+    margin: 22px auto 8px auto;
     align-items: center;
+    text-align: center;
+    display: flex;
+  }
+
+  .slogan-pink-bar {
+    margin-top: 4px;
+  }
+}
+
+/* 4. Small Mobile Phones (max-width: 480px, e.g. iPhone SE, Galaxy) */
+@media (max-width: 480px) {
+  .captiq-desk-viewport {
+    padding: 12px 10px 20px 10px;
+  }
+
+  .captiq-desk-card {
+    border-radius: 22px;
+  }
+
+  .captiq-desk-col-right {
+    padding: 26px 18px 22px 18px;
+    border-radius: 22px;
+  }
+
+  .captiq-mobile-brand-bar {
+    margin-bottom: 18px;
+  }
+
+  .captiq-mobile-brand-bar .brand-logo-img {
+    height: 35px;
+  }
+
+  .captiq-right-title {
+    font-size: 1.75rem;
+  }
+
+  .captiq-right-sub {
+    font-size: 0.82rem;
+  }
+
+  .method-switcher-row {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .method-pill-btn {
+    height: 40px;
+    font-size: 0.86rem;
+    border-radius: 8px;
+  }
+
+  .captiq-styled-input {
+    height: 44px;
+    font-size: 0.88rem;
+    padding: 8px 12px 8px 38px;
+  }
+
+  .field-icon-lead {
+    left: 11px;
+  }
+
+  .captiq-primary-submit-btn {
+    height: 46px;
+    font-size: 0.92rem;
+    border-radius: 10px;
+  }
+
+  /* 4-digit OTP box sizing on very small screens */
+  .captiq-otp-4box-row {
+    gap: 8px;
+    margin: 10px 0 14px 0;
+  }
+
+  .captiq-otp-digit-box {
+    height: 52px;
+    font-size: 1.4rem;
+    border-radius: 11px;
+  }
+
+  .verify-top-subrow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 8px;
   }
 }
 
