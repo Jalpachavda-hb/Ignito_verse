@@ -617,7 +617,7 @@ export default function ProfilePage({
                 <div className="profile-meta-chips-row-ss">
                   <span className="user-pill-chip-ss">
                     <GraduationCap size={14} color="#0284c7" />
-                    <span>{user?.role || 'Student Learner'}</span>
+                    <span>{user?.role || 'Employee Learner'}</span>
                   </span>
                   <span className="user-pill-chip-ss">
                     <Building2 size={13} color="#64748b" />

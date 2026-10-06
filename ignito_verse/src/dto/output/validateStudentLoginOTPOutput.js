@@ -76,7 +76,7 @@ export function parseValidateStudentLoginOTPOutput(rawJson = {}, status = 200) {
       fullName: displayName,
       email: email,
       mobileNumber: mobileNumber,
-      role: 'Student Learner',
+      role: 'Employee Learner',
       avatar: profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'
     } : null,
     error: isSuccess ? null : (message || errorDescription || 'OTP Validation Failed')

@@ -6956,6 +6956,7 @@ body.modal-open {
   display: flex;
   flex-direction: column;
   padding-bottom: 6px;
+  width: 100%;
 }
 
 .mc-hero-flex-layout {
@@ -6969,6 +6970,7 @@ body.modal-open {
 .mc-hero-text-column {
   flex: 1;
   min-width: 0;
+  width: 100%;
 }
 
 .mc-hero-video-column {
@@ -7069,17 +7071,21 @@ body.modal-open {
 }
 
 .mc-hero-tagline-text {
-  font-size: 0.92rem;
-  line-height: 1.6;
+  font-size: 0.94rem;
+  line-height: 1.68;
   color: #475569;
   margin: 0;
-  max-width: 720px;
+  width: 100%;
+  max-width: 100%;
 }
 
+.mc-hero-tagline-text .mc-description-text-stack,
 .mc-hero-tagline-text .mc-rich-html-content,
 .mc-hero-tagline-text p {
-  font-size: 0.92rem;
-  line-height: 1.62;
+  width: 100%;
+  max-width: 100%;
+  font-size: 0.94rem;
+  line-height: 1.68;
   color: #475569;
   margin: 0 0 10px 0;
 }
