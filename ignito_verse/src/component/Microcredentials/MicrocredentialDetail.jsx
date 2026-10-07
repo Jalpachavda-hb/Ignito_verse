@@ -52,6 +52,7 @@ import {
   getMicrocredentialLiveMeetingsByCourse
 } from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
+import { formatDate } from '../../utils/dateFormatter';
 
 export default function MicrocredentialDetail({
   course: initialCourse,
@@ -1219,7 +1220,7 @@ export default function MicrocredentialDetail({
                                             <Star key={i} size={13} className="star-icon-filled" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
                                           ))}
                                         </div>
-                                        <span className="review-timestamp">• {rev.createdOnText || 'Recently'}</span>
+                                        <span className="review-timestamp">• {formatDate(rev.createdOn || rev.createdOnText) || 'Recently'}</span>
                                       </div>
                                     </div>
                                   </div>
@@ -1585,7 +1586,7 @@ export default function MicrocredentialDetail({
 
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#475569', fontWeight: 600 }}>
                                 <Clock size={14} style={{ color: '#0284C7', flexShrink: 0 }} />
-                                <span>{meeting.startDateTime || meeting.startDate || 'Schedule TBA'}</span>
+                                <span>{formatDate(meeting.startDateTime || meeting.startDate) || 'Schedule TBA'}</span>
                               </div>
                             </div>
 

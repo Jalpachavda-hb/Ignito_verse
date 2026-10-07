@@ -1,3 +1,5 @@
+import { formatDate, formatDateTime } from '../../utils/dateFormatter';
+
 /**
  * DTO Output parser for GetStudentMicrocredentialEvents API
  * POST /api/StudentMicrocredentialCalendarAPI/GetStudentMicrocredentialEvents
@@ -18,10 +20,26 @@ export function parseGetStudentMicrocredentialEventsOutput(rawJson = {}, status 
         const isMeet = srcRaw.includes('MEET');
         const isGoogleCal = srcRaw.includes('CALENDAR') || (!isZoom && !isMeet);
 
-        const startRaw = item.startDateTime || item.StartDateTime || '';
-        const endRaw = item.endDateTime || item.EndDateTime || '';
-        const startIso = startRaw ? startRaw.replace(' ', 'T') : '';
-        const endIso = endRaw ? endRaw.replace(' ', 'T') : '';
+        const startRaw = item.startDateTime || item.StartDateTime || item.startDate || item.StartDate || '';
+        const endRaw = item.endDateTime || item.EndDateTime || item.endDate || item.EndDate || '';
+        const startTime = item.startTime || item.StartTime || '';
+        const endTime = item.endTime || item.EndTime || '';
+
+        const finalStartRaw = (startRaw && startTime && !startRaw.includes(':'))
+            ? `${startRaw} ${startTime}`
+            : (startRaw || startTime);
+        const finalEndRaw = (endRaw && endTime && !endRaw.includes(':'))
+            ? `${endRaw} ${endTime}`
+            : (endRaw || endTime);
+
+        const startIso = finalStartRaw ? finalStartRaw.replace(' ', 'T') : '';
+        const endIso = finalEndRaw ? finalEndRaw.replace(' ', 'T') : '';
+
+        const createdRaw = item.createdDate || item.CreatedDate || item.createdDateTime || item.CreatedDateTime || item.createDate || item.CreateDate || item.creationDate || item.CreationDate || item.createdOn || item.CreatedOn || finalStartRaw;
+        const createdTime = item.createdTime || item.CreatedTime || '';
+        const finalCreatedRaw = (createdRaw && createdTime && !createdRaw.includes(':'))
+            ? `${createdRaw} ${createdTime}`
+            : (createdRaw || createdTime);
 
         return {
             id: item.eventId || item.EventId || `EVENT_${idx + 1}`,
@@ -30,12 +48,12 @@ export function parseGetStudentMicrocredentialEventsOutput(rawJson = {}, status 
             microcredentialCourseName: item.microcredentialCourseName || item.MicrocredentialCourseName || '',
             title: item.title || item.Title || 'Event',
             description: item.description || item.Description || '',
-            startDateTime: startRaw,
-            endDateTime: endRaw,
+            startDateTime: finalStartRaw,
+            endDateTime: finalEndRaw,
             startDate: startIso,
             endDate: endIso,
-            displayStart: startRaw,
-            displayEnd: endRaw,
+            displayStart: formatDateTime(finalStartRaw) || formatDate(finalStartRaw),
+            displayEnd: formatDateTime(finalEndRaw) || formatDate(finalEndRaw),
             sourceType: isZoom ? 'zoom' : (isMeet ? 'google_meet' : 'google_calendar'),
             rawSourceType: srcRaw,
             sourceLabel: isZoom ? 'Zoom Meeting' : (isMeet ? 'Google Meet' : 'Google Calendar'),
@@ -48,7 +66,8 @@ export function parseGetStudentMicrocredentialEventsOutput(rawJson = {}, status 
             liveStatus: item.status || item.Status || 'Upcoming',
             programName: item.microcredentialCourseName || item.MicrocredentialCourseName || '',
             programSub: item.description || item.Description || item.title || '',
-            createdDate: startRaw,
+            createdRaw: finalCreatedRaw,
+            createdDate: formatDateTime(finalCreatedRaw) || formatDate(finalCreatedRaw),
             color: isZoom ? '#2563eb' : (isMeet ? '#f59e0b' : '#10b981')
         };
     });

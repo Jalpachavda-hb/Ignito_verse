@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Search, ShieldCheck, CheckCircle2, QrCode, AlertCircle, Building2, Calendar, Award, User, Sparkles } from 'lucide-react';
 import { sampleVerifiedCertificates } from '../../data/microcredentials';
+import { formatDate } from '../../utils/dateFormatter';
 
 export default function CertificateVerification() {
   const [certIdInput, setCertIdInput] = useState('IGN-JAVA-8821');
@@ -129,7 +130,7 @@ export default function CertificateVerification() {
                     <div className="meta-block">
                       <span className="meta-lbl">Date of Issue</span>
                       <strong className="meta-val">
-                        <Calendar size={14} /> {verifiedResult.issueDate}
+                        <Calendar size={14} /> {formatDate(verifiedResult.issueDate)}
                       </strong>
                     </div>
 

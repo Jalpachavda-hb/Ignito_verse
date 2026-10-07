@@ -1,3 +1,5 @@
+import { formatDate } from '../../utils/dateFormatter';
+
 export function parseGetMicrocredentialMeetingRecordingsOutput(rawJson = {}, status = 200) {
     const isHttpOk = status >= 200 && status < 300;
     const rawList = Array.isArray(rawJson?.recordings)
@@ -39,7 +41,7 @@ export function parseGetMicrocredentialMeetingRecordingsOutput(rawJson = {}, sta
             microcredentialCourseName: item.microcredentialCourseName || item.MicrocredentialCourseName || '',
             title: item.title || item.Title || 'Course Meeting Recording',
             description: item.description || item.Description || '',
-            meetingDate: item.meetingDate || item.MeetingDate || item.startDateTime || item.StartDateTime || '',
+            meetingDate: formatDate(item.meetingDate || item.MeetingDate || item.startDateTime || item.StartDateTime || ''),
             duration: item.duration || item.Duration || '',
             sourceType: String(item.sourceType || item.SourceType || 'GOOGLE_MEET').toUpperCase(),
             mainUrl: item.mainUrl || item.MainUrl || '',

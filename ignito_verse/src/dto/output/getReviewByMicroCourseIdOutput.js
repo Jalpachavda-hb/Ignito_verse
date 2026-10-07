@@ -1,3 +1,5 @@
+import { formatDate } from '../../utils/dateFormatter';
+
 /**
  * OUTPUT PARAMETER FILE: Get Review By Micro Course Id Output DTO Parser
  * Parses response data for GetReviewByMicroCourseId POST request.
@@ -68,8 +70,8 @@ export function parseGetReviewByMicroCourseIdOutput(rawJson = {}, status = 200) 
                 reviewDescription: item?.reviewDescription || item?.ReviewDescription || item?.description || item?.Description || '',
                 studentName: item?.studentName || item?.StudentName || item?.applicantFullName || item?.ApplicantFullName || item?.fullName || item?.FullName || '',
                 studentProfileImage: item?.studentProfileImage || item?.StudentProfileImage || item?.profileImage || item?.ProfileImage || '',
-                createdOnText: item?.createdOnText || item?.CreatedOnText || '',
-                createdOn: item?.createdOn || item?.CreatedOn || '',
+                createdOnText: formatDate(item?.createdOnText || item?.CreatedOnText || item?.createdOn || item?.CreatedOn || ''),
+                createdOn: formatDate(item?.createdOn || item?.CreatedOn || ''),
                 isLike: isLikeBool,
                 isLiked: isLikeBool,
                 isReviewLikedByStudent: isLikeBool,

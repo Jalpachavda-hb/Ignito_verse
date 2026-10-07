@@ -37,6 +37,7 @@ import {
   QUESTION_TYPES
 } from '../../services/QuizServices';
 import './quiz.css';
+import { formatDate } from '../../utils/dateFormatter';
 
 export default function QuizPage({
   course = null,
@@ -818,7 +819,7 @@ export default function QuizPage({
                             Attempt #{item.attemptNumber || idx + 1}
                           </span>
                         </td>
-                        <td>{item.attemptDate || 'Completed'}</td>
+                        <td>{formatDate(item.attemptDate, 'Completed')}</td>
                         <td>
                           <strong>{item.score}</strong> / {item.totalMarks || 100}
                         </td>

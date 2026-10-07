@@ -6,6 +6,8 @@
  * @param {number} status - HTTP status code
  * @returns {object} Formatted output DTO
  */
+import { formatDate } from '../../utils/dateFormatter';
+
 export function parseGetMicrocredentialCourseDetailOutput(rawJson = {}, status = 200) {
     const isHttpOk = status >= 200 && status < 300;
     const isSuccess = Boolean(rawJson?.isSuccess ?? rawJson?.IsSuccess ?? isHttpOk);
@@ -38,7 +40,7 @@ export function parseGetMicrocredentialCourseDetailOutput(rawJson = {}, status =
         streamName: rawJson?.streamName || rawJson?.StreamName || '',
         professorName: rawJson?.professorName || rawJson?.ProfessorName || '',
         profileImage: rawJson?.profileImage || rawJson?.ProfileImage || '',
-        updatedOn: rawJson?.updatedOn || rawJson?.UpdatedOn || '',
+        updatedOn: formatDate(rawJson?.updatedOn || rawJson?.UpdatedOn || ''),
         materialIncludeOutputList: rawJson?.materialIncludeOutputList || rawJson?.MaterialIncludeOutputList || [],
         microCourseLearnOutputList: rawJson?.microCourseLearnOutputList || rawJson?.MicroCourseLearnOutputList || [],
         encryptedMicrocredentialCourseId: rawJson?.encryptedMicrocredentialCourseId || rawJson?.EncryptedMicrocredentialCourseId || '',

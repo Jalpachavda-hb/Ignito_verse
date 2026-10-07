@@ -1,3 +1,5 @@
+import { formatDate } from '../../utils/dateFormatter';
+
 /**
  * OUTPUT PARAMETER FILE: Get Microcredential Quiz Student Attempt List Output DTO Parser
  * Parses response data for GetMicrocredentialQuizStudentAttemptList POST request.
@@ -20,7 +22,7 @@ export function parseGetMicrocredentialQuizStudentAttemptListOutput(rawJson = {}
         studentId: item?.studentId ?? item?.StudentId ?? 0,
         attemptNumber: item?.attemptNumber ?? item?.AttemptNumber ?? item?.microcredentialQuizAttemptNumber ?? item?.MicrocredentialQuizAttemptNumber ?? 0,
         microcredentialQuizAttemptNumber: item?.microcredentialQuizAttemptNumber ?? item?.MicrocredentialQuizAttemptNumber ?? item?.attemptNumber ?? 0,
-        attemptDate: item?.attemptDate || item?.AttemptDate || '',
+        attemptDate: formatDate(item?.attemptDate || item?.AttemptDate || ''),
         score: item?.score ?? item?.Score ?? 0,
         totalPoints: item?.totalPoints ?? item?.TotalPoints ?? item?.totalMarks ?? item?.TotalMarks ?? 0,
         totalMarks: item?.totalMarks ?? item?.TotalMarks ?? item?.totalPoints ?? item?.TotalPoints ?? 0,

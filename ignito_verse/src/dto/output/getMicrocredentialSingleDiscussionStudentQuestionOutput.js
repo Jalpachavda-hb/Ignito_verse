@@ -1,3 +1,5 @@
+import { formatDate } from '../../utils/dateFormatter';
+
 /**
  * OUTPUT PARAMETER FILE: Get Microcredential Single Discussion Student Question Output DTO Parser
  * Parses response data for GetMicrocredentialSingleDiscussionStudentQuestion POST request.
@@ -20,7 +22,7 @@ export function parseGetMicrocredentialSingleDiscussionStudentQuestionOutput(raw
             question: item?.question || item?.Question || '',
             microStudentsendDocument: item?.microStudentsendDocument || item?.MicroStudentsendDocument || '',
             type: item?.type || item?.Type || '',
-            createdOn: item?.createdOn || item?.CreatedOn || ''
+            createdOn: formatDate(item?.createdOn || item?.CreatedOn || '')
         }))
         : [];
 

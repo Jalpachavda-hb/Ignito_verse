@@ -1,3 +1,5 @@
+import { formatDate } from '../../utils/dateFormatter';
+
 /**
  * OUTPUT PARAMETER FILE: Micro Course Topic List Output DTO Parser
  * Parses response data for MicroCourseTopicList POST request.
@@ -17,7 +19,7 @@ export function parseMicroCourseTopicListOutput(rawJson = {}, status = 200) {
             microcredentialCourseId: item?.microcredentialCourseId ?? item?.MicrocredentialCourseId ?? 0,
             microcredentialCourseName: item?.microcredentialCourseName || item?.MicrocredentialCourseName || '',
             uploadMicroDocument: item?.uploadMicroDocument || item?.UploadMicroDocument || '',
-            updatedOn: item?.updatedOn || item?.UpdatedOn || '',
+            updatedOn: formatDate(item?.updatedOn || item?.UpdatedOn || ''),
             streamName: item?.streamName || item?.StreamName || ''
         }))
         : [];

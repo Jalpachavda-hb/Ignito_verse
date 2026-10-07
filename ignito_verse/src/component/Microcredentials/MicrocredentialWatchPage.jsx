@@ -68,6 +68,7 @@ import {
 } from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
 import QuizAttemptDetailsModal from '../modals/QuizAttemptDetailsModal';
+import { formatDate } from '../../utils/dateFormatter';
 
 // Helpers for Video duration & YouTube formatting
 function formatDuration(sec) {
@@ -525,11 +526,27 @@ export default function MicrocredentialWatchPage({
       const res = await getMicroManyDiscussionQuestion(courseId, studentId);
       const qList = res?.microDiscussionQuestions || res?.rawData?.microDiscussionQuestions || [];
       if (Array.isArray(qList) && qList.length > 0) {
-        setDiscussionQuestions(qList);
-        // Automatically fetch replies for all questions so they are shown immediately outside
+        // Deduplicate questions to prevent duplicate questions appearing twice
+        const seen = new Set();
+        const uniqueQuestions = [];
         qList.forEach(q => {
-          if (q.microCourseDiscussionQuestionId) {
-            fetchQuestionReplies(q.microCourseDiscussionQuestionId);
+          const qId = q.microCourseDiscussionQuestionId || q.MicroCourseDiscussionQuestionId || 0;
+          const idKey = Number(qId) > 0 ? `id_${qId}` : null;
+          const textKey = `${String(q.studentName || q.studentId || '').trim().toLowerCase()}:::${String(q.question || '').trim().toLowerCase()}:::${String(q.createdOn || '').trim().toLowerCase()}`;
+
+          if ((!idKey || !seen.has(idKey)) && !seen.has(textKey)) {
+            if (idKey) seen.add(idKey);
+            seen.add(textKey);
+            uniqueQuestions.push(q);
+          }
+        });
+
+        setDiscussionQuestions(uniqueQuestions);
+        // Automatically fetch replies for all questions so they are shown immediately outside
+        uniqueQuestions.forEach(q => {
+          const qId = q.microCourseDiscussionQuestionId || q.MicroCourseDiscussionQuestionId;
+          if (qId) {
+            fetchQuestionReplies(qId);
           }
         });
       } else {
@@ -599,11 +616,26 @@ export default function MicrocredentialWatchPage({
     try {
       setLoadingRepliesMap(prev => ({ ...prev, [questionId]: true }));
       const res = await getManyMicroCourseDiscussionQuestionReply(questionId);
-      if (res && res.success && Array.isArray(res.getMicroManyDiscussionQuestionReplay)) {
-        setQuestionRepliesMap(prev => ({ ...prev, [questionId]: res.getMicroManyDiscussionQuestionReplay }));
-      } else {
-        setQuestionRepliesMap(prev => ({ ...prev, [questionId]: [] }));
-      }
+      const rawReplies = (res && res.success && Array.isArray(res.getMicroManyDiscussionQuestionReplay))
+        ? res.getMicroManyDiscussionQuestionReplay
+        : [];
+
+      // Deduplicate replies to prevent duplicate replies appearing twice
+      const seenReplies = new Set();
+      const uniqueReplies = [];
+      rawReplies.forEach(r => {
+        const rId = r.rawReplyId || r.microCourseDiscussionQuestionReplyId || r.MicroCourseDiscussionQuestionReplyId || 0;
+        const idKey = Number(rId) > 0 ? `id_${rId}` : null;
+        const textKey = `${String(r.studentName || r.professorName || '').trim().toLowerCase()}:::${String(r.reply || '').trim().toLowerCase()}:::${String(r.createdOn || '').trim().toLowerCase()}`;
+
+        if ((!idKey || !seenReplies.has(idKey)) && !seenReplies.has(textKey)) {
+          if (idKey) seenReplies.add(idKey);
+          seenReplies.add(textKey);
+          uniqueReplies.push(r);
+        }
+      });
+
+      setQuestionRepliesMap(prev => ({ ...prev, [questionId]: uniqueReplies }));
     } catch (err) {
       console.error(`Error fetching replies for question ${questionId}:`, err);
       setQuestionRepliesMap(prev => ({ ...prev, [questionId]: [] }));
@@ -2095,7 +2127,7 @@ export default function MicrocredentialWatchPage({
                                   {item.question}
                                 </div>
                               </div>
-                              {item.createdOn && <span style={{ fontSize: '0.72rem', color: '#94a3b8', flexShrink: 0, lineHeight: '24px' }}>{item.createdOn}</span>}
+                              {item.createdOn && <span style={{ fontSize: '0.72rem', color: '#94a3b8', flexShrink: 0, lineHeight: '24px' }}>{formatDate(item.createdOn)}</span>}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                               <span style={{ width: '24px', height: '24px', minWidth: '24px', background: '#00385E', color: '#ffffff', fontSize: '0.64rem', fontWeight: 800, borderRadius: '6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -2165,10 +2197,65 @@ export default function MicrocredentialWatchPage({
                 <button
                   type="button"
                   className="forum-tab-btn active"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#00385E', borderColor: '#00385E', color: '#ffffff', padding: '8px 18px', borderRadius: '8px', fontWeight: '700', fontSize: '0.9rem', cursor: 'pointer' }}
+                  onClick={() => fetchDiscussionQuestions()}
+                  title="Click to reload discussion questions from the API"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    background: '#f0f7fc',
+                    border: '1.5px solid #c9dfef',
+                    color: '#00385E',
+                    padding: '8px 18px',
+                    borderRadius: '10px',
+                    fontWeight: '700',
+                    fontSize: '0.92rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 3px rgba(0, 56, 94, 0.05)'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = '#e0f2fe';
+                    e.currentTarget.style.borderColor = '#93c5fd';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = '#f0f7fc';
+                    e.currentTarget.style.borderColor = '#c9dfef';
+                  }}
                 >
-                  <Users size={16} />
+                  <div style={{
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '6px',
+                    background: '#e0f2fe',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#0284c7'
+                  }}>
+                    <Users size={15} />
+                  </div>
                   <span>Group Discussion</span>
+                  {activeQuestions.length > 0 && (
+                    <span
+                      style={{
+                        background: '#00385E',
+                        color: '#ffffff',
+                        fontSize: '0.72rem',
+                        fontWeight: '800',
+                        padding: '2px 8px',
+                        borderRadius: '10px',
+                        marginLeft: '2px'
+                      }}
+                    >
+                      {activeQuestions.length}
+                    </span>
+                  )}
+                  {loadingQuestions ? (
+                    <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite', marginLeft: '4px', color: '#0284c7' }} />
+                  ) : (
+                    <RefreshCw size={12} style={{ color: '#94a3b8', marginLeft: '4px', opacity: 0.7 }} />
+                  )}
                 </button>
 
                 <button
@@ -2271,7 +2358,7 @@ export default function MicrocredentialWatchPage({
                           </h4>
                           <span className="post-timestamp" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#94a3b8' }}>
                             <Clock size={12} />
-                            <span>Posted {q.createdOn || 'recently'}</span>
+                            <span>Posted {formatDate(q.createdOn) || 'recently'}</span>
                           </span>
                         </div>
                       </div>
@@ -2356,7 +2443,12 @@ export default function MicrocredentialWatchPage({
                           }}
                         >
                           <MessageSquare size={13} />
-                          <span>{q.replyCount || (replies ? replies.length : 0) || 0} {Number(q.replyCount || (replies ? replies.length : 0) || 0) === 1 ? 'reply' : 'replies'}</span>
+                          <span>
+                            {(() => {
+                              const count = (replies && replies.length > 0) ? replies.length : (Number(q.replyCount) || 0);
+                              return `${count} ${count === 1 ? 'reply' : 'replies'}`;
+                            })()}
+                          </span>
                         </div>
                       </div>
 
@@ -2391,7 +2483,7 @@ export default function MicrocredentialWatchPage({
                                 </div>
                                 <span className="prof-timestamp" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.74rem', color: '#94a3b8' }}>
                                   <Clock size={11} />
-                                  <span>{r.createdOn || 'recently'}</span>
+                                  <span>{formatDate(r.createdOn) || 'recently'}</span>
                                 </span>
                               </div>
                               <p className="prof-reply-text" style={{ fontSize: '0.86rem', lineHeight: '1.55', color: '#334155', margin: 0 }}>

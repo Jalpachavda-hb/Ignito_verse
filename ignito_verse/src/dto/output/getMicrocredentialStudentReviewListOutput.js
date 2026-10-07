@@ -1,3 +1,5 @@
+import { formatDate } from '../../utils/dateFormatter';
+
 /**
  * OUTPUT PARAMETER FILE: Get Microcredential Student Review List Output DTO Parser
  * Parses response data for GetMicrocredentialStudentReviewList POST request.
@@ -19,7 +21,7 @@ export function parseGetMicrocredentialStudentReviewListOutput(rawJson = {}, sta
             applicantFullName: item?.applicantFullName || item?.ApplicantFullName || '',
             reviewInStar: item?.reviewInStar || item?.ReviewInStar || '',
             reviewDescription: item?.reviewDescription || item?.ReviewDescription || '',
-            createdOn: item?.createdOn || item?.CreatedOn || ''
+            createdOn: formatDate(item?.createdOn || item?.CreatedOn || '')
         }))
         : [];
 

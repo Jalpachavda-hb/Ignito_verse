@@ -352,36 +352,62 @@
 
 .calendar-weekdays-row {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  background: #f8fafc;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  background: #e2e8f0;
+  gap: 1px;
   border-bottom: 1px solid #e2e8f0;
   text-align: center;
 }
 
 .calendar-weekday-cell {
+  background: #f8fafc;
+  min-width: 0;
   padding: 0.75rem 0.5rem;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 800;
-  color: #64748b;
+  color: #00385E;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.weekday-name-full {
+  display: inline;
+}
+
+.weekday-name-short {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .weekday-name-full {
+    display: none;
+  }
+  .weekday-name-short {
+    display: inline;
+  }
 }
 
 .calendar-days-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   background: #e2e8f0;
   gap: 1px;
 }
 
 .calendar-day-cell {
   background: #ffffff;
+  min-width: 0;
   min-height: 108px;
   padding: 0.5rem;
   display: flex;
   flex-direction: column;
   transition: background 0.15s ease;
   position: relative;
+  overflow: hidden;
 }
 
 .calendar-day-cell:hover {
@@ -432,36 +458,56 @@
 }
 
 .calendar-event-pill {
-  padding: 0.25rem 0.45rem;
+  padding: 0.3rem 0.45rem;
   border-radius: 6px;
-  font-size: 0.72rem;
-  font-weight: 600;
   color: #ffffff;
   background: #1e293b;
   display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  white-space: nowrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
   overflow: hidden;
-  text-overflow: ellipsis;
   cursor: pointer;
-  transition: transform 0.1s ease, opacity 0.15s ease;
+  transition: transform 0.12s ease, opacity 0.15s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .calendar-event-pill:hover {
   opacity: 0.92;
-  transform: scale(1.02);
+  transform: translateY(-1px);
+}
+
+.pill-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.25rem;
 }
 
 .pill-time {
   font-weight: 800;
+  font-size: 0.68rem;
+  letter-spacing: 0.3px;
+  opacity: 0.95;
   flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.pill-status-check {
+  font-size: 0.65rem;
+  opacity: 0.85;
 }
 
 .pill-title {
+  width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.72rem;
+  line-height: 1.25;
 }
 
 /* --------------------------------------------------------------------------

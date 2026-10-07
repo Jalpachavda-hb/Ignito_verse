@@ -804,7 +804,7 @@ export const sampleVerifiedCertificates = {
     organization: 'Tata Consultancy Services (TCS)',
     courseTitle: 'Java Enterprise Architecture & Spring Boot',
     credentialTitle: 'Certified Java Enterprise Microservice Specialist (CJEMS)',
-    issueDate: 'August 14, 2026',
+    issueDate: '14-08-2026',
     score: '94%',
     status: 'Verified & Active',
     qrCodeId: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=IGN-JAVA-8821'
@@ -815,7 +815,7 @@ export const sampleVerifiedCertificates = {
     organization: 'Hitachi Digital Services',
     courseTitle: 'Workplace Stress Management & Executive Resilience',
     credentialTitle: 'Certified Workplace Mental Resilience Practitioner (CWMRP)',
-    issueDate: 'August 22, 2026',
+    issueDate: '22-08-2026',
     score: '98%',
     status: 'Verified & Active',
     qrCodeId: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=IGN-STR-4412'
@@ -826,7 +826,7 @@ export const sampleVerifiedCertificates = {
     organization: 'Infosys Limited',
     courseTitle: 'Python for Enterprise Data Analytics & Automation',
     credentialTitle: 'Certified Enterprise Python Data Associate (CEPDA)',
-    issueDate: 'July 29, 2026',
+    issueDate: '29-07-2026',
     score: '91%',
     status: 'Verified & Active',
     qrCodeId: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=IGN-PY-9930'

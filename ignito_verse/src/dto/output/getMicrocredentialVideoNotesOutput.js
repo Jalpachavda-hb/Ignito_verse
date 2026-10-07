@@ -1,3 +1,5 @@
+import { formatDate } from '../../utils/dateFormatter';
+
 /**
  * OUTPUT DTO FILE: Get Microcredential Video Notes Output Parser
  * Normalizes list of notes for a video/course.
@@ -43,7 +45,7 @@ export function parseGetMicrocredentialVideoNotesOutput(rawJson = {}, status = 2
             videoId,
             noteDescription,
             noteTimeInSec,
-            createdOn,
+            createdOn: formatDate(createdOn),
             rawData: item
         };
     }).sort((a, b) => a.noteTimeInSec - b.noteTimeInSec);

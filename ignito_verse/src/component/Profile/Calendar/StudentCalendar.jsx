@@ -15,13 +15,22 @@ import {
   downloadEventIcs
 } from '../../../services/microcredentialService';
 import './StudentCalendar.css';
+import { formatDate, formatDateTime } from '../../../utils/dateFormatter';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-const WEEK_DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const WEEK_DAYS = [
+  { full: 'Sunday', short: 'Sun' },
+  { full: 'Monday', short: 'Mon' },
+  { full: 'Tuesday', short: 'Tue' },
+  { full: 'Wednesday', short: 'Wed' },
+  { full: 'Thursday', short: 'Thu' },
+  { full: 'Friday', short: 'Fri' },
+  { full: 'Saturday', short: 'Sat' }
+];
 
 export default function StudentCalendar({
   user = null,
@@ -489,33 +498,7 @@ export default function StudentCalendar({
             </div>
           </div>
 
-          {/* Color Legend Bar */}
-          <div className="calendar-legend-bar">
-            <div className="legend-item">
-              <span className="legend-dot" style={{ background: '#f59e0b' }} />
-              <span>Google Meeting</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-dot" style={{ background: '#6366f1' }} />
-              <span>Zoom Meeting</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-dot" style={{ background: '#475569' }} />
-              <span>Default</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-dot" style={{ background: '#a855f7' }} />
-              <span>Birthday</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-dot" style={{ background: '#06b6d4' }} />
-              <span>Focus Time</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-dot" style={{ background: '#10b981' }} />
-              <span>Out Of Office</span>
-            </div>
-          </div>
+
 
           {/* Navigation & Period Control */}
           <div className="calendar-nav-toolbar">
@@ -556,20 +539,6 @@ export default function StudentCalendar({
                 onClick={() => setCalViewMode('month')}
               >
                 Month
-              </button>
-              <button
-                type="button"
-                className={`btn-view-mode ${calViewMode === 'week' ? 'active' : ''}`}
-                onClick={() => setCalViewMode('week')}
-              >
-                Week
-              </button>
-              <button
-                type="button"
-                className={`btn-view-mode ${calViewMode === 'day' ? 'active' : ''}`}
-                onClick={() => setCalViewMode('day')}
-              >
-                Day
               </button>
               <button
                 type="button"
@@ -637,8 +606,8 @@ export default function StudentCalendar({
 
                           {/* Date & Time */}
                           <td className="event-datetime-cell">
-                            <div>Start: {ev.displayStart}</div>
-                            <div>End: {ev.displayEnd}</div>
+                            <div>Start: {formatDateTime(ev.startDateTime || ev.startDate || ev.displayStart) || ev.displayStart}</div>
+                            <div>End: {formatDateTime(ev.endDateTime || ev.endDate || ev.displayEnd) || ev.displayEnd}</div>
                           </td>
 
                           {/* Programme Info */}
@@ -690,21 +659,6 @@ export default function StudentCalendar({
 
                               <button
                                 type="button"
-                                className="btn-event-cal-sync"
-                                onClick={() => handleDownloadEventIcs(ev)}
-                                title="Export & Add to Calendar (.ics)"
-                                disabled={downloadingIcsId === (ev.eventId || ev.id || ev.meetingId)}
-                              >
-                                {downloadingIcsId === (ev.eventId || ev.id || ev.meetingId) ? (
-                                  <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} />
-                                ) : (
-                                  <CalendarIcon size={13} />
-                                )}
-                                <span>Sync .ics</span>
-                              </button>
-
-                              <button
-                                type="button"
                                 className="btn-view-desc-link"
                                 onClick={() => setSelectedEvent(ev)}
                               >
@@ -715,7 +669,7 @@ export default function StudentCalendar({
 
                           {/* Created Date */}
                           <td className="event-created-cell">
-                            {ev.createdDate}
+                            {formatDateTime(ev.createdRaw || ev.createdDate || ev.startDateTime) || ev.createdDate}
                           </td>
                         </tr>
                       );
@@ -781,8 +735,9 @@ export default function StudentCalendar({
               )}
               <div className="calendar-weekdays-row">
                 {WEEK_DAYS.map((day) => (
-                  <div key={day} className="calendar-weekday-cell">
-                    {day}
+                  <div key={day.short} className="calendar-weekday-cell">
+                    <span className="weekday-name-full">{day.full}</span>
+                    <span className="weekday-name-short">{day.short}</span>
                   </div>
                 ))}
               </div>
@@ -812,11 +767,13 @@ export default function StudentCalendar({
                               onClick={() => setSelectedEvent(ev)}
                               title={`${ev.title} (${ev.displayStart}) - ${over ? 'Completed' : 'Active'}`}
                             >
-                              <span className="pill-time">
-                                {ev.startDate.split('T')[1]?.slice(0, 5)}
-                              </span>
+                              <div className="pill-top-row">
+                                <span className="pill-time">
+                                  {ev.startDate.split('T')[1]?.slice(0, 5)}
+                                </span>
+                                {over && <span className="pill-status-check">✓</span>}
+                              </div>
                               <span className="pill-title">{ev.title}</span>
-                              {over && <span style={{ fontSize: '0.65rem', opacity: 0.8, marginLeft: '3px' }}>✓</span>}
                             </div>
                           );
                         })}
@@ -967,7 +924,7 @@ export default function StudentCalendar({
                       {/* Date & Time */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', color: '#64748b', fontWeight: 600 }}>
                         <Clock size={13} style={{ color: '#0284C7', flexShrink: 0 }} />
-                        <span>{rec.startDateTime || rec.meetingDate || 'Scheduled Live Session'}</span>
+                        <span>{formatDateTime(rec.startDateTime || rec.meetingDate) || 'Scheduled Live Session'}</span>
                       </div>
                     </div>
 
@@ -1123,11 +1080,11 @@ export default function StudentCalendar({
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="modal-info-item">
                   <span className="modal-info-label">Start Time</span>
-                  <span className="modal-info-value">{selectedEvent.displayStart}</span>
+                  <span className="modal-info-value">{formatDateTime(selectedEvent.startDateTime || selectedEvent.startDate || selectedEvent.displayStart) || selectedEvent.displayStart}</span>
                 </div>
                 <div className="modal-info-item">
                   <span className="modal-info-label">End Time</span>
-                  <span className="modal-info-value">{selectedEvent.displayEnd}</span>
+                  <span className="modal-info-value">{formatDateTime(selectedEvent.endDateTime || selectedEvent.endDate || selectedEvent.displayEnd) || selectedEvent.displayEnd}</span>
                 </div>
               </div>
 
@@ -1166,7 +1123,7 @@ export default function StudentCalendar({
                 ) : (
                   <CalendarIcon size={15} />
                 )}
-                <span>Add to Calendar (.ics)</span>
+                <span>Add to Calendar</span>
               </button>
 
               {!isEventOver(selectedEvent) ? (

@@ -1,3 +1,5 @@
+import { formatDate } from '../../utils/dateFormatter';
+
 /**
  * OUTPUT PARAMETER FILE: Get Student Enrolled Microcredential Course Output DTO Parser
  * Parses response data for GetStudentEnrolledMicrocredentialCourse POST request.
@@ -24,11 +26,11 @@ export function parseGetStudentEnrolledMicrocredentialCourseOutput(rawJson = {},
             microcredentialCourseDuration: item?.microcredentialCourseDuration || item?.MicrocredentialCourseDuration || '',
             microcredentialCourseIntroImage: item?.microcredentialCourseIntroImage || item?.MicrocredentialCourseIntroImage || '',
             language: item?.language || item?.Language || '',
-            updatedOn: item?.updatedOn || item?.UpdatedOn || '',
+            updatedOn: formatDate(item?.updatedOn || item?.UpdatedOn || ''),
             encryptedMicrocredentialCourseId: item?.encryptedMicrocredentialCourseId || item?.EncryptedMicrocredentialCourseId || '',
             courseStatus: item?.courseStatus || item?.CourseStatus || '',
-            enrollmentDate: item?.enrollmentDate || item?.EnrollmentDate || '',
-            expiryDate: item?.expiryDate || item?.ExpiryDate || ''
+            enrollmentDate: formatDate(item?.enrollmentDate || item?.EnrollmentDate || ''),
+            expiryDate: formatDate(item?.expiryDate || item?.ExpiryDate || '')
         }))
         : [];
 

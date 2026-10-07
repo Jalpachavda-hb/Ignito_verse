@@ -1,3 +1,5 @@
+import { formatDate } from '../../utils/dateFormatter';
+
 /**
  * OUTPUT PARAMETER FILE: Get Micro Many Discussion Question Output DTO Parser
  * Parses response data for GetMicroManyDiscussionQuestion POST request.
@@ -12,7 +14,7 @@ export function parseGetMicroManyDiscussionQuestionOutput(rawJson = {}, status =
 
     const rawList = rawJson?.microDiscussionQuestions || rawJson?.MicroDiscussionQuestions || [];
 
-    const microDiscussionQuestions = Array.isArray(rawList)
+    const mappedList = Array.isArray(rawList)
         ? rawList.map(item => ({
             microCourseDiscussionQuestionId: item?.microCourseDiscussionQuestionId ?? item?.MicroCourseDiscussionQuestionId ?? 0,
             studentId: item?.studentId ?? item?.StudentId ?? 0,
@@ -21,11 +23,28 @@ export function parseGetMicroManyDiscussionQuestionOutput(rawJson = {}, status =
             professorName: item?.professorName || item?.ProfessorName || '',
             professorProfileImage: item?.professorProfileImage || item?.ProfessorProfileImage || '',
             question: item?.question || item?.Question || '',
-            createdOn: item?.createdOn || item?.CreatedOn || '',
+            description: item?.description || item?.Description || '',
+            createdOn: formatDate(item?.createdOn || item?.CreatedOn || ''),
             likeCount: item?.likeCount ?? item?.LikeCount ?? 0,
+            replyCount: item?.replyCount ?? item?.ReplyCount ?? 0,
             isLiked: Boolean(item?.isLiked ?? item?.IsLiked ?? false)
         }))
         : [];
+
+    // Deduplicate questions to prevent duplicate items from SQL joins or repeated data
+    const seenQuestions = new Set();
+    const microDiscussionQuestions = [];
+    mappedList.forEach(item => {
+        const idKey = Number(item.microCourseDiscussionQuestionId) > 0 ? `id_${item.microCourseDiscussionQuestionId}` : null;
+        const textKey = `${String(item.studentName || item.studentId).trim().toLowerCase()}:::${String(item.question).trim().toLowerCase()}:::${String(item.createdOn).trim().toLowerCase()}`;
+
+        if (idKey && seenQuestions.has(idKey)) return;
+        if (seenQuestions.has(textKey)) return;
+
+        if (idKey) seenQuestions.add(idKey);
+        seenQuestions.add(textKey);
+        microDiscussionQuestions.push(item);
+    });
 
     return {
         success: isSuccess,

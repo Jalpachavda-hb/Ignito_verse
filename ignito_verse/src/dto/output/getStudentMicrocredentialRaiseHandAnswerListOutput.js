@@ -1,3 +1,5 @@
+import { formatDate } from '../../utils/dateFormatter';
+
 /**
  * OUTPUT PARAMETER FILE: Get Student Microcredential Raise Hand Answer List Output DTO Parser
  * Parses response data for GetStudentMicrocredentialRaiseHandAnswerList POST request.
@@ -20,7 +22,7 @@ export function parseGetStudentMicrocredentialRaiseHandAnswerListOutput(rawJson 
             microcreditYoutubeDataMasterId: item?.microcreditYoutubeDataMasterId ?? item?.MicrocreditYoutubeDataMasterId ?? 0,
             question: item?.question || item?.Question || '',
             answer: item?.answer || item?.Answer || '',
-            createdOn: item?.createdOn || item?.CreatedOn || ''
+            createdOn: formatDate(item?.createdOn || item?.CreatedOn || '')
         }))
         : [];
 

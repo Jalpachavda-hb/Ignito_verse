@@ -21,6 +21,7 @@ import { getStudentCalendarEvents } from '../../services/calendarService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
 import StudentCalendar from './Calendar/StudentCalendar';
 import './ProfilePage.css';
+import { formatDate } from '../../utils/dateFormatter';
 
 
 // Helper to strip HTML tags from backend strings (e.g., <p>text</p>)
@@ -974,7 +975,7 @@ export default function ProfilePage({
                             </div>
                           )}
                           <div className="ss-quiz-last-attempt">
-                            Last Attempt: {quiz.lastAttemptDate || '10 Sep 2026, 06:03 PM'}
+                            Last Attempt: {formatDate(quiz.lastAttemptDate, '10-09-2026')}
                           </div>
                         </div>
                       </div>
