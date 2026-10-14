@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Edit3, ChevronRight } from 'lucide-react';
 import arrowImg from '../../assets/home/Arrow.webp';
-import noriBg01 from '../../assets/home/nori-background-01.png';
 import CourseCard from '../Microcredentials/CourseCard';
 import { getMicrocredentialCourseBindDataList } from '../../services/microcredentialService';
 import { formatImageUrl } from '../../dto/output/homepageOutputs';
@@ -72,7 +71,6 @@ export default function FeaturedSection({
         {/* Top Checkered Background Watermark Pattern */}
         <div
           className="nori-header-bg-watermark"
-          style={{ backgroundImage: `url(${noriBg01})` }}
           aria-hidden="true"
         />
 

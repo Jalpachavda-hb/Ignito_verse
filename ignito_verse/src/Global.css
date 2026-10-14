@@ -851,6 +851,7 @@ a {
   transform: translateX(-50%);
   width: 720px;
   height: 220px;
+  background-image: url('/assets/home/nori-background-01.png');
   background-repeat: no-repeat;
   background-position: center top;
   background-size: contain;
@@ -11042,6 +11043,7 @@ body.modal-open {
   width: 100%;
   max-width: 860px;
   height: 240px;
+  background-image: url('/assets/home/nori-background-01.png');
   background-size: contain;
   background-position: center top;
   background-repeat: no-repeat;

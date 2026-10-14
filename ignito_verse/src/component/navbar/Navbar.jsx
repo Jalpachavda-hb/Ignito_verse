@@ -10,7 +10,10 @@ import './navbar.css';
 
 const navItems = [
   { id: 'home', label: 'Home' },
-  { id: 'microcredentials', label: 'Microcredentials' }
+  { id: 'about', label: 'About Us' },
+  { id: 'microcredentials', label: 'Training Modules' },
+  { id: 'faq', label: 'FAQ' },
+  { id: 'contact', label: 'Contact Us' }
 ];
 
 export default function Navbar({

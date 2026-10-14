@@ -1,0 +1,747 @@
+/* ========================================================
+   ABOUT US PAGE STYLES - IGNITOVERSE
+   Matches Target Mockup Design:
+   1. Hero Banner
+   2. 4 Value Props Highlights
+   3. Our Mission & Our Vision (2 Large Gradient Cards)
+   4. Floating Stats Bar
+   5. Our Journey Roadmap & Timeline
+   6. Bridging the Gap Between Classroom and Career
+   ======================================================== */
+
+.about-page-container {
+  min-height: 100vh;
+  background-color: #fafbfc;
+  color: #0f172a;
+  overflow-x: hidden;
+  font-family: inherit;
+  padding-bottom: 5.5rem;
+}
+
+/* --------------------------------------------------------
+   1. HERO BANNER (WITH ABOUTUS.PNG BACKGROUND)
+   -------------------------------------------------------- */
+.about-hero-section {
+  position: relative;
+  width: 100%;
+  min-height: 520px;
+  background-color: #faf9ff;
+  background-image: url('/assets/home/aboutus.png');
+  background-size: cover;
+  background-position: right center;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  padding: 3.5rem 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.about-hero-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.about-hero-container {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 clamp(1.5rem, 3.5vw, 4rem);
+  display: flex;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 2;
+}
+
+.about-hero-content {
+  max-width: 430px;
+  margin-left: 0;
+  text-align: left;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.about-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(5, 39, 101, 0.08);
+  border: 1px solid rgba(5, 39, 101, 0.22);
+  padding: 0.35rem 1.1rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #052765;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 2px 8px rgba(5, 39, 101, 0.08);
+}
+
+.about-badge-icon {
+  color: #052765;
+}
+
+.about-hero-title {
+  font-size: clamp(2.1rem, 3.2vw, 2.85rem);
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  margin-bottom: 1.25rem;
+  color: #052765;
+  text-align: left;
+}
+
+.about-hero-subtitle {
+  font-size: 0.96rem;
+  line-height: 1.62;
+  color: #334155;
+  margin-bottom: 0;
+  max-width: 410px;
+  font-weight: 500;
+  text-align: left;
+}
+
+/* Common Highlighting */
+.highlight-pink {
+  color: inherit;
+}
+
+/* --------------------------------------------------------
+   2. VALUE PROPS (4 HIGHLIGHT COLUMNS WITH DIVIDERS)
+   -------------------------------------------------------- */
+.about-values-section {
+  width: 100%;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 0;
+  margin: 0 0 3.5rem;
+  box-sizing: border-box;
+}
+
+.about-values-grid {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 clamp(1.5rem, 3.5vw, 4rem);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  box-sizing: border-box;
+}
+
+.about-value-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.8rem 1.2rem;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.about-value-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 15%;
+  height: 70%;
+  width: 1px;
+  background-color: #e5e7eb;
+}
+
+.about-value-icon-box {
+  width: 70px;
+  height: 70px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.about-value-item:hover .about-value-icon-box {
+  transform: translateY(-3px) scale(1.02);
+}
+
+.about-value-icon-box.indigo {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.about-value-icon-box.purple {
+  background: #fdf2f8;
+  color: #c026d3;
+}
+
+.about-value-icon-box.cyan {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.about-value-icon-box.amber {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.about-value-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #052765;
+  margin: 0 0 0.45rem;
+  letter-spacing: -0.015em;
+  text-align: center;
+}
+
+.about-value-desc {
+  font-size: 0.88rem;
+  color: #64748b;
+  line-height: 1.55;
+  max-width: 200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* --------------------------------------------------------
+   3. OUR MISSION & OUR VISION (2 LARGE GRADIENT CARDS)
+   -------------------------------------------------------- */
+.about-mission-vision-section {
+  max-width: 1400px;
+  margin: 2rem auto 2.5rem;
+  padding: 0 clamp(1.5rem, 3.5vw, 4rem);
+  box-sizing: border-box;
+}
+
+.mission-vision-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.mission-card,
+.vision-card {
+  border-radius: 22px;
+  padding: 2.6rem 2.4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.mission-card:hover,
+.vision-card:hover {
+  transform: translateY(-3px);
+}
+
+.mission-card {
+  background: linear-gradient(135deg, #002949 0%, #002441 50%, #001930 100%);
+  box-shadow: 0 16px 36px -8px rgba(0, 36, 65, 0.45);
+}
+
+.vision-card {
+  background: linear-gradient(135deg, #300f4e 0%, #3c1665 45%, #582594 100%);
+  box-shadow: 0 16px 36px -8px rgba(60, 22, 101, 0.45);
+}
+
+.mv-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+.mv-icon-box {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.mv-icon-box.mission {
+  color: #38bdf8;
+}
+
+.mv-icon-box.vision {
+  color: #c084fc;
+}
+
+.mv-card-title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.015em;
+}
+
+.mv-card-body {
+  font-size: 0.98rem;
+  line-height: 1.68;
+  margin: 0 0 2rem;
+  font-weight: 400;
+}
+
+.mission-card .mv-card-body {
+  color: #cbd5e1;
+}
+
+.vision-card .mv-card-body {
+  color: #e9d5ff;
+}
+
+.mv-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.mv-tag {
+  font-size: 0.86rem;
+  font-weight: 600;
+  padding: 0.45rem 1.15rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(6px);
+  transition: all 0.2s ease;
+}
+
+.mission-card .mv-tag {
+  color: #e2e8f0;
+}
+
+.vision-card .mv-tag {
+  color: #f3e8ff;
+}
+
+.mv-tag:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* --------------------------------------------------------
+   4. FLOATING IMPACT STATS BAR
+   -------------------------------------------------------- */
+.about-stats-container {
+  max-width: 1400px;
+  margin: 1.5rem auto 3.5rem;
+  padding: 0 clamp(1.5rem, 3.5vw, 4rem);
+  box-sizing: border-box;
+  position: relative;
+  z-index: 5;
+}
+
+.about-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+  border: 1px solid #edf2f7;
+  padding: 1.8rem 1.5rem;
+  gap: 1.5rem;
+}
+
+.about-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+  padding: 0 1rem;
+}
+
+.about-stat-item:not(:last-child) {
+  border-right: 1px solid #f1f5f9;
+}
+
+.stat-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon-wrapper.blue {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.stat-icon-wrapper.purple {
+  background: #f3e8ff;
+  color: #9333ea;
+}
+
+.stat-icon-wrapper.emerald {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.stat-icon-wrapper.amber {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.stat-num {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #052765;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.stat-label {
+  font-size: 0.74rem;
+  font-weight: 750;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+
+
+/* --------------------------------------------------------
+   6. BRIDGING THE GAP BETWEEN CLASSROOM AND CAREER
+   -------------------------------------------------------- */
+.about-classroom-career-section {
+  max-width: 1400px;
+  margin: 3.5rem auto 3rem;
+  padding: 0 clamp(1.5rem, 3.5vw, 4rem);
+  box-sizing: border-box;
+}
+
+.classroom-career-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 3.5rem;
+  align-items: center;
+}
+
+/* Left Photo Frame */
+.career-photo-col {
+  position: relative;
+}
+
+.career-photo-frame {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+  height: 440px;
+}
+
+.career-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.career-photo-frame:hover .career-photo-img {
+  transform: scale(1.02);
+}
+
+/* Top Right Sparkle Badge */
+.career-sparkle-badge {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.sparkle-icon {
+  color: #a855f7;
+}
+
+/* Bottom Left Video Glass Badge */
+.career-video-badge {
+  position: absolute;
+  bottom: 1.35rem;
+  left: 1.35rem;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  color: #ffffff;
+  z-index: 5;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.career-video-badge:hover {
+  transform: translateY(-2px);
+  background: rgba(15, 23, 42, 0.95);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.video-play-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+}
+
+.video-badge-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.video-title {
+  font-size: 0.95rem;
+  font-weight: 750;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.video-duration {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 0.2rem;
+}
+
+/* Right Content Column */
+.career-text-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.why-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 39, 101, 0.08);
+  border: 1px solid rgba(5, 39, 101, 0.22);
+  color: #052765;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  padding: 0.35rem 1.15rem;
+  border-radius: 999px;
+  margin-bottom: 1.25rem;
+}
+
+.career-section-title {
+  font-size: clamp(2.3rem, 3.6vw, 3rem);
+  font-weight: 900;
+  color: #052765;
+  line-height: 1.2;
+  margin: 0 0 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.career-section-desc {
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: #64748b;
+  margin: 0 0 2.2rem;
+}
+
+.career-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.career-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.15rem;
+}
+
+.check-icon-circle {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  background: #052765;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.2rem;
+}
+
+.check-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.check-title {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #052765;
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+.check-desc {
+  font-size: 0.94rem;
+  color: #64748b;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* --------------------------------------------------------
+   RESPONSIVE MEDIA QUERIES
+   -------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .about-hero-section {
+    background-position: center center;
+  }
+
+  .about-hero-section::before {
+    opacity: 1;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.92) 0%,
+      rgba(255, 255, 255, 0.85) 60%,
+      rgba(255, 255, 255, 0.78) 100%
+    );
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  .about-hero-content {
+    max-width: 540px;
+  }
+
+  .about-values-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+
+  .mission-vision-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .classroom-career-grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .career-photo-frame {
+    height: 380px;
+  }
+}
+
+@media (max-width: 768px) {
+  .about-hero-section {
+    min-height: 420px;
+    padding: 3rem 0;
+    background-position: center center;
+  }
+
+  .about-hero-section::before {
+    opacity: 1;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.94) 0%,
+      rgba(255, 255, 255, 0.88) 100%
+    );
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+  }
+
+  .about-hero-content {
+    max-width: 100%;
+  }
+
+  .about-hero-title {
+    font-size: clamp(1.85rem, 5.5vw, 2.35rem);
+    margin-bottom: 1rem;
+  }
+
+  .about-hero-subtitle {
+    font-size: 0.94rem;
+    line-height: 1.6;
+    max-width: 100%;
+  }
+
+  .about-values-grid {
+    grid-template-columns: 1fr;
+    padding: 1.8rem 1.4rem;
+  }
+
+  .about-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 1.5rem 1rem;
+  }
+
+  .about-stat-item:not(:last-child) {
+    border-right: none;
+  }
+
+  .mission-card,
+  .vision-card {
+    padding: 2rem 1.6rem;
+  }
+
+  .career-photo-frame {
+    height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-hero-section {
+    min-height: 380px;
+    padding: 2.5rem 0;
+  }
+
+  .about-badge {
+    padding: 0.3rem 0.85rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.8px;
+    margin-bottom: 1rem;
+  }
+
+  .about-hero-title {
+    font-size: 1.75rem;
+    line-height: 1.25;
+  }
+
+  .about-hero-subtitle {
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+}
+

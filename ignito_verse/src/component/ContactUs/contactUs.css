@@ -1,0 +1,563 @@
+/* ========================================================
+   CONTACT US PAGE STYLES - IGNITOVERSE
+   Matches Site-Wide 1400px Width & Unified Premium Typography
+   ======================================================== */
+
+.contact-page-wrapper {
+  min-height: calc(100vh - 80px);
+  background-color: #fbfbfe;
+  color: #052765;
+  position: relative;
+  overflow-x: hidden;
+  font-family: inherit;
+  padding-bottom: 5rem;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------
+   DECORATIVE ORGANIC PURPLE CORNER BACKGROUNDS
+   -------------------------------------------------------- */
+.contact-decor-top-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 420px;
+  height: 380px;
+  pointer-events: none;
+  background: radial-gradient(circle at 0% 0%, rgba(192, 132, 252, 0.25) 0%, rgba(216, 180, 254, 0.1) 50%, transparent 75%);
+  border-bottom-right-radius: 100%;
+  z-index: 1;
+}
+
+.contact-decor-bottom-right {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 420px;
+  height: 380px;
+  pointer-events: none;
+  background: radial-gradient(circle at 100% 100%, rgba(192, 132, 252, 0.28) 0%, rgba(216, 180, 254, 0.12) 55%, transparent 80%);
+  border-top-left-radius: 100%;
+  z-index: 1;
+}
+
+/* --------------------------------------------------------
+   1. TOP HEADER SECTION (UNIFIED SITE TYPOGRAPHY)
+   -------------------------------------------------------- */
+.contact-header-container {
+  text-align: center;
+  padding: 3rem 1.5rem 2.2rem;
+  position: relative;
+  z-index: 2;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.contact-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3e8ff;
+  border: 1px solid rgba(192, 132, 252, 0.35);
+  color:#052765;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  padding: 0.38rem 1.25rem;
+  border-radius: 999px;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.05);
+}
+
+.contact-main-heading {
+  font-size: clamp(2.5rem, 3.8vw, 3.3rem);
+  font-weight: 900;
+  color: #052765;
+  margin: 0 0 0.85rem;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.contact-highlight-pink {
+  color: #052765;
+}
+
+.contact-header-desc {
+  max-width: 680px;
+  margin: 0 auto;
+  font-size: 1.05rem;
+  line-height: 1.62;
+  color: #64748b;
+  font-weight: 450;
+}
+
+/* --------------------------------------------------------
+   2. TWO-COLUMN MAIN CONTENT GRID (1400PX MAX-WIDTH ALIGNMENT)
+   -------------------------------------------------------- */
+.contact-content-grid {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 clamp(1.5rem, 3.5vw, 4rem);
+  display: grid;
+  grid-template-columns: 480px 1fr;
+  gap: 2rem;
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  align-items: stretch;
+}
+
+/* Card Base */
+.contact-card {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #edf2f7;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+}
+
+.contact-card-title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #052765;
+  margin: 0 0 0.35rem;
+  letter-spacing: -0.015em;
+}
+
+.contact-card-subtitle {
+  font-size: 0.98rem;
+  color: #64748b;
+  margin: 0 0 1.6rem;
+  line-height: 1.5;
+}
+
+/* --------------------------------------------------------
+   LEFT COLUMN: OUR OFFICE & FIND US ON MAP
+   -------------------------------------------------------- */
+.contact-left-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+/* Our Office Card */
+.our-office-card {
+  padding: 2rem 2rem 1.8rem;
+  flex: 1;
+}
+
+.office-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.office-detail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.1rem;
+}
+
+.office-icon-box {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 12px;
+  background: #f5f3ff;
+  color: #7c3aed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.office-detail-item:hover .office-icon-box {
+  background: #ede9fe;
+  color: #6d28d9;
+  transform: translateY(-2px);
+}
+
+.office-text-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.office-label {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 0.2rem;
+}
+
+.office-value {
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.52;
+  margin: 0;
+}
+
+.office-value-link {
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.52;
+  margin: 0;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.office-value-link:hover {
+  color: #7c3aed;
+  text-decoration: underline;
+}
+
+/* Find Us on Map Card */
+.find-map-card {
+  padding: 1.6rem 1.75rem 1.6rem;
+}
+
+.find-map-card .contact-card-title {
+  font-size: 1.35rem;
+  margin-bottom: 0.9rem;
+}
+
+.map-embed-container {
+  width: 100%;
+  height: 220px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: #f1f5f9;
+}
+
+.map-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+
+.contact-right-col {
+  width: 100%;
+  display: flex;
+}
+
+.send-message-card {
+  padding: 2.5rem 2.6rem 2.2rem;
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Corner Decor */
+.card-corner-wave {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 220px;
+  height: 180px;
+  background: radial-gradient(circle at 100% 0%, rgba(216, 180, 254, 0.4) 0%, rgba(243, 232, 255, 0.14) 60%, transparent 80%);
+  pointer-events: none;
+  border-top-right-radius: 24px;
+}
+
+.card-corner-dots {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.message-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #052765;
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.015em;
+}
+
+.message-subtitle {
+  font-size: 0.98rem;
+  color: #64748b;
+  margin-bottom: 1.8rem;
+}
+
+/* Form Structure */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.form-grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.35rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.field-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.field-star {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+/* Input Boxes with Inner Icons */
+.field-input-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.field-input-box:focus-within {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+}
+
+.field-icon {
+  position: absolute;
+  left: 1rem;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.field-input {
+  width: 100%;
+  padding: 0.85rem 1rem 0.85rem 2.85rem;
+  border: none;
+  background: transparent;
+  font-size: 0.96rem;
+  color: #0f172a;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.field-input::placeholder {
+  color: #94a3b8;
+  font-size: 0.92rem;
+}
+
+/* Select Dropdown */
+.field-select-box {
+  position: relative;
+}
+
+.field-select {
+  width: 100%;
+  padding: 0.85rem 2.6rem 0.85rem 2.85rem;
+  border: none;
+  background: transparent;
+  font-size: 0.96rem;
+  color: #0f172a;
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+}
+
+.field-select option {
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.select-arrow-icon {
+  position: absolute;
+  right: 1.05rem;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+/* Textarea Box */
+.field-textarea-box {
+  position: relative;
+  width: 100%;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.field-textarea-box:focus-within {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+}
+
+.field-textarea-icon {
+  position: absolute;
+  top: 0.95rem;
+  left: 1rem;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.field-textarea {
+  width: 100%;
+  padding: 0.85rem 1rem 0.85rem 2.85rem;
+  border: none;
+  background: transparent;
+  font-size: 0.96rem;
+  color: #0f172a;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 105px;
+  max-height: 150px;
+  box-sizing: border-box;
+}
+
+.field-textarea::placeholder {
+  color: #94a3b8;
+  font-size: 0.92rem;
+}
+
+/* Submit Button */
+.btn-send-message {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.95rem 1.6rem;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 45%, #d946ef 100%);
+  color: #ffffff;
+  font-size: 1.02rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 24px -4px rgba(168, 85, 247, 0.42);
+  transition: all 0.25s ease;
+  margin-top: 0.4rem;
+  letter-spacing: 0.2px;
+}
+
+.btn-send-message:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px -4px rgba(168, 85, 247, 0.52);
+  filter: brightness(1.04);
+}
+
+.btn-send-message:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.send-btn-icon {
+  color: #ffffff;
+}
+
+/* Success State */
+.form-success-state {
+  text-align: center;
+  padding: 3.2rem 1.5rem;
+  background: #faf5ff;
+  border-radius: 18px;
+  border: 1.5px solid #e9d5ff;
+}
+
+.success-icon {
+  color: #8b5cf6;
+  margin: 0 auto 1.2rem;
+}
+
+.success-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #581c87;
+  margin-bottom: 0.6rem;
+}
+
+.success-text {
+  color: #6b21a8;
+  font-size: 0.96rem;
+  margin-bottom: 1.75rem;
+  line-height: 1.6;
+}
+
+.btn-send-another {
+  display: inline-block;
+  padding: 0.8rem 1.8rem;
+  background: #7c3aed;
+  color: #ffffff;
+  border-radius: 10px;
+  border: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-send-another:hover {
+  background: #6d28d9;
+}
+
+/* --------------------------------------------------------
+   RESPONSIVE MEDIA QUERIES
+   -------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .contact-content-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .contact-left-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .contact-header-container {
+    padding: 2.2rem 1.25rem 1.6rem;
+  }
+
+  .contact-main-heading {
+    font-size: 2.2rem;
+  }
+
+  .contact-left-col {
+    grid-template-columns: 1fr;
+  }
+
+  .send-message-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .form-grid-row {
+    grid-template-columns: 1fr;
+  }
+}

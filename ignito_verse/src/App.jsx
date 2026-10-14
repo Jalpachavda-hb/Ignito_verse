@@ -9,6 +9,9 @@ import MicrocredentialWatchPage from './component/Microcredentials/Microcredenti
 import QuizPage from './component/Quiz/QuizPage';
 import ProfilePage from './component/Profile/ProfilePage';
 import LoginPage from './component/Auth/LoginPage';
+import AboutUsPage from './component/AboutUs/AboutUsPage';
+import ContactUsPage from './component/ContactUs/ContactUsPage';
+import FAQPage from './component/FAQ/FAQPage';
 import VideoModal from './component/modals/VideoModal';
 import AuthRequiredModal from './component/modals/AuthRequiredModal';
 import { microcredentialsData } from './data/microcredentials';
@@ -58,6 +61,21 @@ function parseCurrentRoute() {
   }
   param = String(param || '').trim().replace(/^\/+|\/+$/g, '');
 
+  if (rawPage === 'about') {
+    return { page: 'about', param: '' };
+  }
+  if (rawPage === 'faq') {
+    return { page: 'faq', param: '' };
+  }
+  if (rawPage === 'contact') {
+    return { page: 'contact', param: '' };
+  }
+  if (rawPage === 'training-modules' && param) {
+    return { page: 'detail', param };
+  }
+  if (rawPage === 'training-modules') {
+    return { page: 'microcredentials', param: '' };
+  }
   if (rawPage === 'microcredentials' && param) {
     return { page: 'detail', param };
   }
@@ -230,6 +248,14 @@ export default function App() {
 
     if (pageId === 'home') {
       targetPath = '/';
+    } else if (pageId === 'about') {
+      targetPath = '/about';
+    } else if (pageId === 'faq') {
+      targetPath = '/faq';
+    } else if (pageId === 'contact') {
+      targetPath = '/contact';
+    } else if (pageId === 'microcredentials' || pageId === 'training-modules') {
+      targetPath = '/microcredentials';
     } else if (pageId === 'profile') {
       const tab = subParam || 'dashboard';
       setProfileTab(tab);
@@ -391,7 +417,7 @@ export default function App() {
             onViewDetails={handleViewCourseDetails}
             onSelectCategory={handleSelectCategoryFromHome}
             onPreviewVideo={handleOpenVideoPreview}
-            onContact={() => handleNavigate('microcredentials')}
+            onContact={() => handleNavigate('contact')}
           />
         )}
 
@@ -442,6 +468,26 @@ export default function App() {
               setPendingRedirect({ page: 'profile', param: profileTab });
               handleNavigate('login');
             }}
+          />
+        )}
+
+        {activePage === 'about' && (
+          <AboutUsPage 
+            onExploreCatalog={() => handleNavigate('microcredentials')}
+            onContact={() => handleNavigate('contact')}
+          />
+        )}
+
+        {activePage === 'faq' && (
+          <FAQPage 
+            onExploreCatalog={() => handleNavigate('microcredentials')}
+            onContact={() => handleNavigate('contact')}
+          />
+        )}
+
+        {activePage === 'contact' && (
+          <ContactUsPage 
+            onExploreCatalog={() => handleNavigate('microcredentials')}
           />
         )}
 
